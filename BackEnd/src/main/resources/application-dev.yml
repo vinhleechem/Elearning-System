@@ -9,3 +9,11 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+
+open:
+  api:
+    title: API Document
+    version: v1.0.0
+    description: Cinema API service
+    serverUrl: http://localhost:8080
+    serverName: Local Dev Server
