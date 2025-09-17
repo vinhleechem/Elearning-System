@@ -8,6 +8,7 @@ export interface ButtonProps {
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   variant?: "outlined" | "contained" | "text";
   icon?: ReactElement;
+  iconPosition?: "start" | "end";
   size?: "small" | "medium" | "large";
   inputProps?: Record<string, unknown>;
   sx?: SxProps<Theme>;

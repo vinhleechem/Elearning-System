@@ -5,8 +5,8 @@ import {
   EditOutlined,
   GroupOutlined,
 } from "@mui/icons-material";
-import Button from "./common/Button";
-import Menu from "./common/Menu";
+import Button from "./ui/Button";
+import Menu from "./ui/Menu";
 import { relatedFilter } from "../libs/constants";
 
 export default function FilterBar() {

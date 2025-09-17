@@ -5,7 +5,7 @@ import "@fontsource-variable/public-sans";
 const RootLayout: React.FC = () => {
   return (
     <div>
-      <Outlet />
+      <Outlet /> {/* cho dat non dung cua route con */}
     </div>
   );
 };

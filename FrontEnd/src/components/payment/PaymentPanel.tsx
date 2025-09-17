@@ -1,0 +1,82 @@
+import { useState } from "react";
+
+type PaymentMethod = "momo" | "vnpay" | "vietqr" | "payos";
+
+const paymentMethods = [
+  {
+    id: "momo",
+    label: "Momo",
+    logo: "https://event.mediacdn.vn/thumb_w/1000/257767050295742464/image/cca/2023/9/17/momo-16949607838381240407833.jpg",
+  },
+  {
+    id: "vnpay",
+    label: "VNPay",
+    logo: "https://yt3.googleusercontent.com/JM1m2wng0JQUgSg9ZSEvz7G4Rwo7pYb4QBYip4PAhvGRyf1D_YTbL2DdDjOy0qOXssJPdz2r7Q=s900-c-k-c0x00ffffff-no-rj",
+  },
+  {
+    id: "payos",
+    label: "PayOS",
+    logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKOCs8yde-EAOZYYVAQ1Ztqt5yidi_ilpp_Q&s",
+  },
+  {
+    id: "vietqr",
+    label: "Viet Qr",
+    logo: "https://play-lh.googleusercontent.com/22cJzF0otG-EmmQgILMRTWFPnx0wTCSDY9aFaAmOhHs30oNHxi63KcGwUwmbR76Msko",
+  },
+];
+
+const PaymentPanel = () => {
+  const [selected, setSelected] = useState<PaymentMethod>("momo");
+
+  return (
+    <div className="flex-[2] rounded-lg">
+      <h1 className="mb-4 text-xl font-bold">Thanh toán</h1>
+      <div className="mb-6">
+        <label className="block py-2 text-lg font-bold text-gray-700">
+          Địa chỉ thanh toán
+        </label>
+        <p className="block py-1 text-lg font-bold text-gray-700">Quốc gia</p>
+        <select className="mt-1 block w-full rounded border p-2">
+          <option>Việt Nam</option>
+        </select>
+      </div>
+
+      {/* Phương thức thanh toán */}
+      <div>
+        <h2 className="mb-2 text-lg font-bold text-gray-700">
+          Phương thức thanh toán
+        </h2>
+        <div className="space-y-3">
+          {paymentMethods.map((method) => (
+            <label
+              key={method.id}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
+                selected === method.id
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <input
+                type="radio"
+                name="payment"
+                value={method.id}
+                checked={selected === method.id}
+                onChange={() => setSelected(method.id as PaymentMethod)}
+              />
+              <img
+                src={method.logo}
+                alt={method.label}
+                className="h-8 w-8 object-contain"
+              />
+              <div>
+                <p className="font-semibold">{method.label}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentPanel;
