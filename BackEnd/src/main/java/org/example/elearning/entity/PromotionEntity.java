@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.example.elearning.enums.DiscountType;
-import org.example.elearning.enums.NotificationType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,6 +31,7 @@ public class PromotionEntity extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
+    @Builder.Default
     DiscountType discountType = DiscountType.PERCENTAGE;
 
     @Column(name = "discount_value", precision = 10, scale = 2)

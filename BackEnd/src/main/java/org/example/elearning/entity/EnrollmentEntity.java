@@ -2,6 +2,7 @@ package org.example.elearning.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "enrollment")
 public class EnrollmentEntity extends BaseEntity{
@@ -26,6 +27,7 @@ public class EnrollmentEntity extends BaseEntity{
 
     // Tiến độ học (%)
     @Column(name = "progress", nullable = false)
+    @Builder.Default
     Float progress = 0f;
 }
 

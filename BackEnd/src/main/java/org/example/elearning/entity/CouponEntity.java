@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "coupon")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class CouponEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +30,7 @@ public class CouponEntity extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
+    @Builder.Default
     DiscountType discountType = DiscountType.PERCENTAGE;
 
     @Column(name = "discount_value", precision = 10, scale = 2)

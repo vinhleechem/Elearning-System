@@ -29,7 +29,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
-        org.example.elearning.dto.response.ErrorResponse errorResponse = ErrorResponse.builder()
+        ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(new Date())
                 .status(errorCode.getCode())
                 .error(errorCode.getMessage())

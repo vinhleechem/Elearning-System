@@ -6,13 +6,21 @@ import org.example.elearning.dto.response.PermissionResponse;
 import org.example.elearning.entity.PermissionEntity;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PermissionMapper {
+    @Mapping(target = "permissionId", ignore = true)
     PermissionEntity toPermission(PermissionRequest permissionRequest);
+
     PermissionResponse toPermissionResponse(PermissionEntity permission);
+
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updated_At", ignore = true)
+    @Mapping(target = "permissionId", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy =  NullValuePropertyMappingStrategy.IGNORE)
     void updatePermission(PermissionRequest permissionRequest, @MappingTarget PermissionEntity permissionEntity);
 }

@@ -49,6 +49,7 @@ public class CourseEntity extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     CourseStatus courseStatus = CourseStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)

@@ -22,4 +22,6 @@ public interface AuthenticationService {
     RefreshTokenResponse refreshToken(RefreshTokenRequest request);
 
     UserResponse.UserLoginResponse outboundAuthentication(String code);
+
+    UserResponse.UserLoginResponse outboundFacebookAuthentication(String code);
 }

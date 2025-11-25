@@ -1,5 +1,24 @@
 package org.example.elearning.controller;
 
+import org.example.elearning.dto.request.IntrospectRequest;
+import org.example.elearning.dto.request.LogoutRequest;
+import org.example.elearning.dto.request.RefreshTokenRequest;
+import org.example.elearning.dto.request.RegisterRequest;
+import org.example.elearning.dto.request.UserLoginRequest;
+import org.example.elearning.dto.response.IntrospectResponse;
+import org.example.elearning.dto.response.RefreshTokenResponse;
+import org.example.elearning.dto.response.StandardResponse;
+import static org.example.elearning.dto.response.StandardResponse.success;
+import org.example.elearning.dto.response.UserResponse;
+import org.example.elearning.service.AuthenticationService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -8,16 +27,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.example.elearning.dto.request.*;
-import org.example.elearning.dto.response.RefreshTokenResponse;
-import org.example.elearning.dto.response.StandardResponse;
-import org.example.elearning.dto.response.IntrospectResponse;
-import org.example.elearning.dto.response.UserResponse;
-import org.example.elearning.service.AuthenticationService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import static org.example.elearning.dto.response.StandardResponse.success;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -92,5 +101,16 @@ public class AuthenticationController {
     public ResponseEntity<StandardResponse<Object>> loginGoogle(@RequestParam("code") String code) {
         UserResponse.UserLoginResponse result = authenticationService.outboundAuthentication(code);
         return ResponseEntity.ok(success("Đăng nhập Google thành công", result));
+    }
+
+    @Operation(summary = "Đăng nhập với Facebook", description = "API login thông qua Facebook OAuth2 (sử dụng authorization code)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Đăng nhập Facebook thành công"),
+            @ApiResponse(responseCode = "401", description = "Không xác thực được với Facebook")
+    })
+    @RequestMapping(value = "/login-facebook", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<StandardResponse<Object>> loginFacebook(@RequestParam("code") String code) {
+        UserResponse.UserLoginResponse result = authenticationService.outboundFacebookAuthentication(code);
+        return ResponseEntity.ok(success("Đăng nhập Facebook thành công", result));
     }
 }
