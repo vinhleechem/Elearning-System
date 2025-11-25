@@ -6,6 +6,9 @@ import lombok.experimental.FieldDefaults;
 import org.example.elearning.enums.Provider;
 import org.hibernate.annotations.Nationalized;
 
+import java.util.Set;
+
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -13,7 +16,6 @@ import org.hibernate.annotations.Nationalized;
 @Builder
 @Table(name = "role")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class RoleEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,5 +26,8 @@ public class RoleEntity extends BaseEntity{
     @Nationalized
     String roleName;
 
+    @ManyToMany(fetch =  FetchType.EAGER)
+    @JoinTable(name ="role_permission", joinColumns = @JoinColumn(name="role_id"), inverseJoinColumns = @JoinColumn(name ="permission_id"))
+    Set<PermissionEntity> permissions;
 
 }

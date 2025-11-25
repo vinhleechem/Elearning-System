@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "coupon_usage")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class CouponUsageEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

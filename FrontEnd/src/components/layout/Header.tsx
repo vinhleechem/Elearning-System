@@ -11,6 +11,11 @@ import { Badge } from "@mui/material";
 import { Link } from "react-router-dom";
 import { leftPages, rightPages } from "../../libs/constants";
 import type { HeaderProps } from "../../types/header";
+import { useState, useRef } from "react";
+import CartDropdown from "../cart/CartDropdown";
+import type { CartItemProps } from "../../types/cartItem";
+import MegaMenu from "./MegaMenu";
+import { megaMenuPrimaryTitle, megaMenuTopics } from "../../data/megaMenu";
 
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
@@ -19,6 +24,57 @@ const Header: React.FC<HeaderProps> = ({
   showAuth = true,
   checkoutMode = false,
 }) => {
+  const [cartAnchorEl, setCartAnchorEl] = useState<HTMLElement | null>(null);
+  const cartOpen = Boolean(cartAnchorEl);
+  const cartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mock data cho cart items - sau này có thể lấy từ Redux/Context
+  const [isMegaMenuOpen, setMegaMenuOpen] = useState(false);
+  const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cartItems: CartItemProps[] = [
+    {
+      id: 1,
+      title: "Thành Thạo Docker Từ Cơ Bản Đến Nâng Cao",
+      author: "Nguyễn Văn A",
+      reviews: 150,
+      rating: 4.5,
+      price: 779000,
+      oldPrice: 1000000,
+      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
+      tag: "AI",
+      duration: 10,
+      lesson: 50,
+    },
+    {
+      id: 2,
+      title: "React Advanced Patterns",
+      author: "John Doe",
+      reviews: 200,
+      rating: 4.8,
+      price: 899000,
+      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
+      duration: 12,
+      lesson: 60,
+    },
+  ];
+
+  const handleCartMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+    }
+    setCartAnchorEl(event.currentTarget);
+  };
+
+  const handleCartMouseLeave = () => {
+    cartTimeoutRef.current = setTimeout(() => {
+      setCartAnchorEl(null);
+    }, 200);
+  };
+
+  const handleCartClose = () => {
+    setCartAnchorEl(null);
+  };
   const Search = styled("div")(({ theme }) => ({
     position: "relative",
     borderRadius: "20px",
@@ -57,39 +113,85 @@ const Header: React.FC<HeaderProps> = ({
           sx={{
             mr: 2,
             display: { xs: "none", md: "flex" },
-            fontFamily: "monospace",
-            fontWeight: 700,
-            letterSpacing: ".3rem",
-            color: "inherit",
+            alignItems: "center",
             textDecoration: "none",
           }}
         >
           <Box
             component="img"
-            src="https://frontends.udemycdn.com/frontends-homepage/staticx/udemy/images/v7/logo-udemy.svg"
-            alt="Logo"
-            sx={{ height: 34, width: 91 }}
+            src="/images/logo.png"
+            alt="Vidi"
+            sx={{ height: 36 }}
           />
         </Typography>
         <Typography
           variant="h5"
           noWrap
           component="a"
-          href="#app-bar-with-responsive-menu"
+          href="/"
           sx={{
             mr: 2,
             display: { xs: "flex", md: "none" },
             flexGrow: 1,
-            fontFamily: "monospace",
-            fontWeight: 700,
-            letterSpacing: ".3rem",
-            color: "inherit",
+            alignItems: "center",
             textDecoration: "none",
           }}
-        ></Typography>
+        >
+          <Box
+            component="img"
+            src="/images/logo.png"
+            alt="Vidi"
+            sx={{ height: 32 }}
+          />
+        </Typography>
         {showLeftPages && !checkoutMode && (
-          <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            {leftPages.map((page) => (
+          <Box sx={{ display: { xs: "none", md: "flex" }, position: "relative" }}>
+            <Box
+              onMouseEnter={() => {
+                if (megaMenuTimeoutRef.current) {
+                  clearTimeout(megaMenuTimeoutRef.current);
+                }
+                setMegaMenuOpen(true);
+              }}
+              onMouseLeave={() => {
+                megaMenuTimeoutRef.current = setTimeout(() => {
+                  setMegaMenuOpen(false);
+                }, 150);
+              }}
+              sx={{ position: "relative" }}
+            >
+              <Button
+                color="inherit"
+                sx={{
+                  my: 2,
+                  display: "block",
+                  textTransform: "none",
+                  fontWeight: 700,
+                }}
+                className="!text-dark-100 hover:!text-primary-main"
+              >
+                Khám phá
+              </Button>
+              {isMegaMenuOpen && (
+                <MegaMenu
+                  title={megaMenuPrimaryTitle}
+                  topics={megaMenuTopics}
+                  onHover={() => {
+                    if (megaMenuTimeoutRef.current) {
+                      clearTimeout(megaMenuTimeoutRef.current);
+                    }
+                    setMegaMenuOpen(true);
+                  }}
+                  onLeave={() => {
+                    megaMenuTimeoutRef.current = setTimeout(() => {
+                      setMegaMenuOpen(false);
+                    }, 150);
+                  }}
+                />
+              )}
+            </Box>
+
+            {leftPages.slice(1).map((page) => (
               <Button
                 key={page}
                 color="inherit"
@@ -117,6 +219,24 @@ const Header: React.FC<HeaderProps> = ({
               />
             </Search>
           </Box>
+        )}
+
+        {!checkoutMode && (
+          <Button
+            component={Link}
+            to="/my-learning"
+            color="inherit"
+            sx={{
+              my: 2,
+              display: "block",
+              textTransform: "none",
+              fontWeight: 600,
+              mr: 1,
+            }}
+            className="!text-dark-100 hover:!text-primary-main"
+          >
+            Học tập
+          </Button>
         )}
 
         {showRightPages && !checkoutMode && (
@@ -149,7 +269,10 @@ const Header: React.FC<HeaderProps> = ({
         </Box> */}
         {showAuth && !checkoutMode && (
           <>
-            <Box>
+            <Box
+              onMouseEnter={handleCartMouseEnter}
+              onMouseLeave={handleCartMouseLeave}
+            >
               <Button
                 component={Link}
                 to="/cart"
@@ -160,12 +283,18 @@ const Header: React.FC<HeaderProps> = ({
                 <Badge
                   color="primary"
                   overlap="circular"
-                  badgeContent={3}
+                  badgeContent={cartItems.length}
                   showZero
                 >
                   <ShoppingCartOutlined fontSize="medium" />
                 </Badge>
               </Button>
+              <CartDropdown
+                items={cartItems}
+                anchorEl={cartAnchorEl}
+                open={cartOpen}
+                onClose={handleCartClose}
+              />
             </Box>
             <Button
               component={Link}

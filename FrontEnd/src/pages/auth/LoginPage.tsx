@@ -25,8 +25,13 @@ const LoginPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm({ resolver: yupResolver(formSchema) });
+
+  const onSubmit = (values: any) => {
+    // TODO: call auth API
+    console.log("login", values);
+    navigate("/");
+  };
   return (
     <div>
       <Box
@@ -54,13 +59,13 @@ const LoginPage = () => {
             },
           }}
           onClick={() => {
-            navigate("/login/qr");
+            navigate("/login-qr");
           }}
         >
           Đăng nhập với mã QR
         </Button>
       </Box>
-      <form>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <FormField
           name="email"
           label="Email"
@@ -93,7 +98,7 @@ const LoginPage = () => {
         />
 
         <Button fullWidth variant="contained" type="submit" className="!mt-5">
-          Sign up
+          Đăng nhập
         </Button>
       </form>
       <p className="mt-4">

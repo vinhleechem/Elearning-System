@@ -3,7 +3,7 @@ package org.example.elearning.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -11,7 +11,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @Table(name = "topic")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class TopicEntity extends BaseEntity{
     @Id
     @Column(name = "topic_id")

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -11,7 +12,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @Table(name = "subcategory")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class SubcategoryEntity extends BaseEntity{
     @Id
     @Column(name = "subcategory_id")

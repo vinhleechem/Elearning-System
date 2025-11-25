@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Nationalized;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -12,7 +13,6 @@ import org.hibernate.annotations.Nationalized;
 @Builder
 @Table(name = "permission")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class PermissionEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

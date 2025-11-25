@@ -19,8 +19,13 @@ const Button: React.FC<ButtonProps> = ({
       variant={variant}
       disabled={isLoading}
       size={size}
+      sx={{
+        textTransform: "none",
+        fontSize: "1rem",
+        fontWeight: "700",
+        ...sx,
+      }}
       {...inputProps}
-      sx={sx}
     >
       <span className="mr-1">
         {iconPosition === "start" && !isLoading && icon}

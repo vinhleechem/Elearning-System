@@ -8,7 +8,7 @@ import org.example.elearning.enums.NotificationType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor

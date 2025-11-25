@@ -16,7 +16,6 @@ import Button from "../ui/Button";
 import { Sell } from "@mui/icons-material";
 
 const CartItem: React.FC<CartItemProps> = ({
-  id,
   title,
   author,
   rating,
@@ -95,7 +94,7 @@ const CartItem: React.FC<CartItemProps> = ({
               size="small"
               name="simple-controlled"
               value={ratingValue}
-              onChange={(event, newValue) => {
+              onChange={(_event, newValue) => {
                 setRatingValue(newValue);
               }}
               readOnly

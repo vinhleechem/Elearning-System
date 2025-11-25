@@ -8,12 +8,30 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
-
+      ddl-auto: create-drop
+  data:
+    redis:
+      port: 6379
+      host: localhost
 open:
   api:
     title: API Document
     version: v1.0.0
-    description: Cinema API service
+    description: E-Learning System API Service
     serverUrl: http://localhost:8080
     serverName: Local Dev Server
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  valid-duration: 300
+  refreshable-duration: 1800
+outbound:
+  identity:
+    client-id: ${OUTBOUND_IDENTITY_CLIENT_ID}
+    client-secret: ${OUTBOUND_IDENTITY_CLIENT_SECRET}
+    redirect-uri: ${OUTBOUND_IDENTITY_REDIRECT_URI}
+management:
+  endpoint:
+    web:
+      exposure:
+        include: "*"

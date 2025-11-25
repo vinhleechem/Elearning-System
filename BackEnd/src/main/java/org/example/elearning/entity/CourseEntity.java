@@ -9,6 +9,7 @@ import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,7 +17,6 @@ import java.math.BigDecimal;
 @Builder
 @Table(name = "course")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class CourseEntity extends BaseEntity{
     @Id
     @Column(name = "course_id")

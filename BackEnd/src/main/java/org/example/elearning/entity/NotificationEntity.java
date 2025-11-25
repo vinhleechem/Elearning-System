@@ -8,7 +8,7 @@ import org.example.elearning.enums.NotificationType;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
-
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 @Builder
 @Table(name = "notification")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class NotificationEntity extends BaseEntity{
     @Id
     @Column(name = "notification_id")

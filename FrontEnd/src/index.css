@@ -7,7 +7,7 @@ body {
 }
 @layer components {
   .container {
-    @apply maw-w-7xl mx-auto flex gap-4 p-6;
+    @apply max-w-7xl mx-auto flex gap-4 p-6;
   }
   .card {
     @apply rounded-sm bg-white p-4 shadow;

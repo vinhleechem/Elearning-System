@@ -1,17 +1,23 @@
+import { ArrowForwardOutlined } from "@mui/icons-material";
 import Button from "../ui/Button";
 
 const ReportBanner = () => {
   return (
     <div className="flex items-center">
       <div className="space-y-5">
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-4xl font-semibold">
           AI dành cho Nhà lãnh đạo doanh nghiệp
         </h2>
-        <p className="text-xs">
+        <p className="text-xl">
           Xây dựng thói quen AI cho bạn và đội nhóm của bạn để có được các kỹ
           năng thực hành giúp bạn lãnh đạo hiệu quả.
         </p>
-        <Button>Bắt đầu học</Button>
+        <Button
+          icon={<ArrowForwardOutlined fontSize="inherit" />}
+          iconPosition="end"
+        >
+          Bắt đầu học
+        </Button>
       </div>
       <div className="">
         <img

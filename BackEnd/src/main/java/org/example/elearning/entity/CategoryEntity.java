@@ -11,7 +11,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @Table(name = "category")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class CategoryEntity extends BaseEntity{
     @Id
     @Column(name = "category_id")

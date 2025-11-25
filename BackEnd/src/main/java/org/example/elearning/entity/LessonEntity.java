@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.example.elearning.enums.ContentType;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
@@ -12,7 +13,6 @@ import org.example.elearning.enums.ContentType;
 @Builder
 @Table(name = "lesson")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class LessonEntity extends BaseEntity{
     @Id
     @Column(name = "lesson_id")

@@ -24,8 +24,15 @@ const RegisterPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm({ resolver: yupResolver(formSchema) });
+
+  const navigate = useNavigate();
+
+  const onSubmit = (values: any) => {
+    // TODO: call register API
+    console.log('register', values);
+    navigate('/');
+  };
 
   return (
     <div>
@@ -33,7 +40,7 @@ const RegisterPage = () => {
         <h2 className="mb-6 mt-6 text-2xl font-bold text-gray-900">
           Đăng kí với email
         </h2>
-        <form className="space-y-2">
+        <form className="space-y-2" onSubmit={handleSubmit(onSubmit)}>
           <FormField
             name="fullName"
             label="Full Name"
@@ -68,7 +75,7 @@ const RegisterPage = () => {
           </Box>
 
           <Button fullWidth variant="contained" type="submit" className="!mt-5">
-            Sign up
+            Đăng ký
           </Button>
         </form>
         <p className="mt-4">

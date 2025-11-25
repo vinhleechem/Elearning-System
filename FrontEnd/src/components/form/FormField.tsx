@@ -1,5 +1,5 @@
 import React from "react";
-import type { FormFieldProps } from "../types/formField";
+import type { FormFieldProps } from "../../types/formField";
 import { Controller } from "react-hook-form";
 import { FormHelperText } from "@mui/material";
 

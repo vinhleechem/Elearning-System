@@ -1,11 +1,17 @@
-import { createRoot } from "react-dom/client";
-import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
-import { router } from "./routes";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./configs/muiConfig";
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-createRoot(document.getElementById("root")!).render(
-  <MuiThemeProvider theme={theme}>
-    <RouterProvider router={router} />
-  </MuiThemeProvider>,
+import router from "./routes";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  </React.StrictMode>,
 );

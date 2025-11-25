@@ -8,6 +8,7 @@ import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
