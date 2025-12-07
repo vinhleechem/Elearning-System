@@ -2,11 +2,17 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import TextInput from "../../components/form/TextInput";
-import { Box, Button } from "@mui/material";
+import { Alert, Box, Button } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { QrCode2Outlined } from "@mui/icons-material";
 import SocialAuth from "../../components/SocialAuth";
 import FormField from "../../components/form/FormField";
+import { useAuthStore } from "../../store/authStore";
+
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -25,12 +31,20 @@ const LoginPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: yupResolver(formSchema) });
+  } = useForm<LoginFormValues>({ resolver: yupResolver(formSchema) });
 
-  const onSubmit = (values: any) => {
-    // TODO: call auth API
-    console.log("login", values);
-    navigate("/");
+  const login = useAuthStore((state) => state.login);
+  const loading = useAuthStore((state) => state.loading);
+  const error = useAuthStore((state) => state.error);
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      await login(values);
+      const isAdmin = useAuthStore.getState().hasRole("ADMIN");
+      navigate(isAdmin ? "/admin/dashboard" : "/");
+    } catch {
+      // lỗi đã được set trong store
+    }
   };
   return (
     <div>
@@ -49,13 +63,13 @@ const LoginPage = () => {
           startIcon={<QrCode2Outlined />}
           sx={{
             textTransform: "none",
-            borderColor: "#A435F0",
-            color: "#A435F0",
-            bgcolor: "#F3E8FF",
+            borderColor: "#3b82f6",
+            color: "#3b82f6",
+            bgcolor: "#eff6ff",
             fontWeight: "bold",
             "&:hover": {
-              bgcolor: "#E9D5FF",
-              borderColor: "#A435F0",
+              bgcolor: "#dbeafe",
+              borderColor: "#3b82f6",
             },
           }}
           onClick={() => {
@@ -97,10 +111,21 @@ const LoginPage = () => {
           error={errors.password}
         />
 
-        <Button fullWidth variant="contained" type="submit" className="!mt-5">
-          Đăng nhập
+        <Button
+          fullWidth
+          variant="contained"
+          type="submit"
+          className="!mt-5"
+          disabled={loading}
+        >
+          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
         </Button>
       </form>
+      {error && (
+        <Alert severity="error" className="mt-4">
+          {error}
+        </Alert>
+      )}
       <p className="mt-4">
         New on our platform?{" "}
         <Link to="/register" className="text-primary-main">

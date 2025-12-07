@@ -1,9 +1,14 @@
 package org.example.elearning.service.impl;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.example.elearning.constant.PredefinedRole;
+import org.example.elearning.dto.request.ChangePasswordRequest;
+import org.example.elearning.dto.request.UpdateProfileRequest;
 import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
 import org.example.elearning.dto.response.UserResponse;
@@ -16,14 +21,24 @@ import org.example.elearning.exception.exceptions.ForbiddenException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.exception.exceptions.UnauthorizedException;
 import org.example.elearning.mapper.UserMapper;
+import org.example.elearning.repository.InstructorRepository;
+import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.UserService;
+import org.example.elearning.util.CloudinaryUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -31,12 +46,18 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     UserMapper userMapper;
     UserRepository userRepository;
+    RoleRepository roleRepository;
+    InstructorRepository instructorRepository;
+    PasswordEncoder passwordEncoder;
+    CloudinaryUtil cloudinaryUtil;
 
     @Override
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email).orElseThrow(() ->
                                         new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
+
+    // ==================== User self-service APIs ====================
     @Override
     public UserResponse getMyInfo() {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -45,23 +66,131 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-        List<UserEntity> userEntities = userRepository.findAll().stream().filter(userEntity -> !userEntity.isDeleted()).toList();
-        return userMapper.toEntityDTO(userEntities);
+    @Transactional
+    public UserResponse updateMyProfile(UpdateProfileRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = getUserByEmail(email);
+        
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+        if (request.getDateOfBirth() != null) {
+            user.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        
+        return userMapper.toEntityDTO(userRepository.save(user));
     }
 
-
+    @Override
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = getUserByEmail(email);
+        
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BusinessException("Mật khẩu hiện tại không đúng!");
+        }
+        
+        // Verify new password and confirm password match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BusinessException("Mật khẩu xác nhận không khớp!");
+        }
+        
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
 
     @Override
-    public UserEntity getUserById(Long id) {
+    @Transactional
+    public UserResponse uploadAvatar(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("File upload không hợp lệ!");
+        }
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = getUserByEmail(email);
+
+        // Xoá avatar cũ trên Cloudinary nếu có
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
+        }
+
+        try {
+            String imageUrl = cloudinaryUtil.uploadImage(file);
+            user.setAvatarUrl(imageUrl);
+            userRepository.save(user);
+            return userMapper.toEntityDTO(user);
+        } catch (IOException e) {
+            throw new BusinessException("Không thể upload ảnh lên Cloudinary. Vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteAvatar() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = getUserByEmail(email);
+        
+        if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+            throw new BusinessException("Người dùng chưa có avatar!");
+        }
+
+        // Xoá file trên Cloudinary
+        cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
+
+        user.setAvatarUrl(null);
+        userRepository.save(user);
+    }
+
+    // ==================== Admin APIs ====================
+    @Override
+    public Page<UserResponse> getAllUsers(Pageable pageable, String search) {
+        Page<UserEntity> userPage;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            userPage = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCaseAndIsDeletedFalse(
+                search.trim(), search.trim(), pageable);
+        } else {
+            userPage = userRepository.findByIsDeletedFalse(pageable);
+        }
+
+        return userPage.map(user -> {
+            UserResponse dto = userMapper.toEntityDTO(user);
+            enrichInstructorInfo(user, dto);
+            return dto;
+        });
+    }
+
+    @Override
+    public UserResponse getUserById(Long id) {
+        UserEntity user = getUserByIdEntity(id);
+        UserResponse dto = userMapper.toEntityDTO(user);
+        enrichInstructorInfo(user, dto);
+        return dto;
+    }
+    @Override
+    public UserEntity getUserByIdEntity(Long id) {
         return userRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
+
     @Override
     public UserEntity getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
+
     @Override
     public UserEntity getActiveUser(String email){
         UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() ->
@@ -76,40 +205,169 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponse createUser(UserCreateRequest userRequest) {
-        UserEntity userEntity = getUserByEmail(userRequest.getEmail());
-        if(userEntity != null){
+        // Check if user already exists
+        userRepository.findByEmail(userRequest.getEmail()).ifPresent(user -> {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
-        }
+        });
+        
         UserEntity newUser = userMapper.toEntity(userRequest);
         return userMapper.toEntityDTO(userRepository.save(newUser));
     }
 
     @Override
+    @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest userUpdateRequest) {
-        UserEntity userEntity = getUserById(id);
+        UserEntity userEntity = getUserByIdEntity(id);
+
+        // Nếu admin đổi avatarUrl và trước đó user đã có avatar → xoá ảnh cũ
+        String oldAvatarUrl = userEntity.getAvatarUrl();
+        String newAvatarUrl = userUpdateRequest.getAvatarUrl();
+
         userMapper.updateEntity(userEntity, userUpdateRequest);
+
+        if (newAvatarUrl != null
+                && oldAvatarUrl != null
+                && !oldAvatarUrl.isEmpty()
+                && !oldAvatarUrl.equals(newAvatarUrl)) {
+            cloudinaryUtil.deleteImageByUrl(oldAvatarUrl);
+        }
+
         return userMapper.toEntityDTO(userRepository.save(userEntity));
     }
 
     @Override
+    @Transactional
+    public UserResponse updateUserAvatar(Long id, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("File upload không hợp lệ!");
+        }
+
+        UserEntity user = getUserByIdEntity(id);
+
+        // Xoá avatar cũ trên Cloudinary nếu có
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
+        }
+
+        try {
+            String imageUrl = cloudinaryUtil.uploadImage(file);
+            user.setAvatarUrl(imageUrl);
+            userRepository.save(user);
+            return userMapper.toEntityDTO(user);
+        } catch (IOException e) {
+            throw new BusinessException("Không thể upload ảnh lên Cloudinary. Vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
+    @Transactional
     public void deleteUser(Long id) {
-        UserEntity user = getUserById(id);
+        UserEntity user = getUserByIdEntity(id);
         user.getRoles().forEach(this::handleAdminUser);
         user.setStatus(UserStatus.LOCKED);
         user.setDeleted(true);
         userRepository.save(user);
     }
+
     @Override
+    @Transactional
     public void restoreUser(Long id) {
-        UserEntity entity = getUserById(id);
+        UserEntity entity = getUserByIdEntity(id);
         entity.setDeleted(false);
         userRepository.save(entity);
     }
 
+    @Override
+    @Transactional
+    public UserResponse toggleUserStatus(Long id) {
+        UserEntity user = getUserByIdEntity(id);
+        user.getRoles().forEach(this::handleAdminUser);
+        
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            user.setStatus(UserStatus.LOCKED);
+        } else {
+            user.setStatus(UserStatus.ACTIVE);
+        }
+        
+        return userMapper.toEntityDTO(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public UserResponse assignRoles(Long id, List<String> roleNames) {
+        UserEntity user = getUserByIdEntity(id);
+        user.getRoles().forEach(this::handleAdminUser);
+        
+        Set<RoleEntity> roles = roleNames.stream()
+                .map(roleName -> roleRepository.findByRoleName(roleName)
+                        .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại: " + roleName)))
+                .collect(Collectors.toSet());
+        
+        user.setRoles(roles);
+        return userMapper.toEntityDTO(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public String resetPassword(Long id) {
+        UserEntity user = getUserByIdEntity(id);
+        user.getRoles().forEach(this::handleAdminUser);
+        
+        // Generate random password (8 characters) 
+        String newPassword = generateRandomPassword(8);
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        
+        // Return plain password to admin (should be sent via email in production)
+        return newPassword;
+    }
+
+    // ==================== Helper methods ====================
     private void handleAdminUser(RoleEntity entity) {
         if (PredefinedRole.ROLE_ADMIN.equals(entity.getRoleName())) {
             throw new BusinessException("Tài khoản ADMIN không được tùy chỉnh!");
         }
+    }
+
+    /**
+     * Gắn thêm thông tin giảng viên vào UserResponse nếu user này là INSTRUCTOR.
+     */
+    private void enrichInstructorInfo(UserEntity user, UserResponse dto) {
+        if (user.getRoles() == null) {
+            return;
+        }
+
+        boolean isInstructor = user.getRoles().stream()
+                .anyMatch(role -> PredefinedRole.ROLE_INSTRUCTOR.equals(role.getRoleName()));
+
+        if (!isInstructor) {
+            return;
+        }
+
+        instructorRepository.findByUser(user).ifPresent(instructor -> {
+            dto.setInstructorId(instructor.getInstructorId());
+            dto.setInstructorHeadline(instructor.getHeadline());
+            dto.setInstructorBiography(instructor.getBiography());
+            dto.setInstructorWebsite(instructor.getWebsite());
+            dto.setInstructorLinkedin(instructor.getLinkedin());
+            dto.setInstructorTwitter(instructor.getTwitter());
+            dto.setInstructorYoutube(instructor.getYoutube());
+            dto.setInstructorTotalStudents(instructor.getTotalStudents());
+            dto.setInstructorTotalCourses(instructor.getTotalCourses());
+        });
+    }
+
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+        
+        for (int i = 0; i < length; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        return password.toString();
     }
 }

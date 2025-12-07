@@ -1,174 +1,464 @@
-import { Label } from "@mui/icons-material";
-import { useModal } from "../../hooks/useModal";
-import { Modal } from "../modal";
-import { Input } from "@mui/material";
-import Button from "../ui/Button";
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+} from "@mui/material";
 
 export default function UserInfoCard() {
-  const { isOpen, openModal, closeModal } = useModal();
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving changes...");
-    closeModal();
-  };
   return (
-    <div className="rounded-2xl border border-gray-200 p-5 lg:p-6">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h4 className="text-lg font-semibold text-gray-800 lg:mb-6">
-            Personal Information
-          </h4>
+    <Box sx={{ bgcolor: "white", p: 2.5, maxWidth: 800, mb: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 1.8 }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+          Public profile
+        </Typography>
+        <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+          Add information about yourself
+        </Typography>
+      </Box>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500">
-                First Name
-              </p>
-              <p className="text-sm font-medium text-gray-800">Musharof</p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500">
-                Last Name
-              </p>
-              <p className="text-sm font-medium text-gray-800">Chowdhury</p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500">
-                Email address
-              </p>
-              <p className="text-sm font-medium text-gray-800">
-                randomuser@pimjo.com
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500">Phone</p>
-              <p className="text-sm font-medium text-gray-800">
-                +09 363 398 46
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500">Bio</p>
-              <p className="text-sm font-medium text-gray-800">Team Manager</p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={openModal}
-          className="shadow-theme-xs flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 lg:inline-flex lg:w-auto"
+      {/* Basics Section */}
+      <Box sx={{ mb: 1.8, pb: 1.8, borderBottom: "1px solid #d1d7dc" }}>
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          sx={{ mb: 1 }}
+          fontSize="0.9rem"
         >
-          <svg
-            className="fill-current"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-              fill=""
+          Basics:
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+          <TextField
+            fullWidth
+            placeholder="First Name"
+            defaultValue="Vinh"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: "0.9rem",
+                "& fieldset": {
+                  borderColor: "#d1d7dc",
+                },
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            placeholder="Last Name"
+            defaultValue="Lê Quang"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: "0.9rem",
+                "& fieldset": {
+                  borderColor: "#d1d7dc",
+                },
+              },
+            }}
+          />
+          <Box>
+            <TextField
+              fullWidth
+              placeholder="Headline"
+              size="small"
+              helperText="Add a professional headline like, 'Instructor at Udemy' or 'Architect'"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+                "& .MuiFormHelperText-root": {
+                  fontSize: "0.75rem",
+                },
+              }}
             />
-          </svg>
-          Edit
-        </button>
-      </div>
+            <Typography
+              variant="caption"
+              sx={{
+                float: "right",
+                mt: 0.5,
+                color: "text.secondary",
+                fontSize: "0.75rem",
+              }}
+            >
+              0
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
-      <Modal isOpen={isOpen} onClose={closeModal} className="m-4 max-w-[700px]">
-        <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800">
-              Edit Personal Information
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 lg:mb-7">
-              Update your details to keep your profile up-to-date.
-            </p>
-          </div>
-          <form className="flex flex-col">
-            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              <div>
-                <h5 className="mb-5 text-lg font-medium text-gray-800 lg:mb-6">
-                  Social Links
-                </h5>
+      {/* Biography Section */}
+      <Box sx={{ mb: 1.8, pb: 1.8, borderBottom: "1px solid #d1d7dc" }}>
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          sx={{ mb: 1 }}
+          fontSize="0.9rem"
+        >
+          Biography
+        </Typography>
+        <Box sx={{ border: "1px solid #d1d7dc", borderRadius: 1 }}>
+          <Box
+            sx={{
+              borderBottom: "1px solid #d1d7dc",
+              p: 0.5,
+              bgcolor: "#f7f9fa",
+            }}
+          >
+            <Button
+              sx={{
+                minWidth: 35,
+                color: "#2d2f31",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                py: 0.5,
+              }}
+            >
+              B
+            </Button>
+            <Button
+              sx={{
+                minWidth: 35,
+                color: "#2d2f31",
+                fontStyle: "italic",
+                fontSize: "0.85rem",
+                py: 0.5,
+              }}
+            >
+              I
+            </Button>
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={2.5}
+            placeholder="Biography"
+            variant="standard"
+            sx={{
+              px: 1.5,
+              py: 1,
+              "& .MuiInput-root": {
+                fontSize: "0.9rem",
+                "&:before": { borderBottom: "none" },
+                "&:after": { borderBottom: "none" },
+                "&:hover:not(.Mui-disabled):before": { borderBottom: "none" },
+              },
+            }}
+          />
+        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 0.5, display: "block", fontSize: "0.75rem" }}
+        >
+          Links and coupon codes are not permitted in this section.
+        </Typography>
+      </Box>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div>
-                    <Label>Facebook</Label>
-                    <Input
-                      type="text"
-                      value="https://www.facebook.com/PimjoHQ"
-                    />
-                  </div>
+      {/* Language */}
+      <Box sx={{ mb: 1.8, pb: 1.8, borderBottom: "1px solid #d1d7dc" }}>
+        <FormControl fullWidth size="small">
+          <Select
+            defaultValue="English (US)"
+            sx={{
+              fontSize: "0.9rem",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#d1d7dc",
+              },
+            }}
+          >
+            <MenuItem value="English (US)">English (US)</MenuItem>
+            <MenuItem value="Vietnamese">Tiếng Việt</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
-                  <div>
-                    <Label>X.com</Label>
-                    <Input type="text" value="https://x.com/PimjoHQ" />
-                  </div>
+      {/* Links Section */}
+      <Box sx={{ mb: 1.8 }}>
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          sx={{ mb: 1 }}
+          fontSize="0.9rem"
+        >
+          Links:
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+          <TextField
+            fullWidth
+            placeholder="Website (http(s)://..)"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: "0.9rem",
+                "& fieldset": {
+                  borderColor: "#d1d7dc",
+                },
+              },
+            }}
+          />
 
-                  <div>
-                    <Label>Linkedin</Label>
-                    <Input
-                      type="text"
-                      value="https://www.linkedin.com/company/pimjo"
-                    />
-                  </div>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                facebook.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Username"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Input your Facebook username (e.g. johnsmith).
+          </Typography>
 
-                  <div>
-                    <Label>Instagram</Label>
-                    <Input type="text" value="https://instagram.com/PimjoHQ" />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-7">
-                <h5 className="mb-5 text-lg font-medium text-gray-800 lg:mb-6">
-                  Personal Information
-                </h5>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                instagram.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Username"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Input your Instagram username (e.g. johnsmith).
+          </Typography>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>First Name</Label>
-                    <Input type="text" value="Musharof" />
-                  </div>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                linkedin.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Public Profile URL"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Input your LinkedIn public profile URL (e.g. in/johnsmith,
+            company/udemy).
+          </Typography>
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Last Name</Label>
-                    <Input type="text" value="Chowdhury" />
-                  </div>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                tiktok.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="@Username"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Input your TikTok username (e.g. @johnsmith).
+          </Typography>
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Email Address</Label>
-                    <Input type="text" value="randomuser@pimjo.com" />
-                  </div>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                x.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Username"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Add your X username (e.g. johnsmith).
+          </Typography>
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Phone</Label>
-                    <Input type="text" value="+09 363 398 46" />
-                  </div>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                px: 1.5,
+                bgcolor: "#f7f9fa",
+                border: "1px solid #d1d7dc",
+                borderRadius: "4px 0 0 4px",
+                minWidth: 140,
+              }}
+            >
+              <Typography variant="body2" fontSize="0.85rem">
+                youtube.com/
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Username"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.9rem",
+                  borderRadius: "0 4px 4px 0",
+                  "& fieldset": {
+                    borderColor: "#d1d7dc",
+                  },
+                },
+              }}
+            />
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5, fontSize: "0.75rem" }}
+          >
+            Input your Youtube username (e.g. johnsmith).
+          </Typography>
+        </Box>
+      </Box>
 
-                  <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input type="text" value="Team Manager" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 flex items-center gap-3 px-2 lg:justify-end">
-              <Button size="small" variant="outlined" onClick={closeModal}>
-                Close
-              </Button>
-              <Button size="small" onClick={handleSave}>
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
-    </div>
+      {/* Save Button */}
+      <Button
+        variant="contained"
+        sx={{
+          bgcolor: "#5624d0",
+          color: "white",
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: "0.9rem",
+          px: 2.5,
+          py: 1,
+          "&:hover": {
+            bgcolor: "#3d1a99",
+          },
+        }}
+      >
+        Save
+      </Button>
+    </Box>
   );
 }

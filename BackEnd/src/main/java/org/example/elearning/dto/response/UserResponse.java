@@ -1,13 +1,16 @@
 package org.example.elearning.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.example.elearning.enums.Provider;
-import org.hibernate.annotations.Nationalized;
+import java.util.List;
 
-import java.util.Set;
+import org.example.elearning.enums.Provider;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
@@ -20,6 +23,18 @@ public class UserResponse extends ResponseAbstract{
     String avatarUrl;
     String providerId;
     Provider provider = Provider.LOCAL;
+    List<String> roles;
+
+    // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
+    Long instructorId;
+    String instructorHeadline;
+    String instructorBiography;
+    String instructorWebsite;
+    String instructorLinkedin;
+    String instructorTwitter;
+    String instructorYoutube;
+    Integer instructorTotalStudents;
+    Integer instructorTotalCourses;
 
     @Getter
     @Setter

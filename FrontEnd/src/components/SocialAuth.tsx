@@ -1,7 +1,46 @@
 import { Box, Divider, IconButton, Typography } from "@mui/material";
 import { Facebook, Twitter, Google } from "@mui/icons-material";
+import { useGoogleLogin } from "@react-oauth/google";
+import { authService } from "../service/authService";
+import { useAuthStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 export default function SocialAuth() {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      try {
+        console.log("Google code response:", codeResponse);
+        const tokens = await authService.loginGoogle(codeResponse.code);
+        const user = await authService.getProfile(tokens.accessToken);
+        setAuth(tokens.accessToken, tokens.refreshToken, user);
+        navigate("/");
+      } catch (error) {
+        console.error("Google login failed:", error);
+        alert(
+          `Đăng nhập Google thất bại: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Google login error:", error);
+      alert("Đăng nhập Google thất bại. Vui lòng thử lại.");
+    },
+    flow: "auth-code",
+    ux_mode: "popup",
+  });
+
+  const handleFacebookLogin = () => {
+    const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    const redirectUri = `${window.location.origin}/auth/facebook/callback`;
+    const scope = "email,public_profile";
+    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${facebookAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
+
+    window.location.href = authUrl;
+  };
+
   return (
     <Box>
       <Box my={3} display="flex" alignItems="center">
@@ -17,6 +56,7 @@ export default function SocialAuth() {
 
       <Box display="flex" justifyContent="center" gap={3}>
         <IconButton
+          onClick={handleFacebookLogin}
           sx={{
             bgcolor: "#e6eaf6",
             color: "#1877F2",
@@ -41,6 +81,7 @@ export default function SocialAuth() {
         </IconButton>
 
         <IconButton
+          onClick={() => handleGoogleLogin()}
           sx={{
             bgcolor: "#fce2e0",
             color: "#DB4437",

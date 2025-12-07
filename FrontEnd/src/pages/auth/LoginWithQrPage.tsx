@@ -30,13 +30,13 @@ const LoginWithQrPage: React.FC = () => {
           sx={{
             fontSize: 11,
             textTransform: "none",
-            borderColor: "#A435F0",
-            color: "#A435F0",
-            bgcolor: "#F3E8FF",
+            borderColor: "#3b82f6",
+            color: "#3b82f6",
+            bgcolor: "#eff6ff",
             fontWeight: "bold",
             "&:hover": {
-              bgcolor: "#E9D5FF",
-              borderColor: "#A435F0",
+              bgcolor: "#dbeafe",
+              borderColor: "#3b82f6",
             },
           }}
         >

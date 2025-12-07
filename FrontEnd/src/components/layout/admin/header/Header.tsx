@@ -40,7 +40,7 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-10 flex w-full border-gray-200 bg-white lg:border-b">
+    <header className="sticky top-0 z-10 flex w-full border-b border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-md">
       <div className="flex grow flex-col items-center justify-between lg:flex-row lg:px-6">
         <div className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-3 py-3 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button

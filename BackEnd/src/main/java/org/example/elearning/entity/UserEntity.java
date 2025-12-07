@@ -1,10 +1,11 @@
 package org.example.elearning.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
+
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.enums.Provider;
 import org.example.elearning.enums.UserStatus;
 import org.hibernate.annotations.Nationalized;
@@ -12,10 +13,21 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Entity
@@ -34,14 +46,28 @@ public class UserEntity extends BaseEntity implements UserDetails {
 
     @Column(name = "email", unique = true, length = 50)
     String email;
+
     @Column(name = "password_hash", length = 255)
     String passwordHash;
+
     @Column(name = "full_name", nullable = false, length = 50)
     @Nationalized
     String fullName;
 
     @Column(name = "avatar_url")
     String avatarUrl;
+
+    @Column(name = "phone", length = 20)
+    String phone;
+
+    @Column(name = "address")
+    String address;
+
+    @Column(name = "date_of_birth")
+    LocalDate dateOfBirth;
+
+    @Column(name = "bio", length = 500)
+    String bio;
 
     @Column(name = "providerId")
     String providerId;

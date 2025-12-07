@@ -149,7 +149,7 @@ export default function CourseHero({ data }: CourseHeroProps) {
                     textDecoration: "underline",
                     cursor: "pointer",
                     fontSize: "0.875rem",
-                    "&:hover": { color: "#a855f7" },
+                    "&:hover": { color: "#60a5fa" },
                   }}
                 >
                   ({(data.reviewCount || 121).toLocaleString()} xếp hạng)
@@ -174,7 +174,7 @@ export default function CourseHero({ data }: CourseHeroProps) {
                     color: "#c0c4fc",
                     textDecoration: "underline",
                     cursor: "pointer",
-                    "&:hover": { color: "#a855f7" },
+                    "&:hover": { color: "#60a5fa" },
                   }}
                 >
                   {data.instructor?.name || "AI Coding"}

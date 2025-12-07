@@ -9,7 +9,7 @@ export default function StatisticsChart() {
       position: "top",
       horizontalAlign: "left",
     },
-    colors: ["#465FFF", "#9CB9FF"], // Define line colors
+    colors: ["#3b82f6", "#93c5fd"], // Define line colors - xanh dương nhạt
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,

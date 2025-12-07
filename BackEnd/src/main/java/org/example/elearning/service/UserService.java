@@ -1,31 +1,58 @@
 package org.example.elearning.service;
 
+import java.util.List;
+
+import org.example.elearning.dto.request.ChangePasswordRequest;
+import org.example.elearning.dto.request.UpdateProfileRequest;
 import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
 import org.example.elearning.dto.response.UserResponse;
 import org.example.elearning.entity.UserEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetailsService;
-
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
     UserDetailsService userDetailsService();
 
-    UserEntity getUserById(Long id);
+    UserEntity getUserByIdEntity(Long id);
 
     UserEntity getUserByEmail(String email);
 
     UserEntity getActiveUser(String email);
 
+    // Admin APIs
     UserResponse createUser(UserCreateRequest userRequest);
 
     UserResponse updateUser(Long id, UserUpdateRequest userRequest);
 
-    List<UserResponse> getAllUsers();
+    Page<UserResponse> getAllUsers(Pageable pageable, String search);
 
-    UserResponse getMyInfo();
+    UserResponse getUserById(Long id);
+
+    void deleteUser(Long id);
 
     void restoreUser(Long id);
 
-    void deleteUser(Long id);
+    UserResponse toggleUserStatus(Long id);
+
+    UserResponse assignRoles(Long id, List<String> roleNames);
+
+    String resetPassword(Long id);
+
+    // User self-service APIs
+    UserResponse getMyInfo();
+
+    UserResponse updateMyProfile(UpdateProfileRequest request);
+
+    void changePassword(ChangePasswordRequest request);
+
+    UserResponse uploadAvatar(MultipartFile file);
+
+    void deleteAvatar();
+
+    // Admin update avatar for specific user
+    UserResponse updateUserAvatar(Long id, MultipartFile file);
 }
+

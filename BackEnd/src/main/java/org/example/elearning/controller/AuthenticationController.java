@@ -12,10 +12,10 @@ import static org.example.elearning.dto.response.StandardResponse.success;
 import org.example.elearning.dto.response.UserResponse;
 import org.example.elearning.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -108,7 +108,7 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "200", description = "Đăng nhập Facebook thành công"),
             @ApiResponse(responseCode = "401", description = "Không xác thực được với Facebook")
     })
-    @RequestMapping(value = "/login-facebook", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping("/login-facebook")
     public ResponseEntity<StandardResponse<Object>> loginFacebook(@RequestParam("code") String code) {
         UserResponse.UserLoginResponse result = authenticationService.outboundFacebookAuthentication(code);
         return ResponseEntity.ok(success("Đăng nhập Facebook thành công", result));

@@ -8,17 +8,18 @@ import AuthLayout from "./pages/auth/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import LoginWithQrPage from "./pages/auth/LoginWithQrPage";
-import VerifyOtpPage from "./pages/auth/VerifyOtpPage";
-
+import FacebookCallbackPage from "./pages/auth/FacebookCallbackPage";
 import CourseDetailPage from "./pages/course/CourseDetailPage";
 // import InstructorDetailPage from './pages/instructor/InstructorDetailPage';
 // import InstructorListPage from './pages/instructor/InstructorListPage';
-import ProtectedLayout from "./pages/ProtectedLayout";
 import DashboardHome from "./pages/dashboard/Home";
 import UserProfiles from "./pages/dashboard/UserProfiles";
+import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
+import UserManagement from "./pages/admin/UserManagement";
 import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
+import WishlistPage from "./pages/WishlistPage";
 
 export const router = createBrowserRouter([
   {
@@ -44,7 +45,16 @@ export const router = createBrowserRouter([
       },
       {
         path: "my-learning",
-        element: <MyLearningPage />,
+        children: [
+          {
+            index: true,
+            element: <MyLearningPage />,
+          },
+          {
+            path: "wishlist",
+            element: <WishlistPage />,
+          },
+        ],
       },
       {
         path: "course/:courseId/learn",
@@ -67,6 +77,10 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "profile",
+        element: <UserProfiles />,
+      },
     ],
   },
   {
@@ -85,22 +99,22 @@ export const router = createBrowserRouter([
         element: <LoginWithQrPage />,
       },
       {
-        path: "verify-otp",
-        element: <VerifyOtpPage />,
+        path: "auth/facebook/callback",
+        element: <FacebookCallbackPage />,
       },
     ],
   },
   {
-    path: "/dashboard",
-    element: <ProtectedLayout />,
+    path: "/admin",
+    element: <AdminProtectedLayout />,
     children: [
       {
-        index: true,
+        path: "dashboard",
         element: <DashboardHome />,
       },
       {
-        path: "profile",
-        element: <UserProfiles />,
+        path: "users",
+        element: <UserManagement />,
       },
     ],
   },

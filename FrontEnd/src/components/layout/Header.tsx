@@ -6,31 +6,46 @@ import Button from "@mui/material/Button";
 import InputBase from "@mui/material/InputBase";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
-import { ShoppingCartOutlined } from "@mui/icons-material";
-import { Badge } from "@mui/material";
+import {
+  ShoppingCartOutlined,
+  FavoriteBorder,
+  NotificationsOutlined,
+} from "@mui/icons-material";
+import {
+  Badge,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+  IconButton,
+} from "@mui/material";
 import { Link } from "react-router-dom";
-import { leftPages, rightPages } from "../../libs/constants";
+import { leftPages } from "../../libs/constants";
 import type { HeaderProps } from "../../types/header";
 import { useState, useRef } from "react";
-import CartDropdown from "../cart/CartDropdown";
 import type { CartItemProps } from "../../types/cartItem";
 import MegaMenu from "./MegaMenu";
 import { megaMenuPrimaryTitle, megaMenuTopics } from "../../data/megaMenu";
+import { useAuthStore } from "../../store/authStore";
+import CartDropdown from "../cart/CartDropdown";
 
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
   showLeftPages = true,
-  showRightPages = true,
   showAuth = true,
   checkoutMode = false,
 }) => {
+  const { user, logout } = useAuthStore();
+  const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
+    null,
+  );
   const [cartAnchorEl, setCartAnchorEl] = useState<HTMLElement | null>(null);
   const cartOpen = Boolean(cartAnchorEl);
   const cartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Mock data cho cart items - sau này có thể lấy từ Redux/Context
   const [isMegaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isCartPinned, setCartPinned] = useState(false);
 
   const cartItems: CartItemProps[] = [
     {
@@ -66,6 +81,12 @@ const Header: React.FC<HeaderProps> = ({
     setCartAnchorEl(event.currentTarget);
   };
 
+  const handleCartDropdownEnter = () => {
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+    }
+  };
+
   const handleCartMouseLeave = () => {
     cartTimeoutRef.current = setTimeout(() => {
       setCartAnchorEl(null);
@@ -73,8 +94,48 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleCartClose = () => {
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+      cartTimeoutRef.current = null;
+    }
     setCartAnchorEl(null);
   };
+
+  const handleCartIconClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+      cartTimeoutRef.current = null;
+    }
+
+    if (isCartPinned) {
+      handleCartClose();
+      return;
+    }
+
+    setCartPinned(true);
+    setCartAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      handleUserMenuClose();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Vẫn đóng menu và clear state đã được xử lý trong store
+      handleUserMenuClose();
+    }
+  };
+
   const Search = styled("div")(({ theme }) => ({
     position: "relative",
     borderRadius: "20px",
@@ -103,7 +164,12 @@ const Header: React.FC<HeaderProps> = ({
     },
   }));
   return (
-    <AppBar position="static" color="secondary" sx={{ px: 5, mb: 2 }}>
+    <AppBar
+      position="static"
+      color="secondary"
+      elevation={0}
+      sx={{ px: { xs: 2, md: 5 }, mb: 2, borderBottom: "1px solid #e5e5e5" }}
+    >
       <Toolbar disableGutters>
         <Typography
           variant="h6"
@@ -145,7 +211,9 @@ const Header: React.FC<HeaderProps> = ({
           />
         </Typography>
         {showLeftPages && !checkoutMode && (
-          <Box sx={{ display: { xs: "none", md: "flex" }, position: "relative" }}>
+          <Box
+            sx={{ display: { xs: "none", md: "flex" }, position: "relative" }}
+          >
             <Box
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current) {
@@ -214,88 +282,158 @@ const Header: React.FC<HeaderProps> = ({
                 <SearchIcon />
               </SearchIconWrapper>
               <StyledInputBase
-                placeholder="Tìm nội dung bất kì"
+                placeholder="Tìm kiếm nội dung bất kỳ"
                 inputProps={{ "aria-label": "search" }}
               />
             </Search>
           </Box>
         )}
 
-        {!checkoutMode && (
-          <Button
-            component={Link}
-            to="/my-learning"
-            color="inherit"
-            sx={{
-              my: 2,
-              display: "block",
-              textTransform: "none",
-              fontWeight: 600,
-              mr: 1,
-            }}
-            className="!text-dark-100 hover:!text-primary-main"
-          >
-            Học tập
-          </Button>
-        )}
-
-        {showRightPages && !checkoutMode && (
-          <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            {rightPages.map((page) => (
-              <Button
-                key={page}
-                color="inherit"
-                sx={{
-                  my: 2,
-                  display: "block",
-                  textTransform: "none",
-                }}
-                className="!text-dark-100 hover:!text-primary-main"
-              >
-                {page}
-              </Button>
-            ))}
-          </Box>
-        )}
-        {}
-
-        {/* <Box sx={{ flexGrow: 0 }}>
-          <Menu
-            buttonLabel={
-              <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-            }
-            items={settingsFilter}
-          />
-        </Box> */}
         {showAuth && !checkoutMode && (
           <>
-            <Box
-              onMouseEnter={handleCartMouseEnter}
-              onMouseLeave={handleCartMouseLeave}
+            <Button
+              component={Link}
+              to="/business"
+              color="inherit"
+              sx={{
+                my: 2,
+                display: { xs: "none", lg: "block" },
+                textTransform: "none",
+                fontWeight: 600,
+                mr: 1,
+              }}
+              className="!text-dark-100 hover:!text-primary-main"
             >
-              <Button
-                component={Link}
-                to="/cart"
-                color="inherit"
-                sx={{ minWidth: 0, p: 1 }}
-                aria-label="Giỏ hàng"
+              Udemy Business
+            </Button>
+
+            <Button
+              component={Link}
+              to="/teaching"
+              color="inherit"
+              sx={{
+                my: 2,
+                display: { xs: "none", lg: "block" },
+                textTransform: "none",
+                fontWeight: 600,
+                mr: 1,
+              }}
+              className="!text-dark-100 hover:!text-primary-main"
+            >
+              Giảng viên
+            </Button>
+          </>
+        )}
+
+        {showAuth && !checkoutMode && user && (
+          <>
+            <Button
+              component={Link}
+              to="/my-learning"
+              color="inherit"
+              sx={{
+                my: 2,
+                display: { xs: "none", lg: "block" },
+                textTransform: "none",
+                fontWeight: 600,
+                mr: 1,
+              }}
+              className="!text-dark-100 hover:!text-primary-main"
+            >
+              Học tập
+            </Button>
+
+            <IconButton
+              component={Link}
+              to="/my-learning/wishlist"
+              color="inherit"
+              sx={{ mx: 0.5 }}
+              aria-label="Wishlist"
+            >
+              <FavoriteBorder />
+            </IconButton>
+
+            <IconButton
+              color="inherit"
+              sx={{ mx: 0.5 }}
+              aria-label="Giỏ hàng"
+              onMouseEnter={handleCartMouseEnter}
+              onClick={handleCartIconClick}
+            >
+              <Badge
+                color="primary"
+                overlap="circular"
+                badgeContent={cartItems.length}
+                showZero
               >
-                <Badge
-                  color="primary"
-                  overlap="circular"
-                  badgeContent={cartItems.length}
-                  showZero
-                >
-                  <ShoppingCartOutlined fontSize="medium" />
-                </Badge>
-              </Button>
-              <CartDropdown
-                items={cartItems}
-                anchorEl={cartAnchorEl}
-                open={cartOpen}
-                onClose={handleCartClose}
-              />
-            </Box>
+                <ShoppingCartOutlined />
+              </Badge>
+            </IconButton>
+            <CartDropdown
+              items={cartItems}
+              anchorEl={cartAnchorEl}
+              open={cartOpen}
+              onClose={handleCartClose}
+              onMouseEnter={handleCartDropdownEnter}
+              onMouseLeave={handleCartMouseLeave}
+            />
+
+            <IconButton color="inherit" sx={{ mx: 0.5 }} aria-label="Thông báo">
+              <Badge color="error" variant="dot">
+                <NotificationsOutlined />
+              </Badge>
+            </IconButton>
+
+            <IconButton
+              onClick={handleUserMenuOpen}
+              sx={{ ml: 1 }}
+              aria-label="User menu"
+            >
+              <Avatar
+                src={user.avatarUrl}
+                alt={user.fullName}
+                sx={{ width: 32, height: 32 }}
+              >
+                {user.fullName.charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
+
+            <Menu
+              anchorEl={userMenuAnchor}
+              open={Boolean(userMenuAnchor)}
+              onClose={handleUserMenuClose}
+              transformOrigin={{ horizontal: "right", vertical: "top" }}
+              anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+            >
+              <MenuItem
+                component={Link}
+                to="/profile"
+                onClick={handleUserMenuClose}
+              >
+                Hồ sơ cá nhân
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/my-courses"
+                onClick={handleUserMenuClose}
+              >
+                Khóa học của tôi
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/settings"
+                onClick={handleUserMenuClose}
+              >
+                Cài đặt
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+            </Menu>
+          </>
+        )}
+
+        {showAuth && !checkoutMode && !user && (
+          <>
             <Button
               component={Link}
               to="/login"
@@ -322,7 +460,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="contained"
               className="!ml-2"
             >
-              Đăng kí
+              Đăng ký
             </Button>
           </>
         )}

@@ -105,8 +105,8 @@ const CartSummary: React.FC<CartSummaryProps> = ({
               size="small"
               sx={{
                 minWidth: 30,
-                backgroundColor: "purple",
-                "&:hover": { backgroundColor: "#6a1b9a" },
+                backgroundColor: "#3b82f6",
+                "&:hover": { backgroundColor: "#2563eb" },
               }}
               onClick={handleApplyCoupon}
             >

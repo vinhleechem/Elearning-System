@@ -1,22 +1,50 @@
 package org.example.elearning.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+@Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "category")
+@Table(name = "categories")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CategoryEntity extends BaseEntity{
+public class CategoryEntity extends BaseEntity {
     @Id
-    @Column(name = "category_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long categoryId;
+    @Column(name = "id")
+    Long id;
 
-    @Column(name = "category_name", nullable = false, length = 100)
-    String categoryName;
+    @Column(name = "name", nullable = false, length = 255)
+    String name;
+
+    @Column(name = "slug", nullable = false, length = 255, unique = true)
+    String slug;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    CategoryEntity parent;
+
+    @Column(name = "level", nullable = false)
+    Integer level;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    Boolean isActive = true;
 }

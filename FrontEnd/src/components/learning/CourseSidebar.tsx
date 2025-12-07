@@ -105,7 +105,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                           : "transparent",
                       borderLeft:
                         currentLectureId === lecture.id
-                          ? "4px solid #a435f0"
+                          ? "4px solid #3b82f6"
                           : "4px solid transparent",
                       "&:hover": {
                         bgcolor: "#f7f9fa",
@@ -133,7 +133,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                         sx={{
                           color:
                             currentLectureId === lecture.id
-                              ? "#a435f0"
+                              ? "#3b82f6"
                               : "inherit",
                           fontWeight:
                             currentLectureId === lecture.id ? 700 : 400,

@@ -7,6 +7,9 @@ import {
   ChevronRight,
   GridView,
   MoreHoriz,
+  Group,
+  School,
+  Notifications,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -20,17 +23,27 @@ const navItems: NavItem[] = [
   {
     icon: <GridView />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    path: "/admin/dashboard",
   },
   {
-    icon: <CalendarViewMonthRounded />,
-    name: "Calendar",
-    path: "/calendar",
+    icon: <Group />,
+    name: "Quản lý người dùng",
+    path: "/admin/users",
+  },
+  {
+    icon: <School />,
+    name: "Quản lý khóa học",
+    path: "/admin/courses",
+  },
+  {
+    icon: <Notifications />,
+    name: "Quản lý thông báo",
+    path: "/admin/notifications",
   },
   {
     icon: <AccountCircle />,
-    name: "User Profile",
-    path: "/admin/dashboard/profile",
+    name: "Hồ sơ cá nhân",
+    path: "/admin/profile",
   },
 ];
 
@@ -89,15 +102,17 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index)}
-              className={`flex w-full items-center gap-3 rounded-lg p-2 transition-colors duration-200 lg:justify-center${
+              className={`flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 lg:justify-center ${
                 openSubmenu === index
-                  ? "bg-primary-50 text-primary-600"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               } cursor-pointer`}
             >
               <span
                 className={`flex h-5 w-5 items-center justify-center ${
-                  openSubmenu === index ? "text-primary-600" : "text-gray-600"
+                  openSubmenu === index
+                    ? "text-white"
+                    : "text-gray-500 group-hover:text-gray-900"
                 }`}
               >
                 {nav.icon}
@@ -109,7 +124,7 @@ const AppSidebar: React.FC = () => {
                 <ChevronRight
                   className={`ml-auto h-5 w-5 transition-transform duration-200 ${
                     openSubmenu === index
-                      ? "text-primary-600 rotate-90"
+                      ? "rotate-90 text-white"
                       : "text-gray-400"
                   }`}
                 />
@@ -119,15 +134,17 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 to={nav.path}
-                className={`flex w-full items-center gap-3 rounded-lg p-2 transition-colors duration-200 ${
+                className={`group flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${
                   isActive(nav.path)
-                    ? "bg-primary-50 text-primary-600"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 <span
                   className={`flex h-5 w-5 items-center justify-center ${
-                    isActive(nav.path) ? "text-primary-600" : "text-gray-600"
+                    isActive(nav.path)
+                      ? "text-white"
+                      : "text-gray-500 group-hover:text-gray-900"
                   }`}
                 >
                   {nav.icon}
@@ -217,26 +234,21 @@ const AppSidebar: React.FC = () => {
             <>
               <img
                 className=""
-                src="/images/logo/logo.svg"
+                src="/images/logo.png"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={100}
+                height={28}
               />
               <img
                 className="hidden"
-                src="/images/logo/logo-dark.svg"
+                src="/images/logo.png"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={100}
+                height={28}
               />
             </>
           ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <img src="/images/logo.png" alt="Logo" width={32} height={32} />
           )}
         </Link>
       </div>

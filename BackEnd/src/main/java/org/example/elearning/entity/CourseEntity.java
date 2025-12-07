@@ -1,13 +1,30 @@
 package org.example.elearning.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.example.elearning.enums.CourseStatus;
-import org.example.elearning.enums.CourseTag;
 import org.hibernate.annotations.Nationalized;
 
-import java.math.BigDecimal;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Getter
@@ -15,47 +32,94 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "course")
+@Table(name = "courses")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseEntity extends BaseEntity{
+public class CourseEntity extends BaseEntity {
     @Id
-    @Column(name = "course_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "course_id")
     Long courseId;
 
-    @Column(name = "title", nullable = false, length = 100)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id", nullable = false)
+    InstructorEntity instructor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    CategoryEntity category;
+
+    @Column(name = "title", nullable = false)
+    @Nationalized
     String title;
 
-    @Column(name = "course_name_en", nullable = false, length = 150)
-    String courseNameEn;
+    @Column(name = "slug", nullable = false, unique = true)
+    String slug;
 
-    @Column(name = "course_name_vi", nullable = false, length = 150)
+    @Column(name = "short_description")
     @Nationalized
-    String courseNameVi;
-
-    @Column(name = "slug_en", unique = true, nullable = false, length = 150)
-    String slugEn;
-
-    @Column(name = "slug_vi", unique = true, nullable = false ,length = 150)
-    String slugVi;
+    String shortDescription;
 
     @Lob
     @Nationalized
     @Column(name = "description")
     String description;
 
-    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    @Lob
+    @Nationalized
+    @Column(name = "what_you_learn")
+    String whatYouLearn;
+
+    @Lob
+    @Nationalized
+    @Column(name = "requirements")
+    String requirements;
+
+    @Lob
+    @Nationalized
+    @Column(name = "target_audience")
+    String targetAudience;
+
+    @Column(name = "thumbnail_url")
+    String thumbnailUrl;
+
+    @Column(name = "preview_video_url")
+    String previewVideoUrl;
+
+    @Column(name = "level", length = 50)
+    String level; // beginner, intermediate, advanced
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    @Builder.Default
+    CourseStatus status = CourseStatus.DRAFT; // draft, published, archived
+
+    @Column(name = "price", precision = 10, scale = 2)
     BigDecimal price;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    CourseStatus courseStatus = CourseStatus.DRAFT;
+    @Column(name = "discount_price", precision = 10, scale = 2)
+    BigDecimal discountPrice;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tag", length = 20)
-    private CourseTag tag;
+    @Column(name = "language", length = 50)
+    String language;
 
-    @Column(name = "thumbnail", length = 255)
-    String thumbnail;
+    @Column(name = "has_certificate")
+    Boolean hasCertificate;
+
+    @Column(name = "total_duration_minutes")
+    Integer totalDurationMinutes;
+
+    @Column(name = "total_lectures")
+    Integer totalLectures;
+
+    @Column(name = "average_rating", precision = 3, scale = 2)
+    BigDecimal averageRating;
+
+    @Column(name = "total_students")
+    Integer totalStudents;
+
+    @Column(name = "total_reviews")
+    Integer totalReviews;
+
+    @Column(name = "published_at")
+    LocalDateTime publishedAt;
 }

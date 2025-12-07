@@ -1,128 +1,181 @@
-import { Label } from "@mui/icons-material";
-import { useModal } from "../../hooks/useModal";
-import { Modal } from "../modal";
-import { Input } from "@mui/material";
-import Button from "../ui/Button";
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Button,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Box,
+  useTheme,
+  alpha,
+} from "@mui/material";
+import { Edit as EditIcon } from "@mui/icons-material";
 
 export default function UserAddressCard() {
-  const { isOpen, openModal, closeModal } = useModal();
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
   const handleSave = () => {
-    // Handle save logic here
     console.log("Saving changes...");
-    closeModal();
+    handleClose();
   };
+
+  const InfoItem = ({ label, value }: { label: string; value: string }) => (
+    <Box>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mb: 0.5, display: "block" }}
+      >
+        {label}
+      </Typography>
+      <Typography variant="body1" fontWeight="medium" color="text.primary">
+        {value}
+      </Typography>
+    </Box>
+  );
+
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 p-5 lg:p-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 lg:mb-6">
-              Address
-            </h4>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-              <div>
-                <p className="mb-2 text-xs leading-normal text-gray-500">
-                  Country
-                </p>
-                <p className="text-sm font-medium text-gray-800">
-                  United States.
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs leading-normal text-gray-500">
-                  City/State
-                </p>
-                <p className="text-sm font-medium text-gray-800">
-                  Phoenix, Arizona, United States.
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs leading-normal text-gray-500">
-                  Postal Code
-                </p>
-                <p className="text-sm font-medium text-gray-800">ERT 2489</p>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs leading-normal text-gray-500">
-                  TAX ID
-                </p>
-                <p className="text-sm font-medium text-gray-800">AS4568384</p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={openModal}
-            className="shadow-theme-xs flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 lg:inline-flex lg:w-auto"
+      <Card
+        sx={{
+          borderRadius: "20px",
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            mb={3}
           >
-            <svg
-              className="fill-current"
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <Typography variant="h6" fontWeight="bold">
+              Address
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleOpen}
+              size="small"
+              sx={{
+                borderRadius: "20px",
+                textTransform: "none",
+                borderColor: "divider",
+                color: "text.primary",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+                },
+              }}
             >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-                fill=""
+              Edit
+            </Button>
+          </Stack>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <InfoItem label="Country" value="United States" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <InfoItem
+                label="City/State"
+                value="Phoenix, Arizona, United States"
               />
-            </svg>
-            Edit
-          </button>
-        </div>
-      </div>
-      <Modal isOpen={isOpen} onClose={closeModal} className="m-4 max-w-[700px]">
-        <div className="no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-4 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800">
-              Edit Address
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 lg:mb-7">
-              Update your details to keep your profile up-to-date.
-            </p>
-          </div>
-          <form className="flex flex-col">
-            <div className="custom-scrollbar overflow-y-auto px-2">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                <div>
-                  <Label>Country</Label>
-                  <Input type="text" value="United States" />
-                </div>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <InfoItem label="Postal Code" value="ERT 2489" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <InfoItem label="TAX ID" value="AS4568384" />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
-                <div>
-                  <Label>City/State</Label>
-                  <Input type="text" value="Arizona, United States." />
-                </div>
-
-                <div>
-                  <Label>Postal Code</Label>
-                  <Input type="text" value="ERT 2489" />
-                </div>
-
-                <div>
-                  <Label>TAX ID</Label>
-                  <Input type="text" value="AS4568384" />
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 flex items-center gap-3 px-2 lg:justify-end">
-              <Button size="small" variant="outlined" onClick={closeModal}>
-                Close
-              </Button>
-              <Button size="small" onClick={handleSave}>
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      {/* Edit Modal */}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: "20px" },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.5rem" }}>
+          Edit Address
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Country"
+                defaultValue="United States"
+                variant="outlined"
+                InputProps={{ sx: { borderRadius: "12px" } }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="City/State"
+                defaultValue="Phoenix, Arizona, United States"
+                variant="outlined"
+                InputProps={{ sx: { borderRadius: "12px" } }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Postal Code"
+                defaultValue="ERT 2489"
+                variant="outlined"
+                InputProps={{ sx: { borderRadius: "12px" } }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="TAX ID"
+                defaultValue="AS4568384"
+                variant="outlined"
+                InputProps={{ sx: { borderRadius: "12px" } }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={handleClose}
+            color="inherit"
+            sx={{ borderRadius: "10px" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            sx={{
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, #3A6073 0%, #16222A 100%)",
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

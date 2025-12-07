@@ -1,4 +1,4 @@
-import { Box, Button, Checkbox, FormControlLabel } from "@mui/material";
+import { Alert, Box, Button, Checkbox, FormControlLabel } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import SocialAuth from "../../components/SocialAuth";
 import { useForm } from "react-hook-form";
@@ -6,6 +6,15 @@ import TextInput from "../../components/form/TextInput";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import FormField from "../../components/form/FormField";
+import { useAuthStore } from "../../store/authStore";
+
+type RegisterFormValues = {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 const RegisterPage = () => {
   const formSchema = yup.object().shape({
     fullName: yup.string().required(),
@@ -24,14 +33,20 @@ const RegisterPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: yupResolver(formSchema) });
+  } = useForm<RegisterFormValues>({ resolver: yupResolver(formSchema) });
 
   const navigate = useNavigate();
+  const registerAccount = useAuthStore((state) => state.register);
+  const loading = useAuthStore((state) => state.loading);
+  const error = useAuthStore((state) => state.error);
 
-  const onSubmit = (values: any) => {
-    // TODO: call register API
-    console.log('register', values);
-    navigate('/');
+  const onSubmit = async (values: RegisterFormValues) => {
+    try {
+      await registerAccount(values);
+      navigate("/login");
+    } catch {
+      // lỗi đã được lưu trong store
+    }
   };
 
   return (
@@ -69,15 +84,26 @@ const RegisterPage = () => {
               label="Confirm Password"
               control={control}
               Component={TextInput}
-              type="confirmPassword"
+              type="password"
               error={errors.confirmPassword}
             />
           </Box>
 
-          <Button fullWidth variant="contained" type="submit" className="!mt-5">
-            Đăng ký
+          <Button
+            fullWidth
+            variant="contained"
+            type="submit"
+            className="!mt-5"
+            disabled={loading}
+          >
+            {loading ? "Đang tạo tài khoản..." : "Đăng ký"}
           </Button>
         </form>
+        {error && (
+          <Alert severity="error" className="mt-4">
+            {error}
+          </Alert>
+        )}
         <p className="mt-4">
           Already have an account?{" "}
           <Link to="/login" className="text-primary-main">

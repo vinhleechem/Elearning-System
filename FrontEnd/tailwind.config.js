@@ -9,13 +9,23 @@ export default {
           200: "#8B4309",
         },
         primary: {
-          main: "#A435F0",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6", // Main color - xanh dương nhạt
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+          main: "#3b82f6",
         },
         tag: {
           bestseller: "#d1f4ed", // xanh nhạt
           hot: "#EF4444", // đỏ
           new: "#FACC15", // vàng
-          featured: "#A855F7", // tím
+          featured: "#3b82f6", // xanh dương
         },
         success: {
           50: "#ecfdf5",

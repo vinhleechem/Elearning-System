@@ -10,13 +10,15 @@ import {
   Stack,
 } from "@mui/material";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import PurchasedCourseCard from "../../components/learning/PurchasedCourseCard";
 import type { PurchasedCourse } from "../../types/purchasedCourse";
 import { Schedule } from "@mui/icons-material";
-import Header from "../../components/layout/Header.tsx";
 
 const MyLearningPage = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Mock data - trong thực tế sẽ lấy từ API
   const purchasedCourses: PurchasedCourse[] = [
@@ -24,8 +26,7 @@ const MyLearningPage = () => {
       id: 1,
       title: "Viết ứng dụng bán hàng với Java Springboot API và Angular",
       instructor: "Nguyen Duc Hoang",
-      image:
-        "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
+      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
       progress: 45,
       totalLectures: 150,
       completedLectures: 68,
@@ -38,8 +39,7 @@ const MyLearningPage = () => {
       id: 2,
       title: "How to Create an Online Course: The Official Udemy Course",
       instructor: "Udemy Instructor Team",
-      image:
-        "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
+      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
       progress: 0,
       totalLectures: 50,
       completedLectures: 0,
@@ -51,6 +51,10 @@ const MyLearningPage = () => {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+    if (newValue === 2) {
+      // Tab "Danh sách mong ước"
+      navigate("/my-learning/wishlist");
+    }
   };
 
   const getFilteredCourses = () => {
@@ -74,13 +78,9 @@ const MyLearningPage = () => {
 
   return (
     <>
-      <Header />
-      <Box sx={{ bgcolor: "#1c1d1f", color: "white", py: 3, mt: -1 }}>
+      <Box sx={{ bgcolor: "#1c1d1f", color: "white", py: 3 }}>
         <Container maxWidth="xl" sx={{ px: { xs: 2, lg: 4 } }}>
-          <Typography
-            variant="h3"
-            sx={{ fontWeight: 700, mb: 3 }}
-          >
+          <Typography variant="h3" sx={{ fontWeight: 700, mb: 3 }}>
             Học tập
           </Typography>
           <Tabs
@@ -89,7 +89,7 @@ const MyLearningPage = () => {
             variant="scrollable"
             scrollButtons={false}
             sx={{
-            borderBottom: "1px solid rgba(255,255,255,0.2)",
+              borderBottom: "1px solid rgba(255,255,255,0.2)",
               "& .MuiTab-root": {
                 color: "#d1d7dc",
                 textTransform: "none",
@@ -205,14 +205,15 @@ const MyLearningPage = () => {
                       >
                         Học một chút mỗi ngày sẽ giúp bạn tích lũy kiến thức.
                         Nghiên cứu cho thấy rằng những học viên biến việc học
-                        thành thói quen sẽ có nhiều khả năng đạt được mục tiêu hơn.
+                        thành thói quen sẽ có nhiều khả năng đạt được mục tiêu
+                        hơn.
                       </Typography>
                       <Box sx={{ display: "flex", gap: 2 }}>
                         <Button
                           variant="outlined"
                           sx={{
-                            borderColor: "#5624d0",
-                            color: "#5624d0",
+                            borderColor: "#3b82f6",
+                            color: "#3b82f6",
                             textTransform: "none",
                             fontWeight: 600,
                           }}
@@ -221,7 +222,11 @@ const MyLearningPage = () => {
                         </Button>
                         <Button
                           variant="text"
-                          sx={{ color: "#5624d0", textTransform: "none", fontWeight: 600 }}
+                          sx={{
+                            color: "#3b82f6",
+                            textTransform: "none",
+                            fontWeight: 600,
+                          }}
                         >
                           Hủy bỏ
                         </Button>
@@ -265,11 +270,11 @@ const MyLearningPage = () => {
                   variant="contained"
                   sx={{
                     mt: 3,
-                    bgcolor: "#a435f0",
+                    bgcolor: "#3b82f6",
                     textTransform: "none",
                     fontWeight: 600,
                     "&:hover": {
-                      bgcolor: "#8710d8",
+                      bgcolor: "#2563eb",
                     },
                   }}
                 >

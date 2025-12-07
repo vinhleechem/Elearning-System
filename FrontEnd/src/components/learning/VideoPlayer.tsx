@@ -176,7 +176,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           max={duration || 100}
           onChange={handleSeek}
           sx={{
-            color: "#a435f0",
+            color: "#3b82f6",
             height: 4,
             mb: 1,
             "& .MuiSlider-thumb": {

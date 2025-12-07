@@ -20,7 +20,7 @@ const Trending = () => {
               <div key={item.name}>
                 <Link
                   to="/"
-                  className="flex items-center text-xl font-semibold text-purple-700 hover:underline"
+                  className="flex items-center text-xl font-semibold text-blue-600 hover:underline"
                 >
                   {item.name}
                   <ArrowForwardIosOutlined sx={{ fontSize: 14, ml: 0.5 }} />
@@ -34,7 +34,7 @@ const Trending = () => {
             {col.button && (
               <Link
                 to="/tat-ca-ky-nang"
-                className="inline-block rounded border border-purple-500 px-3 py-1 text-xs text-purple-700 hover:bg-purple-50"
+                className="inline-block rounded border border-blue-500 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50"
               >
                 {col.button}
                 <TrendingUpOutlined className="ml-0.5" fontSize="small" />

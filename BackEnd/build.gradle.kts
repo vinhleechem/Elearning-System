@@ -18,6 +18,7 @@ configurations {
 	compileOnly {
 		extendsFrom(configurations.annotationProcessor.get())
 	}
+    // cấu hình developmentOnly đã được Spring Boot plugin tạo sẵn, không cần tạo lại
 }
 
 repositories {
@@ -41,6 +42,10 @@ dependencies {
     implementation("org.springframework.data:spring-data-redis:3.5.4")
     implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.6")
     implementation ("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("com.cloudinary:cloudinary-http45:1.39.0")
+
+    // Devtools (chỉ dùng ở môi trường dev, hot reload)
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 
     runtimeOnly("org.postgresql:postgresql")

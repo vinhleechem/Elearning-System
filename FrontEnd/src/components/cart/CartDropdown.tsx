@@ -14,6 +14,8 @@ interface CartDropdownProps {
   anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 const CartDropdownItem: React.FC<CartItemProps> = ({
@@ -72,14 +74,14 @@ const CartDropdownItem: React.FC<CartItemProps> = ({
       </Box>
       <Box sx={{ textAlign: "right", minWidth: 80 }}>
         <Typography variant="body2" fontWeight={700}>
-          {formatCurrency(price)} 
+          {formatCurrency(price)}
         </Typography>
         {oldPrice && (
           <Typography
             variant="caption"
             sx={{ color: "text.secondary", textDecoration: "line-through" }}
           >
-            {formatCurrency(oldPrice)} 
+            {formatCurrency(oldPrice)}
           </Typography>
         )}
       </Box>
@@ -92,6 +94,8 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
   anchorEl,
   open,
   onClose,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const total = items.reduce((sum, item) => sum + item.price, 0);
   const originalTotal = items.reduce(
@@ -122,8 +126,8 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
             boxShadow: "0 12px 32px rgba(15,23,42,0.18)",
             border: "1px solid #e0e0e0",
           },
-          onMouseEnter: () => {},
-          onMouseLeave: onClose,
+          onMouseEnter: onMouseEnter,
+          onMouseLeave: onMouseLeave,
         },
       }}
       disableRestoreFocus
@@ -162,14 +166,17 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
               </Typography>
               <Box sx={{ textAlign: "right" }}>
                 <Typography variant="h6" fontWeight={700}>
-                  {formatCurrency(total)} 
+                  {formatCurrency(total)}
                 </Typography>
                 {originalTotal > total && (
                   <Typography
                     variant="body2"
-                    sx={{ color: "text.secondary", textDecoration: "line-through" }}
+                    sx={{
+                      color: "text.secondary",
+                      textDecoration: "line-through",
+                    }}
                   >
-                    {formatCurrency(originalTotal)} 
+                    {formatCurrency(originalTotal)}
                   </Typography>
                 )}
               </Box>
@@ -182,12 +189,12 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
               sx={{
                 textTransform: "none",
                 fontWeight: 700,
-                bgcolor: "#5624d0",
+                bgcolor: "#3b82f6",
                 borderRadius: 999,
                 py: 1.2,
                 fontSize: 16,
                 "&:hover": {
-                  bgcolor: "#401b9c",
+                  bgcolor: "#2563eb",
                 },
               }}
             >
@@ -201,4 +208,3 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
 };
 
 export default CartDropdown;
-

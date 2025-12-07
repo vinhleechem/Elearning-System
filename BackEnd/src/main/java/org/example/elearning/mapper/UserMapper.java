@@ -35,31 +35,19 @@ public interface UserMapper {
     void updateEntity(@MappingTarget UserEntity userEntity, UserUpdateRequest userRequest);
 
     @Mapping(target = "updatedAt", source = "updated_At")
+    @Mapping(target = "roles", expression = "java(mapRoles(userEntity))")
     UserResponse toEntityDTO(UserEntity userEntity);
 
     List<UserResponse> toEntityDTO(List<UserEntity> userEntities);
 
-//    List<UserResponse.UserEmployeePaginationResponse> toEmployeePaginationResponse(List<UserEntity> accountEntities);
-//
-//    List<UserResponse.UserCustomerPaginationResponse> toCustomerPaginationResponse(List<UserEntity> accountEntities);
 
-
-//    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-//    @Mapping(target = "roles", ignore = true)
-//    void updateEntity(@MappingTarget UserEntity accountEntity, UserUpdateEmployeeRequest accountUpdateProfileRequest);
-//
-//    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-//    void updateEntity(@MappingTarget UserEntity accountEntity, UserUpdateMemberRequest accountUpdateProfileRequest);
-
-//    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-//    @Mapping(target = "email", source = "newEmail")
-//    @Mapping(target = "phoneNumber", source = "newPhoneNumber")
-//    @Mapping(target = "identityCard", source = "identityCard")
-//    @Mapping(target = "dateOfBirth", source = "dateOfBirth")
-//    @Mapping(target = "password", ignore = true) // Xử lý ngoài service
-//    void updateEntity(@MappingTarget UserEntity entity, UserUpdateProfileRequest request);
-
-//    @Mapping(target = "userId", source = "userId")
-//    UserUpdateProfileResponse toUpdateProfileResponse(UserEntity entity);
-
+    default java.util.List<String> mapRoles(UserEntity userEntity) {
+        if (userEntity.getRoles() == null) {
+            return java.util.Collections.emptyList();
+        }
+        return userEntity.getRoles()
+                .stream()
+                .map(role -> role.getRoleName())
+                .toList();
+    }
 }
