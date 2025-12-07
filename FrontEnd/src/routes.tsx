@@ -16,6 +16,7 @@ import DashboardHome from "./pages/dashboard/Home";
 import UserProfiles from "./pages/dashboard/UserProfiles";
 import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
 import UserManagement from "./pages/admin/UserManagement";
+import CourseManagement from "./pages/admin/CourseManagement";
 import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
@@ -115,6 +116,10 @@ export const router = createBrowserRouter([
       {
         path: "users",
         element: <UserManagement />,
+      },
+      {
+        path: "courses",
+        element: <CourseManagement />,
       },
     ],
   },

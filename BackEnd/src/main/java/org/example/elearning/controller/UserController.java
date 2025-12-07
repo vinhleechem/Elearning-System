@@ -9,9 +9,9 @@ import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
 import org.example.elearning.dto.response.StandardResponse;
 import static org.example.elearning.dto.response.StandardResponse.success;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.dto.response.UserResponse;
 import org.example.elearning.service.UserService;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -88,7 +88,7 @@ public class UserController {
     @GetMapping("")
     @PreAuthorize("hasRole('ADMIN')")
     @SecuredEndpoint("VIEW_USER")
-    public ResponseEntity<StandardResponse<Page<UserResponse>>> getUsers(
+    public ResponseEntity<StandardResponse<PaginatedResponse<UserResponse>>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "userId") String sortBy,
@@ -96,7 +96,7 @@ public class UserController {
             @RequestParam(required = false) String search) {
         Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<UserResponse> users = userService.getAllUsers(pageable, search);
+        PaginatedResponse<UserResponse> users = userService.getAllUsers(pageable, search);
         return ResponseEntity.ok(success("Lấy danh sách users thành công", users));
     }
 

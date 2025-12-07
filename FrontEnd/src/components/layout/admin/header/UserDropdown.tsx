@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Dropdown } from "../../../ui/Dropdown";
 import { DropdownItem } from "../../../ui/DropdownItem";
+import { useAuthStore } from "../../../../store/authStore";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -13,6 +16,16 @@ export default function UserDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeDropdown();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   return (
     <div className="relative">
       <button
@@ -135,9 +148,9 @@ export default function UserDropdown() {
             </DropdownItem>
           </li>
         </ul>
-        <Link
-          to="/signin"
-          className="text-theme-sm group mt-3 flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-700"
+        <button
+          onClick={handleLogout}
+          className="text-theme-sm group mt-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-700"
         >
           <svg
             className="fill-gray-500 group-hover:fill-gray-700"
@@ -155,7 +168,7 @@ export default function UserDropdown() {
             />
           </svg>
           Sign out
-        </Link>
+        </button>
       </Dropdown>
     </div>
   );

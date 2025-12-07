@@ -6,12 +6,10 @@ import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.response.CartItemResponse;
 import org.example.elearning.dto.response.CartResponse;
 import org.example.elearning.entity.CartEntity;
-import org.example.elearning.entity.CartItemEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.CartItemRepository;
 import org.example.elearning.repository.CartRepository;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.EnrollmentRepository;
@@ -30,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
         CartRepository cartRepository;
-        CartItemRepository cartItemRepository;
         CourseRepository courseRepository;
         UserRepository userRepository;
         EnrollmentRepository enrollmentRepository;
@@ -43,9 +40,8 @@ public class CartServiceImpl implements CartService {
                 CartEntity cart = cartRepository.findByUser(user)
                                 .orElseGet(() -> createCartForUser(user));
 
-                List<CartItemEntity> cartItems = cartItemRepository.findByCart(cart);
-
-                List<CartItemResponse> itemResponses = cartItems.stream()
+                List<CartItemResponse> itemResponses = cart.getCourses().stream()
+                                .filter(course -> !course.isDeleted())
                                 .map(this::mapToCartItemResponse)
                                 .collect(Collectors.toList());
 
@@ -79,34 +75,34 @@ public class CartServiceImpl implements CartService {
                 }
 
                 // Kiểm tra đã có trong giỏ hàng chưa
-                if (cartItemRepository.existsByCartAndCourse(cart, course)) {
+                if (cart.getCourses().contains(course)) {
                         throw new BusinessException("Khóa học đã có trong giỏ hàng");
                 }
 
-                CartItemEntity cartItem = CartItemEntity.builder()
-                                .cart(cart)
-                                .course(course)
-                                .build();
-
-                cartItemRepository.save(cartItem);
+                cart.getCourses().add(course);
+                cartRepository.save(cart);
 
                 return getMyCart();
         }
 
         @Override
         @Transactional
-        public void removeFromCart(Long cartItemId) {
+        public void removeFromCart(Long courseId) {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
                 UserEntity user = getUserByEmail(email);
 
-                CartItemEntity cartItem = cartItemRepository.findById(cartItemId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy item trong giỏ hàng"));
+                CartEntity cart = cartRepository.findByUser(user)
+                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giỏ hàng"));
 
-                if (!cartItem.getCart().getUser().getUserId().equals(user.getUserId())) {
-                        throw new BusinessException("Bạn không có quyền xóa item này");
+                CourseEntity course = courseRepository.findById(courseId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+
+                if (!cart.getCourses().contains(course)) {
+                        throw new ResourceNotFoundException("Khóa học không có trong giỏ hàng");
                 }
 
-                cartItemRepository.delete(cartItem);
+                cart.getCourses().remove(course);
+                cartRepository.save(cart);
         }
 
         @Override
@@ -118,7 +114,8 @@ public class CartServiceImpl implements CartService {
                 CartEntity cart = cartRepository.findByUser(user)
                                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giỏ hàng"));
 
-                cartItemRepository.deleteByCart(cart);
+                cart.getCourses().clear();
+                cartRepository.save(cart);
         }
 
         private UserEntity getUserByEmail(String email) {
@@ -133,10 +130,8 @@ public class CartServiceImpl implements CartService {
                 return cartRepository.save(cart);
         }
 
-        private CartItemResponse mapToCartItemResponse(CartItemEntity cartItem) {
-                CourseEntity course = cartItem.getCourse();
+        private CartItemResponse mapToCartItemResponse(CourseEntity course) {
                 return CartItemResponse.builder()
-                                .cartItemId(cartItem.getCartItemId())
                                 .courseId(course.getCourseId())
                                 .courseTitle(course.getTitle())
                                 .courseImage(course.getThumbnailUrl())

@@ -9,16 +9,14 @@ import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RoleMapper {
-    @Mapping(target = "permissions", ignore = true)
     @Mapping(target = "roleId", ignore = true)
+    @Mapping(target = "permissions", ignore = true)
     RoleEntity toRole(RoleRequest roleRequest);
 
     RoleResponse toRoleResponse(RoleEntity role);
 
     @Mapping(target = "permissions", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updated_At", ignore = true)
     @Mapping(target = "roleId", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE )
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateRole(RoleRequest roleRequest, @MappingTarget RoleEntity role);
 }

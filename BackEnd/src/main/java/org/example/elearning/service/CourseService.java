@@ -2,12 +2,15 @@ package org.example.elearning.service;
 
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
-import org.springframework.data.domain.Page;
+import org.example.elearning.dto.response.PaginatedResponse;
+import org.example.elearning.enums.CourseStatus;
 import org.springframework.data.domain.Pageable;
 
 public interface CourseService {
 
-    Page<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level);
+    PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level);
+
+    PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search, CourseStatus status);
 
     CourseResponse getCourseBySlug(String slug);
 

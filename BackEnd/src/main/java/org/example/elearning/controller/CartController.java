@@ -43,10 +43,10 @@ public class CartController {
                 .build();
     }
 
-    @DeleteMapping("/{cartItemId}")
+    @DeleteMapping("/{courseId}")
     @Operation(summary = "Xóa khóa học khỏi giỏ hàng")
-    public ApiResponse<Void> removeFromCart(@PathVariable Long cartItemId) {
-        cartService.removeFromCart(cartItemId);
+    public ApiResponse<Void> removeFromCart(@PathVariable Long courseId) {
+        cartService.removeFromCart(courseId);
         return ApiResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message("Xóa khỏi giỏ hàng thành công")

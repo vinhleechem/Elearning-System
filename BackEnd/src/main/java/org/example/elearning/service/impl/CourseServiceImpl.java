@@ -1,10 +1,8 @@
 package org.example.elearning.service.impl;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CategoryEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.InstructorEntity;
@@ -15,10 +13,15 @@ import org.example.elearning.repository.CategoryRepository;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.service.CourseService;
+import org.example.elearning.specification.CourseSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Service
 @RequiredArgsConstructor
@@ -31,17 +34,59 @@ public class CourseServiceImpl implements CourseService {
     CourseMapper courseMapper;
 
     @Override
-    public Page<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level) {
-        Page<CourseEntity> page;
+    @Transactional
+    public PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level) {
+        var spec = CourseSpecification.publishedCourses();
+
         if (search != null && !search.trim().isEmpty()) {
-            page = courseRepository.findByTitleContainingIgnoreCaseAndIsDeletedFalse(search.trim(), pageable);
-        } else {
-            page = courseRepository.findByStatusAndIsDeletedFalse(CourseStatus.PUBLISHED, pageable);
+            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
         }
-        return page.map(courseMapper::toResponse);
+
+        Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
+
+
+        var courseResponses = page.getContent().stream()
+                .map(courseMapper::toResponse)
+                .toList();
+
+        return new PaginatedResponse<>(courseResponses, new PaginatedResponse.Pagination(
+                page.getNumber() + 1,
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
+        ));
     }
 
     @Override
+    @Transactional
+    public PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search, CourseStatus status) {
+        var spec = CourseSpecification.notDeleted();
+
+        if (status != null) {
+            spec = spec.and(CourseSpecification.filterByStatus(status));
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
+        }
+
+        Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
+
+
+        var courseResponses = page.getContent().stream()
+                .map(courseMapper::toResponse)
+                .toList();
+
+        return new PaginatedResponse<>(courseResponses, new PaginatedResponse.Pagination(
+                page.getNumber() + 1,
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
+        ));
+    }
+
+    @Override
+    @Transactional
     public CourseResponse getCourseBySlug(String slug) {
         CourseEntity entity = courseRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
@@ -49,6 +94,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional
     public CourseResponse getCourseById(Long id) {
         CourseEntity entity = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
@@ -63,23 +109,10 @@ public class CourseServiceImpl implements CourseService {
         CategoryEntity category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
-        CourseEntity entity = CourseEntity.builder()
-                .instructor(instructor)
-                .category(category)
-                .title(request.getTitle())
-                .slug(request.getSlug())
-                .shortDescription(request.getShortDescription())
-                .description(request.getDescription())
-                .whatYouLearn(request.getWhatYouLearn())
-                .requirements(request.getRequirements())
-                .targetAudience(request.getTargetAudience())
-                .price(request.getPrice())
-                .discountPrice(request.getDiscountPrice())
-                .language(request.getLanguage())
-                .level(request.getLevel())
-                .hasCertificate(request.getHasCertificate())
-                .status(CourseStatus.DRAFT)
-                .build();
+        CourseEntity entity = courseMapper.toEntity(request);
+        entity.setInstructor(instructor);
+        entity.setCategory(category);
+        entity.setStatus(CourseStatus.DRAFT);
 
         return courseMapper.toResponse(courseRepository.save(entity));
     }
@@ -90,18 +123,7 @@ public class CourseServiceImpl implements CourseService {
         CourseEntity entity = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
-        if (request.getTitle() != null) entity.setTitle(request.getTitle());
-        if (request.getSlug() != null) entity.setSlug(request.getSlug());
-        if (request.getShortDescription() != null) entity.setShortDescription(request.getShortDescription());
-        if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getWhatYouLearn() != null) entity.setWhatYouLearn(request.getWhatYouLearn());
-        if (request.getRequirements() != null) entity.setRequirements(request.getRequirements());
-        if (request.getTargetAudience() != null) entity.setTargetAudience(request.getTargetAudience());
-        if (request.getPrice() != null) entity.setPrice(request.getPrice());
-        if (request.getDiscountPrice() != null) entity.setDiscountPrice(request.getDiscountPrice());
-        if (request.getLanguage() != null) entity.setLanguage(request.getLanguage());
-        if (request.getLevel() != null) entity.setLevel(request.getLevel());
-        if (request.getHasCertificate() != null) entity.setHasCertificate(request.getHasCertificate());
+        courseMapper.updateEntity(entity, request);
 
         if (request.getCategoryId() != null) {
             CategoryEntity category = categoryRepository.findById(request.getCategoryId())

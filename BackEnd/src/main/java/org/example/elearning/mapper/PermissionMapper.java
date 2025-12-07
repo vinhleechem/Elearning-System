@@ -18,9 +18,7 @@ public interface PermissionMapper {
 
     PermissionResponse toPermissionResponse(PermissionEntity permission);
 
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updated_At", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "permissionId", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy =  NullValuePropertyMappingStrategy.IGNORE)
     void updatePermission(PermissionRequest permissionRequest, @MappingTarget PermissionEntity permissionEntity);
 }

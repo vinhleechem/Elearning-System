@@ -6,9 +6,9 @@ import org.example.elearning.dto.request.ChangePasswordRequest;
 import org.example.elearning.dto.request.UpdateProfileRequest;
 import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.dto.response.UserResponse;
 import org.example.elearning.entity.UserEntity;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +27,7 @@ public interface UserService {
 
     UserResponse updateUser(Long id, UserUpdateRequest userRequest);
 
-    Page<UserResponse> getAllUsers(Pageable pageable, String search);
+    PaginatedResponse<UserResponse> getAllUsers(Pageable pageable, String search);
 
     UserResponse getUserById(Long id);
 

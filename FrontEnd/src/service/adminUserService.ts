@@ -1,19 +1,21 @@
 import type { UserResponse } from "../types/auth";
 import { httpClient, type StandardApiResponse } from "./httpClient";
 
-type PageResponse<T> = {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  number: number;
-  size: number;
+type PaginatedResponse<T> = {
+  data: T[];
+  pagination: {
+    pageNo: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+  };
 };
 
 export const adminUserService = {
   getUsers: async (
     accessToken: string,
     params: { page: number; size: number; search?: string },
-  ): Promise<PageResponse<UserResponse>> => {
+  ): Promise<PaginatedResponse<UserResponse>> => {
     const query = new URLSearchParams();
     query.set("page", params.page.toString());
     query.set("size", params.size.toString());
@@ -21,7 +23,7 @@ export const adminUserService = {
       query.set("search", params.search.trim());
     }
 
-    const response = await httpClient<PageResponse<UserResponse>>(
+    const response = await httpClient<PaginatedResponse<UserResponse>>(
       `/users?${query.toString()}`,
       {
         method: "GET",

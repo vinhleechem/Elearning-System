@@ -1,5 +1,7 @@
 package org.example.elearning.config;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,11 +11,16 @@ import java.util.Set;
 
 import org.example.elearning.constant.PredefinedRole;
 import org.example.elearning.constant.SecurityConstant;
+import org.example.elearning.entity.CategoryEntity;
+import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.InstructorEntity;
 import org.example.elearning.entity.PermissionEntity;
 import org.example.elearning.entity.RoleEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.enums.CourseStatus;
 import org.example.elearning.enums.UserStatus;
+import org.example.elearning.repository.CategoryRepository;
+import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.PermissionRepository;
 import org.example.elearning.repository.RoleRepository;
@@ -39,6 +46,8 @@ public class ApplicationInitConfig {
         RoleRepository roleRepository;
         PermissionRepository permissionRepository;
         InstructorRepository instructorRepository;
+        CategoryRepository categoryRepository;
+        CourseRepository courseRepository;
         PasswordEncoder passwordEncoder;
 
         @Bean
@@ -222,6 +231,187 @@ public class ApplicationInitConfig {
                                 // Save instructor profiles
                                 instructorRepository.saveAll(instructorProfiles);
                                 log.info("Created {} instructor profiles", instructorProfiles.size());
+                        }
+
+                        // Initialize categories if not exists
+                        List<CategoryEntity> categories = Arrays.asList(
+                                        CategoryEntity.builder()
+                                                        .name("Lập trình")
+                                                        .slug("lap-trinh")
+                                                        .level(1)
+                                                        .isActive(true)
+                                                        .build(),
+                                        CategoryEntity.builder()
+                                                        .name("Web Development")
+                                                        .slug("web-development")
+                                                        .level(1)
+                                                        .isActive(true)
+                                                        .build(),
+                                        CategoryEntity.builder()
+                                                        .name("Mobile Development")
+                                                        .slug("mobile-development")
+                                                        .level(1)
+                                                        .isActive(true)
+                                                        .build(),
+                                        CategoryEntity.builder()
+                                                        .name("Data Science")
+                                                        .slug("data-science")
+                                                        .level(1)
+                                                        .isActive(true)
+                                                        .build(),
+                                        CategoryEntity.builder()
+                                                        .name("DevOps")
+                                                        .slug("devops")
+                                                        .level(1)
+                                                        .isActive(true)
+                                                        .build());
+
+                        List<CategoryEntity> savedCategories = new java.util.ArrayList<>();
+                        for (CategoryEntity category : categories) {
+                                if (categoryRepository.findBySlug(category.getSlug()).isEmpty()) {
+                                        savedCategories.add(categoryRepository.save(category));
+                                } else {
+                                        savedCategories.add(categoryRepository.findBySlug(category.getSlug()).get());
+                                }
+                        }
+                        log.info("Initialized {} categories", savedCategories.size());
+
+                        // Initialize courses if not exists
+                        List<InstructorEntity> allInstructors = instructorRepository.findAll();
+                        if (!allInstructors.isEmpty() && !savedCategories.isEmpty()) {
+                                List<CourseEntity> courses = Arrays.asList(
+                                                CourseEntity.builder()
+                                                                .instructor(allInstructors.get(0))
+                                                                .category(savedCategories.get(0))
+                                                                .title("Java Spring Boot - Xây Dựng RESTful API từ Cơ Bản đến Nâng Cao")
+                                                                .slug("java-spring-boot-restful-api")
+                                                                .shortDescription("Khóa học toàn diện về Spring Boot, từ cơ bản đến nâng cao, giúp bạn xây dựng RESTful API chuyên nghiệp")
+                                                                .description("Khóa học này sẽ hướng dẫn bạn từng bước xây dựng một ứng dụng Spring Boot hoàn chỉnh. Bạn sẽ học cách tạo RESTful API, kết nối database, xử lý authentication, và deploy ứng dụng lên cloud.")
+                                                                .whatYouLearn("• Hiểu rõ kiến trúc Spring Boot\n• Xây dựng RESTful API với Spring MVC\n• Kết nối và làm việc với Database\n• Xử lý Authentication và Authorization\n• Testing và Deploy ứng dụng")
+                                                                .requirements("• Kiến thức cơ bản về Java\n• Hiểu biết về OOP\n• Có máy tính cài đặt JDK và IDE")
+                                                                .targetAudience("• Lập trình viên Java muốn học Spring Boot\n• Developer muốn xây dựng Backend API\n• Sinh viên IT muốn nâng cao kỹ năng")
+                                                                .thumbnailUrl("https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800")
+                                                                .previewVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                                                .level("intermediate")
+                                                                .status(CourseStatus.PUBLISHED)
+                                                                .price(new BigDecimal("599000"))
+                                                                .discountPrice(new BigDecimal("399000"))
+                                                                .language("Tiếng Việt")
+                                                                .hasCertificate(true)
+                                                                .totalDurationMinutes(1800)
+                                                                .totalLectures(45)
+                                                                .averageRating(new BigDecimal("4.8"))
+                                                                .totalStudents(5234)
+                                                                .totalReviews(1234)
+                                                                .publishedAt(LocalDateTime.now().minusMonths(2))
+                                                                .build(),
+                                                CourseEntity.builder()
+                                                                .instructor(allInstructors.get(1))
+                                                                .category(savedCategories.get(1))
+                                                                .title("React.js - Xây Dựng Ứng Dụng Web Hiện Đại")
+                                                                .slug("react-js-xay-dung-ung-dung-web")
+                                                                .shortDescription("Học React.js từ đầu, xây dựng các ứng dụng web hiện đại với Hooks, Redux, và các công nghệ mới nhất")
+                                                                .description("Khóa học React.js toàn diện giúp bạn nắm vững thư viện JavaScript phổ biến nhất hiện nay. Từ cơ bản đến nâng cao, bạn sẽ học cách xây dựng Single Page Application (SPA) chuyên nghiệp.")
+                                                                .whatYouLearn("• Nắm vững React Hooks và Functional Components\n• Quản lý state với Redux và Context API\n• Routing với React Router\n• Tích hợp API và xử lý dữ liệu\n• Testing và tối ưu hiệu suất")
+                                                                .requirements("• Kiến thức cơ bản về JavaScript\n• Hiểu biết về HTML/CSS\n• Có máy tính cài đặt Node.js")
+                                                                .targetAudience("• Frontend Developer muốn học React\n• Web Developer muốn nâng cao kỹ năng\n• Sinh viên muốn xây dựng ứng dụng web")
+                                                                .thumbnailUrl("https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800")
+                                                                .previewVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                                                .level("beginner")
+                                                                .status(CourseStatus.PUBLISHED)
+                                                                .price(new BigDecimal("499000"))
+                                                                .discountPrice(new BigDecimal("299000"))
+                                                                .language("Tiếng Việt")
+                                                                .hasCertificate(true)
+                                                                .totalDurationMinutes(1500)
+                                                                .totalLectures(38)
+                                                                .averageRating(new BigDecimal("4.7"))
+                                                                .totalStudents(3890)
+                                                                .totalReviews(890)
+                                                                .publishedAt(LocalDateTime.now().minusMonths(1))
+                                                                .build(),
+                                                CourseEntity.builder()
+                                                                .instructor(allInstructors.get(2))
+                                                                .category(savedCategories.get(4))
+                                                                .title("Docker & Kubernetes - Containerization và Orchestration")
+                                                                .slug("docker-kubernetes-containerization")
+                                                                .shortDescription("Học Docker và Kubernetes từ cơ bản, triển khai ứng dụng với container và quản lý cluster hiệu quả")
+                                                                .description("Khóa học này sẽ giúp bạn nắm vững Docker và Kubernetes - hai công cụ quan trọng nhất trong DevOps. Bạn sẽ học cách containerize ứng dụng và quản lý chúng trên Kubernetes cluster.")
+                                                                .whatYouLearn("• Containerization với Docker\n• Xây dựng và quản lý Docker Images\n• Kubernetes Architecture và Components\n• Deploy và Scale ứng dụng\n• CI/CD với Kubernetes")
+                                                                .requirements("• Kiến thức cơ bản về Linux\n• Hiểu biết về hệ thống và mạng\n• Có máy tính cài đặt Docker Desktop")
+                                                                .targetAudience("• DevOps Engineer\n• Backend Developer muốn học DevOps\n• System Administrator")
+                                                                .thumbnailUrl("https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800")
+                                                                .previewVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                                                .level("intermediate")
+                                                                .status(CourseStatus.PUBLISHED)
+                                                                .price(new BigDecimal("699000"))
+                                                                .discountPrice(new BigDecimal("499000"))
+                                                                .language("Tiếng Việt")
+                                                                .hasCertificate(true)
+                                                                .totalDurationMinutes(2100)
+                                                                .totalLectures(52)
+                                                                .averageRating(new BigDecimal("4.9"))
+                                                                .totalStudents(2567)
+                                                                .totalReviews(567)
+                                                                .publishedAt(LocalDateTime.now().minusMonths(3))
+                                                                .build(),
+                                                CourseEntity.builder()
+                                                                .instructor(allInstructors.get(3))
+                                                                .category(savedCategories.get(3))
+                                                                .title("Machine Learning với Python - Từ Cơ Bản đến Nâng Cao")
+                                                                .slug("machine-learning-python")
+                                                                .shortDescription("Khóa học Machine Learning toàn diện với Python, từ thuật toán cơ bản đến Deep Learning")
+                                                                .description("Khóa học Machine Learning này sẽ đưa bạn từ những khái niệm cơ bản đến các kỹ thuật nâng cao như Deep Learning, Neural Networks. Bạn sẽ học cách xây dựng và deploy các mô hình ML thực tế.")
+                                                                .whatYouLearn("• Machine Learning Fundamentals\n• Supervised và Unsupervised Learning\n• Deep Learning với TensorFlow và PyTorch\n• Natural Language Processing\n• Computer Vision và Image Recognition")
+                                                                .requirements("• Kiến thức cơ bản về Python\n• Hiểu biết về Toán học (Đại số, Giải tích)\n• Có máy tính cài đặt Python và Jupyter Notebook")
+                                                                .targetAudience("• Data Scientist\n• AI Engineer\n• Developer muốn học Machine Learning")
+                                                                .thumbnailUrl("https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800")
+                                                                .previewVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                                                .level("advanced")
+                                                                .status(CourseStatus.PUBLISHED)
+                                                                .price(new BigDecimal("799000"))
+                                                                .discountPrice(new BigDecimal("599000"))
+                                                                .language("Tiếng Việt")
+                                                                .hasCertificate(true)
+                                                                .totalDurationMinutes(2400)
+                                                                .totalLectures(60)
+                                                                .averageRating(new BigDecimal("4.8"))
+                                                                .totalStudents(4123)
+                                                                .totalReviews(923)
+                                                                .publishedAt(LocalDateTime.now().minusMonths(4))
+                                                                .build(),
+                                                CourseEntity.builder()
+                                                                .instructor(allInstructors.get(4))
+                                                                .category(savedCategories.get(2))
+                                                                .title("Flutter - Phát Triển Ứng Dụng Di Động Đa Nền Tảng")
+                                                                .slug("flutter-phat-trien-ung-dung-di-dong")
+                                                                .shortDescription("Học Flutter để xây dựng ứng dụng iOS và Android với một codebase duy nhất")
+                                                                .description("Khóa học Flutter này sẽ hướng dẫn bạn xây dựng ứng dụng di động đẹp mắt và hiệu suất cao cho cả iOS và Android. Bạn sẽ học từ cơ bản đến nâng cao, bao gồm state management, API integration, và publish app.")
+                                                                .whatYouLearn("• Flutter Widgets và UI Components\n• State Management với Provider và Bloc\n• Navigation và Routing\n• API Integration và Data Persistence\n• Publish App lên App Store và Google Play")
+                                                                .requirements("• Kiến thức cơ bản về Dart hoặc OOP\n• Hiểu biết về Mobile App Development\n• Có máy tính cài đặt Flutter SDK")
+                                                                .targetAudience("• Mobile Developer\n• Web Developer muốn học Mobile\n• Sinh viên muốn xây dựng ứng dụng di động")
+                                                                .thumbnailUrl("https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800")
+                                                                .previewVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                                                .level("beginner")
+                                                                .status(CourseStatus.DRAFT)
+                                                                .price(new BigDecimal("549000"))
+                                                                .discountPrice(new BigDecimal("349000"))
+                                                                .language("Tiếng Việt")
+                                                                .hasCertificate(true)
+                                                                .totalDurationMinutes(1650)
+                                                                .totalLectures(42)
+                                                                .averageRating(new BigDecimal("4.6"))
+                                                                .totalStudents(3456)
+                                                                .totalReviews(756)
+                                                                .publishedAt(null)
+                                                                .build());
+
+                                for (CourseEntity course : courses) {
+                                        if (courseRepository.findBySlug(course.getSlug()).isEmpty()) {
+                                                courseRepository.save(course);
+                                        }
+                                }
+                                log.info("Initialized {} courses", courses.size());
                         }
 
                 };

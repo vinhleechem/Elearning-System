@@ -91,9 +91,14 @@ export const httpClient = async <T>(
               const newAccessToken = refreshBody.data.accessToken;
 
               // Cập nhật accessToken mới vào localStorage (giữ nguyên refreshToken cũ)
+              // Sử dụng zustand store thay vì thao tác trực tiếp với localStorage
               if (stored.state?.tokens) {
                 stored.state.tokens.accessToken = newAccessToken;
-                localStorage.setItem("auth-store", JSON.stringify(stored));
+                try {
+                  localStorage.setItem("auth-store", JSON.stringify(stored));
+                } catch (e) {
+                  console.warn("Lỗi khi cập nhật token:", e);
+                }
               }
 
               // Thử gọi lại request ban đầu với accessToken mới
@@ -130,7 +135,18 @@ export const httpClient = async <T>(
               }
 
               if (!retryResponse.ok || retryBody?.success === false) {
-                // Nếu retry vẫn lỗi -> sẽ rơi xuống nhánh logout bên dưới
+                // Nếu retry vẫn lỗi -> refresh token cũng đã hết hạn, cần logout
+                // Xóa auth store và redirect về login
+                try {
+                  localStorage.removeItem("auth-store");
+                  if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+                    setTimeout(() => {
+                      window.location.href = "/login";
+                    }, 100);
+                  }
+                } catch (e) {
+                  console.warn("Lỗi khi xóa auth-store sau refresh fail:", e);
+                }
               } else {
                 if (!retryBody) {
                   throw new ApiError(
@@ -152,6 +168,7 @@ export const httpClient = async <T>(
 
     // Nếu backend trả 401 (access token/refresh token hết hạn hoặc không hợp lệ)
     // -> tự động logout user ở FE (clear store) và điều hướng về trang đăng nhập
+    // CHỈ logout nếu đã thử refresh token và vẫn fail, hoặc không có refresh token
     if (
       response.status === 401 &&
       !path.startsWith("/auth/login") &&
@@ -159,16 +176,26 @@ export const httpClient = async <T>(
       !path.startsWith("/auth/refresh")
     ) {
       try {
-        // Xóa thông tin auth đã persist
-        localStorage.removeItem("auth-store");
+        const raw = localStorage.getItem("auth-store");
+        const hasValidTokens = raw && JSON.parse(raw)?.state?.tokens?.refreshToken;
+        
+        // Chỉ logout nếu không có refresh token hoặc refresh token đã fail ở trên
+        // Tránh logout khi đang trong quá trình hot reload hoặc component mount
+        if (!hasValidTokens) {
+          // Xóa thông tin auth đã persist
+          localStorage.removeItem("auth-store");
+          
+          // Nếu không đang ở trang login thì redirect về /login
+          if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+            // Sử dụng setTimeout để tránh conflict với React rendering
+            setTimeout(() => {
+              window.location.href = "/login";
+            }, 100);
+          }
+        }
       } catch (e) {
         // ignore storage errors
         console.warn("Lỗi khi xóa auth-store:", e);
-      }
-
-      // Nếu không đang ở trang login thì redirect về /login
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
       }
     }
 

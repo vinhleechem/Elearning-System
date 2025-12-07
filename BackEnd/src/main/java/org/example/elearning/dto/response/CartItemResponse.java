@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CartItemResponse {
-    private Long cartItemId;
     private Long courseId;
     private String courseTitle;
     private String courseImage;

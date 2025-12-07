@@ -10,7 +10,7 @@ import org.example.elearning.enums.ContentType;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "lesson_question")
+@Table(name = "lesson_questions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 
 public class LessonQuestionEntity extends BaseEntity{

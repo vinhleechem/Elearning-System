@@ -11,7 +11,7 @@ import org.hibernate.annotations.Nationalized;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "permission")
+@Table(name = "permissions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PermissionEntity extends BaseEntity{
     @Id

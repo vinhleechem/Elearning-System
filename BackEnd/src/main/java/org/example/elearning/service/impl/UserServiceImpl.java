@@ -11,6 +11,7 @@ import org.example.elearning.dto.request.ChangePasswordRequest;
 import org.example.elearning.dto.request.UpdateProfileRequest;
 import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.dto.response.UserResponse;
 import org.example.elearning.entity.RoleEntity;
 import org.example.elearning.entity.UserEntity;
@@ -25,6 +26,7 @@ import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.UserService;
+import org.example.elearning.specification.UserSpecification;
 import org.example.elearning.util.CloudinaryUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,22 +73,8 @@ public class UserServiceImpl implements UserService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
         
-        if (request.getFullName() != null) {
-            user.setFullName(request.getFullName());
-        }
-        if (request.getPhone() != null) {
-            user.setPhone(request.getPhone());
-        }
-        if (request.getAddress() != null) {
-            user.setAddress(request.getAddress());
-        }
-        if (request.getDateOfBirth() != null) {
-            user.setDateOfBirth(request.getDateOfBirth());
-        }
-        if (request.getBio() != null) {
-            user.setBio(request.getBio());
-        }
-        
+        userMapper.updateEntity(user, request);
+
         return userMapper.toEntityDTO(userRepository.save(user));
     }
 
@@ -155,21 +143,29 @@ public class UserServiceImpl implements UserService {
 
     // ==================== Admin APIs ====================
     @Override
-    public Page<UserResponse> getAllUsers(Pageable pageable, String search) {
-        Page<UserEntity> userPage;
-        
+    public PaginatedResponse<UserResponse> getAllUsers(Pageable pageable, String search) {
+        var spec = UserSpecification.notDeleted();
+
         if (search != null && !search.trim().isEmpty()) {
-            userPage = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCaseAndIsDeletedFalse(
-                search.trim(), search.trim(), pageable);
-        } else {
-            userPage = userRepository.findByIsDeletedFalse(pageable);
+            spec = spec.and(UserSpecification.filterByKeyword(search.trim()));
         }
 
-        return userPage.map(user -> {
-            UserResponse dto = userMapper.toEntityDTO(user);
-            enrichInstructorInfo(user, dto);
-            return dto;
-        });
+        Page<UserEntity> userPage = userRepository.findAll(spec, pageable);
+
+        List<UserResponse> userResponses = userPage.getContent().stream()
+                .map(user -> {
+                    UserResponse dto = userMapper.toEntityDTO(user);
+                    enrichInstructorInfo(user, dto);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return new PaginatedResponse<>(userResponses, new PaginatedResponse.Pagination(
+                userPage.getNumber() + 1,
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages()
+        ));
     }
 
     @Override
@@ -315,12 +311,10 @@ public class UserServiceImpl implements UserService {
         UserEntity user = getUserByIdEntity(id);
         user.getRoles().forEach(this::handleAdminUser);
         
-        // Generate random password (8 characters) 
         String newPassword = generateRandomPassword(8);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         
-        // Return plain password to admin (should be sent via email in production)
         return newPassword;
     }
 

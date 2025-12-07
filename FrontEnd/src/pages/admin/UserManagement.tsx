@@ -102,7 +102,7 @@ const UserManagement = () => {
           },
         );
 
-        const mappedUsers: User[] = pageResult.content.map((u) => {
+        const mappedUsers: User[] = (pageResult.data || []).map((u) => {
           const normalizedRoles =
             u.roles?.map((role) => role.replace(/^ROLE_/, "").toUpperCase()) ??
             [];
@@ -140,7 +140,7 @@ const UserManagement = () => {
         });
 
         setUsers(mappedUsers);
-        setTotalPages(pageResult.totalPages || 1);
+        setTotalPages(pageResult.pagination?.totalPages || 1);
       } catch (error) {
         console.error("Không thể tải danh sách người dùng:", error);
       }

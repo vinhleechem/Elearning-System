@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "promotion_usage")
+@Table(name = "promotion_usages")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 
 public class PromotionUsageEntity extends BaseEntity{
