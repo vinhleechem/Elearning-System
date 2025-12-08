@@ -35,6 +35,14 @@ public class CategoryController {
         return ResponseEntity.ok(success("Lấy danh sách category thành công", result));
     }
 
+    @Operation(summary = "Lấy toàn bộ cấu trúc category (recursive tree)")
+    @ApiResponse(responseCode = "200", description = "Lấy thành công")
+    @GetMapping("/tree")
+    public ResponseEntity<StandardResponse<List<CategoryResponse>>> getCategoryTree() {
+        List<CategoryResponse> result = categoryService.getCategoryTree();
+        return ResponseEntity.ok(success("Lấy cấu trúc category thành công", result));
+    }
+
     @Operation(summary = "Lấy danh sách category con theo parentId")
     @ApiResponse(responseCode = "200", description = "Lấy thành công")
     @GetMapping("/{parentId}/children")

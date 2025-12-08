@@ -8,6 +8,7 @@ import org.example.elearning.dto.response.CartResponse;
 import org.example.elearning.entity.CartEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CartRepository;
@@ -33,6 +34,7 @@ public class CartServiceImpl implements CartService {
         EnrollmentRepository enrollmentRepository;
 
         @Override
+        @Transactional(readOnly = true)
         public CartResponse getMyCart() {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
                 UserEntity user = getUserByEmail(email);
@@ -67,16 +69,17 @@ public class CartServiceImpl implements CartService {
                                 .orElseGet(() -> createCartForUser(user));
 
                 CourseEntity course = courseRepository.findById(courseId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
                 // Kiểm tra đã enroll chưa
                 if (enrollmentRepository.existsByUserAndCourse(user, course)) {
-                        throw new BusinessException("Bạn đã đăng ký khóa học này rồi");
+                        throw new BusinessException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
                 }
 
                 // Kiểm tra đã có trong giỏ hàng chưa
                 if (cart.getCourses().contains(course)) {
-                        throw new BusinessException("Khóa học đã có trong giỏ hàng");
+                        throw new BusinessException(ErrorCode.COURSE_ALREADY_IN_CART.getMessage());
                 }
 
                 cart.getCourses().add(course);
@@ -92,13 +95,15 @@ public class CartServiceImpl implements CartService {
                 UserEntity user = getUserByEmail(email);
 
                 CartEntity cart = cartRepository.findByUser(user)
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giỏ hàng"));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
                 CourseEntity course = courseRepository.findById(courseId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
                 if (!cart.getCourses().contains(course)) {
-                        throw new ResourceNotFoundException("Khóa học không có trong giỏ hàng");
+                        throw new ResourceNotFoundException(ErrorCode.CART_ITEM_NOT_FOUND.getMessage());
                 }
 
                 cart.getCourses().remove(course);

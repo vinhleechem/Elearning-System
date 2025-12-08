@@ -8,6 +8,7 @@ import org.example.elearning.dto.response.ReviewResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.ReviewEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CourseRepository;
@@ -71,10 +72,10 @@ public class ReviewServiceImpl implements ReviewService {
         UserEntity user = getUserByEmail(email);
 
         ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND.getMessage()));
 
         if (!review.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền cập nhật đánh giá này");
+            throw new BusinessException(ErrorCode.REVIEW_UNAUTHORIZED.getMessage());
         }
 
         if (request.getRating() != null) {
@@ -99,10 +100,10 @@ public class ReviewServiceImpl implements ReviewService {
         UserEntity user = getUserByEmail(email);
 
         ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND.getMessage()));
 
         if (!review.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền xóa đánh giá này");
+            throw new BusinessException(ErrorCode.REVIEW_UNAUTHORIZED.getMessage());
         }
 
         CourseEntity course = review.getCourse();

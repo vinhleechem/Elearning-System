@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -234,7 +235,7 @@ public class ApplicationInitConfig {
                         }
 
                         // Initialize categories if not exists
-                        List<CategoryEntity> categories = Arrays.asList(
+                        List<CategoryEntity> rootCategories = Arrays.asList(
                                         CategoryEntity.builder()
                                                         .name("Lập trình")
                                                         .slug("lap-trinh")
@@ -254,35 +255,327 @@ public class ApplicationInitConfig {
                                                         .isActive(true)
                                                         .build(),
                                         CategoryEntity.builder()
-                                                        .name("Data Science")
-                                                        .slug("data-science")
+                                                        .name("Data Science & AI")
+                                                        .slug("data-science-ai")
                                                         .level(1)
                                                         .isActive(true)
                                                         .build(),
                                         CategoryEntity.builder()
-                                                        .name("DevOps")
-                                                        .slug("devops")
+                                                        .name("DevOps & Cloud")
+                                                        .slug("devops-cloud")
                                                         .level(1)
                                                         .isActive(true)
                                                         .build());
 
-                        List<CategoryEntity> savedCategories = new java.util.ArrayList<>();
-                        for (CategoryEntity category : categories) {
+                        List<CategoryEntity> savedRootCategories = new java.util.ArrayList<>();
+                        for (CategoryEntity category : rootCategories) {
                                 if (categoryRepository.findBySlug(category.getSlug()).isEmpty()) {
-                                        savedCategories.add(categoryRepository.save(category));
+                                        savedRootCategories.add(categoryRepository.save(category));
                                 } else {
-                                        savedCategories.add(categoryRepository.findBySlug(category.getSlug()).get());
+                                        savedRootCategories.add(categoryRepository.findBySlug(category.getSlug()).get());
                                 }
                         }
-                        log.info("Initialized {} categories", savedCategories.size());
+
+                        // Create subcategories for better testing
+                        if (savedRootCategories.size() >= 5) {
+                                CategoryEntity lapTrinhCat = savedRootCategories.get(0);
+                                CategoryEntity webDevCat = savedRootCategories.get(1);
+                                CategoryEntity mobileDevCat = savedRootCategories.get(2);
+                                CategoryEntity dsAiCat = savedRootCategories.get(3);
+                                CategoryEntity devopsCat = savedRootCategories.get(4);
+
+                                // Subcategories for "Lập trình"
+                                List<CategoryEntity> lapTrinhSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Java")
+                                                                .slug("java")
+                                                                .parent(lapTrinhCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Python")
+                                                                .slug("python")
+                                                                .parent(lapTrinhCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("C++/C#")
+                                                                .slug("cpp-csharp")
+                                                                .parent(lapTrinhCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("JavaScript/TypeScript")
+                                                                .slug("javascript-typescript")
+                                                                .parent(lapTrinhCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Subcategories for "Web Development"
+                                List<CategoryEntity> webDevSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Frontend")
+                                                                .slug("frontend")
+                                                                .parent(webDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Backend")
+                                                                .slug("backend")
+                                                                .parent(webDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Full-Stack")
+                                                                .slug("full-stack")
+                                                                .parent(webDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Subcategories for "Mobile Development"
+                                List<CategoryEntity> mobileDevSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("iOS")
+                                                                .slug("ios")
+                                                                .parent(mobileDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Android")
+                                                                .slug("android")
+                                                                .parent(mobileDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("React Native & Flutter")
+                                                                .slug("react-native-flutter")
+                                                                .parent(mobileDevCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Subcategories for "Data Science & AI"
+                                List<CategoryEntity> dsAiSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Machine Learning")
+                                                                .slug("machine-learning")
+                                                                .parent(dsAiCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Deep Learning")
+                                                                .slug("deep-learning")
+                                                                .parent(dsAiCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Data Analysis")
+                                                                .slug("data-analysis")
+                                                                .parent(dsAiCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Subcategories for "DevOps & Cloud"
+                                List<CategoryEntity> devopsSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Docker & Kubernetes")
+                                                                .slug("docker-kubernetes")
+                                                                .parent(devopsCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("AWS")
+                                                                .slug("aws")
+                                                                .parent(devopsCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Azure & GCP")
+                                                                .slug("azure-gcp")
+                                                                .parent(devopsCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("CI/CD Pipeline")
+                                                                .slug("cicd-pipeline")
+                                                                .parent(devopsCat)
+                                                                .level(2)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Save all subcategories (check duplicate first)
+                                for (CategoryEntity subcat : lapTrinhSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : webDevSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : mobileDevSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : dsAiSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : devopsSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+
+                                // Create 3rd level subcategories (nested deeper for testing)
+                                // Get Java parent from DB (must exist after save above)
+                                CategoryEntity javaParent = categoryRepository.findBySlug("java")
+                                        .orElseThrow(() -> new RuntimeException("Java category not found"));
+                                List<CategoryEntity> javaSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Spring Boot")
+                                                                .slug("spring-boot")
+                                                                .parent(javaParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Hibernate & JPA")
+                                                                .slug("hibernate-jpa")
+                                                                .parent(javaParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Microservices")
+                                                                .slug("java-microservices")
+                                                                .parent(javaParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Get Frontend parent from DB
+                                CategoryEntity frontendParent = categoryRepository.findBySlug("frontend")
+                                        .orElseThrow(() -> new RuntimeException("Frontend category not found"));
+                                List<CategoryEntity> frontendSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("React.js")
+                                                                .slug("reactjs")
+                                                                .parent(frontendParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Vue.js")
+                                                                .slug("vuejs")
+                                                                .parent(frontendParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Angular")
+                                                                .slug("angular")
+                                                                .parent(frontendParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Get Machine Learning parent from DB
+                                CategoryEntity mlParent = categoryRepository.findBySlug("machine-learning")
+                                        .orElseThrow(() -> new RuntimeException("Machine Learning category not found"));
+                                List<CategoryEntity> mlSubcats = Arrays.asList(
+                                                CategoryEntity.builder()
+                                                                .name("Supervised Learning")
+                                                                .slug("supervised-learning")
+                                                                .parent(mlParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Unsupervised Learning")
+                                                                .slug("unsupervised-learning")
+                                                                .parent(mlParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build(),
+                                                CategoryEntity.builder()
+                                                                .name("Reinforcement Learning")
+                                                                .slug("reinforcement-learning")
+                                                                .parent(mlParent)
+                                                                .level(3)
+                                                                .isActive(true)
+                                                                .build());
+
+                                // Save 3rd level subcategories (check duplicate first)
+                                for (CategoryEntity subcat : javaSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : frontendSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+                                for (CategoryEntity subcat : mlSubcats) {
+                                    if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        categoryRepository.save(subcat);
+                                    }
+                                }
+
+                                log.info("Initialized complete category hierarchy with {} root categories and nested subcategories", savedRootCategories.size());
+                        }
+
+                        List<CategoryEntity> savedCategories = categoryRepository.findAll();
 
                         // Initialize courses if not exists
-                        List<InstructorEntity> allInstructors = instructorRepository.findAll();
-                        if (!allInstructors.isEmpty() && !savedCategories.isEmpty()) {
-                                List<CourseEntity> courses = Arrays.asList(
+                        initializeCourses(savedCategories);
+                };
+
+        }
+
+        @Transactional
+        private void initializeCourses(List<CategoryEntity> savedCategories) {
+                List<InstructorEntity> allInstructors = instructorRepository.findAll();
+                if (!allInstructors.isEmpty() && !savedCategories.isEmpty()) {
+                        // Get specific categories by slug for accurate assignment
+                        CategoryEntity springBootCat = categoryRepository.findBySlug("spring-boot").orElse(null);
+                        CategoryEntity reactCat = categoryRepository.findBySlug("reactjs").orElse(null);
+                        CategoryEntity pythonCat = categoryRepository.findBySlug("python").orElse(null);
+                        CategoryEntity dockerCat = categoryRepository.findBySlug("docker-kubernetes").orElse(null);
+                        CategoryEntity mlCat = categoryRepository.findBySlug("machine-learning").orElse(null);
+                        CategoryEntity flutterCat = categoryRepository.findBySlug("react-native-flutter").orElse(null);
+
+                        // Fallback to root categories if specific ones not found
+                        if (springBootCat == null) springBootCat = savedCategories.get(0); // Lập trình
+                        if (reactCat == null) reactCat = savedCategories.get(1); // Web Development
+                        if (pythonCat == null) pythonCat = savedCategories.get(0); // Lập trình
+                        if (dockerCat == null) dockerCat = savedCategories.get(4); // DevOps & Cloud
+                        if (mlCat == null) mlCat = savedCategories.get(3); // Data Science & AI
+                        if (flutterCat == null) flutterCat = savedCategories.get(2); // Mobile Development
+
+                        List<CourseEntity> courses = Arrays.asList(
                                                 CourseEntity.builder()
                                                                 .instructor(allInstructors.get(0))
-                                                                .category(savedCategories.get(0))
+                                                                .category(springBootCat)
                                                                 .title("Java Spring Boot - Xây Dựng RESTful API từ Cơ Bản đến Nâng Cao")
                                                                 .slug("java-spring-boot-restful-api")
                                                                 .shortDescription("Khóa học toàn diện về Spring Boot, từ cơ bản đến nâng cao, giúp bạn xây dựng RESTful API chuyên nghiệp")
@@ -307,7 +600,7 @@ public class ApplicationInitConfig {
                                                                 .build(),
                                                 CourseEntity.builder()
                                                                 .instructor(allInstructors.get(1))
-                                                                .category(savedCategories.get(1))
+                                                                .category(reactCat)
                                                                 .title("React.js - Xây Dựng Ứng Dụng Web Hiện Đại")
                                                                 .slug("react-js-xay-dung-ung-dung-web")
                                                                 .shortDescription("Học React.js từ đầu, xây dựng các ứng dụng web hiện đại với Hooks, Redux, và các công nghệ mới nhất")
@@ -332,7 +625,7 @@ public class ApplicationInitConfig {
                                                                 .build(),
                                                 CourseEntity.builder()
                                                                 .instructor(allInstructors.get(2))
-                                                                .category(savedCategories.get(4))
+                                                                .category(dockerCat)
                                                                 .title("Docker & Kubernetes - Containerization và Orchestration")
                                                                 .slug("docker-kubernetes-containerization")
                                                                 .shortDescription("Học Docker và Kubernetes từ cơ bản, triển khai ứng dụng với container và quản lý cluster hiệu quả")
@@ -357,7 +650,7 @@ public class ApplicationInitConfig {
                                                                 .build(),
                                                 CourseEntity.builder()
                                                                 .instructor(allInstructors.get(3))
-                                                                .category(savedCategories.get(3))
+                                                                .category(mlCat)
                                                                 .title("Machine Learning với Python - Từ Cơ Bản đến Nâng Cao")
                                                                 .slug("machine-learning-python")
                                                                 .shortDescription("Khóa học Machine Learning toàn diện với Python, từ thuật toán cơ bản đến Deep Learning")
@@ -382,7 +675,7 @@ public class ApplicationInitConfig {
                                                                 .build(),
                                                 CourseEntity.builder()
                                                                 .instructor(allInstructors.get(4))
-                                                                .category(savedCategories.get(2))
+                                                                .category(flutterCat)
                                                                 .title("Flutter - Phát Triển Ứng Dụng Di Động Đa Nền Tảng")
                                                                 .slug("flutter-phat-trien-ung-dung-di-dong")
                                                                 .shortDescription("Học Flutter để xây dựng ứng dụng iOS và Android với một codebase duy nhất")
@@ -406,14 +699,12 @@ public class ApplicationInitConfig {
                                                                 .publishedAt(null)
                                                                 .build());
 
-                                for (CourseEntity course : courses) {
-                                        if (courseRepository.findBySlug(course.getSlug()).isEmpty()) {
-                                                courseRepository.save(course);
-                                        }
+                        for (CourseEntity course : courses) {
+                                if (!courseRepository.existsBySlug(course.getSlug())) {
+                                        courseRepository.save(course);
                                 }
-                                log.info("Initialized {} courses", courses.size());
                         }
-
-                };
+                        log.info("Initialized {} courses", courses.size());
+                }
         }
 }

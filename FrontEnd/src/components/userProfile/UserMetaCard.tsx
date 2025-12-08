@@ -139,7 +139,7 @@ export default function UserMetaCard() {
             sx={{
               bgcolor: item.active ? "#e8e5ff" : "transparent",
               borderLeft: item.active
-                ? "4px solid #5624d0"
+                ? "4px solid #3b82f6"
                 : "4px solid transparent",
               "&:hover": {
                 bgcolor: item.active ? "#e8e5ff" : "#f7f9fa",
@@ -152,7 +152,7 @@ export default function UserMetaCard() {
               primary={item.label}
               primaryTypographyProps={{
                 fontSize: "0.95rem",
-                color: item.active ? "#5624d0" : "#2d2f31",
+                color: item.active ? "#3b82f6" : "#2d2f31",
                 fontWeight: item.active ? 600 : 400,
               }}
             />

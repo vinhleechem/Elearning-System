@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -21,6 +23,7 @@ public class CategoryResponse {
     Long parentId;
     Integer level;
     Boolean isActive;
+    List<CategoryResponse> children;
 }
 
 

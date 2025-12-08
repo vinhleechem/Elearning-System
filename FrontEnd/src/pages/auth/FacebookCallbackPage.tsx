@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, CircularProgress, Typography } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { authService } from "../../service/authService";
 import { useAuthStore } from "../../store/authStore";
 
 export default function FacebookCallbackPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { enqueueSnackbar } = useSnackbar();
   const hasHandledRef = useRef(false);
 
   useEffect(() => {
@@ -24,8 +26,10 @@ export default function FacebookCallbackPage() {
           setAuth(tokens.accessToken, tokens.refreshToken, user);
           navigate("/");
         } catch (error) {
+          enqueueSnackbar("Đăng nhập Facebook thất bại. Vui lòng thử lại.", {
+            variant: "error",
+          });
           console.error("Facebook login failed:", error);
-          alert("Đăng nhập Facebook thất bại. Vui lòng thử lại.");
           navigate("/auth/login");
         }
       } else {

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.dto.response.RefreshTokenResponse;
 import org.example.elearning.entity.RefreshTokenEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.UnauthorizedException;
 import org.example.elearning.repository.RefreshTokenRepository;
 import org.example.elearning.service.JwtService;
@@ -57,7 +58,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshTokenEntity verifyExpiration(RefreshTokenEntity token) {
         if (token.getExpiryAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
-            throw new UnauthorizedException("Invalid or expired refresh token");
+            throw new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage());
         }
         return token;
     }
@@ -75,9 +76,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                         String newAccessToken = jwtService.generateAccessToken(user);
                         return new RefreshTokenResponse(newAccessToken);
                     })
-                    .orElseThrow(() -> new UnauthorizedException("Invalid or expired refresh token"));
+                    .orElseThrow(() -> new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage()));
         } catch (Exception e) {
-            throw new UnauthorizedException("Invalid or expired refresh token");
+            throw new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage());
         }
     }
 

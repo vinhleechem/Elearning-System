@@ -86,12 +86,12 @@ public class UserServiceImpl implements UserService {
         
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new BusinessException("Mật khẩu hiện tại không đúng!");
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD.getMessage());
         }
         
         // Verify new password and confirm password match
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException("Mật khẩu xác nhận không khớp!");
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH.getMessage());
         }
         
         // Update password
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse uploadAvatar(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException("File upload không hợp lệ!");
+            throw new BusinessException(ErrorCode.INVALID_FILE.getMessage());
         }
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -120,7 +120,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             return userMapper.toEntityDTO(user);
         } catch (IOException e) {
-            throw new BusinessException("Không thể upload ảnh lên Cloudinary. Vui lòng thử lại sau!");
+            throw new BusinessException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
@@ -131,7 +131,7 @@ public class UserServiceImpl implements UserService {
         UserEntity user = getUserByEmail(email);
         
         if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
-            throw new BusinessException("Người dùng chưa có avatar!");
+            throw new BusinessException(ErrorCode.USER_NO_AVATAR.getMessage());
         }
 
         // Xoá file trên Cloudinary
@@ -237,7 +237,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateUserAvatar(Long id, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException("File upload không hợp lệ!");
+            throw new BusinessException(ErrorCode.INVALID_FILE.getMessage());
         }
 
         UserEntity user = getUserByIdEntity(id);
@@ -253,7 +253,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             return userMapper.toEntityDTO(user);
         } catch (IOException e) {
-            throw new BusinessException("Không thể upload ảnh lên Cloudinary. Vui lòng thử lại sau!");
+            throw new BusinessException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
@@ -321,7 +321,7 @@ public class UserServiceImpl implements UserService {
     // ==================== Helper methods ====================
     private void handleAdminUser(RoleEntity entity) {
         if (PredefinedRole.ROLE_ADMIN.equals(entity.getRoleName())) {
-            throw new BusinessException("Tài khoản ADMIN không được tùy chỉnh!");
+            throw new BusinessException(ErrorCode.ADMIN_ACCOUNT_CANNOT_MODIFY.getMessage());
         }
     }
 

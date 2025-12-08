@@ -19,7 +19,7 @@ export default function UserProfiles() {
           >
             <Box
               component="span"
-              sx={{ cursor: "pointer", "&:hover": { color: "#5624d0" } }}
+              sx={{ cursor: "pointer", "&:hover": { color: "#3b82f6" } }}
             >
               Home
             </Box>

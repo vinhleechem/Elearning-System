@@ -24,6 +24,8 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
     @EntityGraph(attributePaths = {"instructor", "instructor.user"})
     Page<CourseEntity> findAll(org.springframework.data.jpa.domain.Specification<CourseEntity> spec, Pageable pageable);
 
+    boolean existsBySlug(String slug);
+
 }
 
 

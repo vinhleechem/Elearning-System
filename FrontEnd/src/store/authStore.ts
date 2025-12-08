@@ -23,6 +23,7 @@ type AuthState = {
     refreshToken: string,
     user: UserResponse,
   ) => void;
+  updateAccessToken: (accessToken: string) => void;
   fetchProfile: () => Promise<UserResponse | null>;
   hasRole: (role: string) => boolean;
 };
@@ -50,6 +51,14 @@ export const useAuthStore = create<AuthState>()(
           tokens: { accessToken, refreshToken },
           user,
         });
+      },
+      updateAccessToken: (accessToken) => {
+        const currentTokens = get().tokens;
+        if (currentTokens) {
+          set({
+            tokens: { ...currentTokens, accessToken },
+          });
+        }
       },
       hasRole: (role: string) => {
         const { user } = get();
@@ -131,3 +140,8 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+// Export store instance để httpClient có thể sử dụng (không phải hook)
+// Sử dụng getState() để lấy state hiện tại và setState để cập nhật
+export const getAuthStoreState = () => useAuthStore.getState();
+export const setAuthStoreState = useAuthStore.setState;

@@ -16,7 +16,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserResponse extends ResponseAbstract{
+public class UserResponse{
     Long userId;
     String email;
     String fullName;

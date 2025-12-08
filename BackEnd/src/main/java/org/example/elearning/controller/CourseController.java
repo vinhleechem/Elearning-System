@@ -2,9 +2,9 @@ package org.example.elearning.controller;
 
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.dto.response.StandardResponse;
 import static org.example.elearning.dto.response.StandardResponse.success;
-import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.enums.CourseStatus;
 import org.example.elearning.service.CourseService;
 import org.springframework.data.domain.PageRequest;
@@ -69,6 +69,15 @@ public class CourseController {
         Pageable pageable = PageRequest.of(page, size, sort);
         PaginatedResponse<CourseResponse> courses = courseService.getAllCoursesForAdmin(pageable, search, status);
         return ResponseEntity.ok(success("Lấy danh sách khóa học thành công", courses));
+    }
+
+    @Operation(summary = "Lấy chi tiết khóa học theo ID (Admin)")
+    @ApiResponse(responseCode = "200", description = "Lấy thành công")
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<CourseResponse>> getCourseById(@PathVariable Long id) {
+        CourseResponse result = courseService.getCourseById(id);
+        return ResponseEntity.ok(success("Lấy khóa học thành công", result));
     }
 
     @Operation(summary = "Lấy chi tiết khóa học theo slug")

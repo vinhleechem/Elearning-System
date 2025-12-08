@@ -7,6 +7,7 @@ import org.example.elearning.dto.request.SectionRequest;
 import org.example.elearning.dto.response.SectionResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.SectionEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.SectionRepository;
@@ -27,7 +28,7 @@ public class SectionServiceImpl implements SectionService {
     @Override
     public List<SectionResponse> getSectionsByCourse(Long courseId) {
         CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
         return sectionRepository.findByCourseOrderByPositionAsc(course)
                 .stream()
                 .map(this::toResponse)
@@ -38,11 +39,10 @@ public class SectionServiceImpl implements SectionService {
     @Transactional
     public SectionResponse createSection(Long courseId, SectionRequest request) {
         CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         Integer position = request.getPosition();
         if (position == null) {
-            // đơn giản: để null hoặc tính theo số lượng hiện tại
             int currentSize = sectionRepository.findByCourseOrderByPositionAsc(course).size();
             position = currentSize + 1;
         }
@@ -60,7 +60,7 @@ public class SectionServiceImpl implements SectionService {
     @Transactional
     public SectionResponse updateSection(Long sectionId, SectionRequest request) {
         SectionEntity entity = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
         if (request.getTitle() != null) {
             entity.setTitle(request.getTitle());
@@ -76,7 +76,7 @@ public class SectionServiceImpl implements SectionService {
     @Transactional
     public void deleteSection(Long sectionId) {
         SectionEntity entity = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
         sectionRepository.delete(entity);
     }
 
@@ -89,5 +89,4 @@ public class SectionServiceImpl implements SectionService {
                 .build();
     }
 }
-
 

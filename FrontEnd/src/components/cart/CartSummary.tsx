@@ -60,8 +60,8 @@ const CartSummary: React.FC<CartSummaryProps> = ({
         fullWidth
         sx={{
           mt: 2,
-          backgroundColor: "purple",
-          "&:hover": { backgroundColor: "#6a1b9a" },
+          backgroundColor: "#3b82f6",
+          "&:hover": { backgroundColor: "#2563eb" },
         }}
         endIcon={<ArrowForward />}
       >
@@ -78,13 +78,16 @@ const CartSummary: React.FC<CartSummaryProps> = ({
       <Divider sx={{ my: 2 }} />
 
       <Box>
+        <Typography variant="h6" fontWeight={700} mb={2}>
+          Khuyến mại
+        </Typography>
         {!showCoupon ? (
           <Button
             variant="outlined"
             fullWidth
             sx={{
-              borderColor: "purple",
-              color: "purple",
+              borderColor: "#3b82f6",
+              color: "#3b82f6",
               fontWeight: 600,
             }}
             onClick={() => setShowCoupon(true)}
@@ -95,18 +98,20 @@ const CartSummary: React.FC<CartSummaryProps> = ({
           <Box display="flex" gap={1}>
             <TextField
               size="small"
+              fullWidth
               placeholder="Nhập coupon"
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
-              sx={{ width: 142 }}
             />
             <Button
               variant="contained"
-              size="small"
               sx={{
-                minWidth: 30,
                 backgroundColor: "#3b82f6",
                 "&:hover": { backgroundColor: "#2563eb" },
+                textTransform: "none",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                minWidth: "fit-content",
               }}
               onClick={handleApplyCoupon}
             >

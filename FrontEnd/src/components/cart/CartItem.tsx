@@ -26,6 +26,7 @@ const CartItem: React.FC<CartItemProps> = ({
   tag,
   lesson,
   duration,
+  onRemove,
 }) => {
   const [ratingValue, setRatingValue] = useState<number | null>(rating || 0);
   const style = tag ? TAGS_STYLE[tag] : null;
@@ -124,7 +125,7 @@ const CartItem: React.FC<CartItemProps> = ({
             gap: 1,
           }}
         >
-          <Button variant="text" sx={{ p: 0, textTransform: "none" }}>
+          <Button variant="text" sx={{ p: 0, textTransform: "none" }} onClick={onRemove}>
             Xóa
           </Button>
           <Button variant="text" sx={{ p: 0, textTransform: "none" }}>

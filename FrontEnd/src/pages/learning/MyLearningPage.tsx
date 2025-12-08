@@ -102,7 +102,7 @@ const MyLearningPage = () => {
                 color: "#fff",
               },
               "& .MuiTabs-indicator": {
-                backgroundColor: "#a435f0",
+                backgroundColor: "#3b82f6",
                 height: 3,
               },
             }}

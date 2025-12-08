@@ -30,19 +30,21 @@ const OrderSummaryPanel = () => {
           textTransform: "none",
           fontWeight: "bold",
           fontSize: "1rem",
-          backgroundColor: "#6d28d9",
-          "&:hover": { backgroundColor: "#5b21b6" },
+          backgroundColor: "#3b82f6",
+          "&:hover": { backgroundColor: "#2563eb" },
         }}
         className="!my-4 w-full"
       >
-        Thanh toán
-        <span className="ml-1 font-bold">
-          2.114.000
-          <span className="ml-0.5 align-text-top text-xs">đ</span>
-        </span>
+        Hoàn tất thanh toán
       </Button>
 
-      <p className="text-sm text-gray-500">Đã bảo hành tiền trong 30 ngày</p>
+      <div className="text-center text-sm text-gray-500">
+        <p className="font-bold">Đảm bảo hoàn tiền trong 30 ngày</p>
+        <p>
+          Bạn không hài lòng? Nhận lại toàn bộ tiền hoàn lại trong vòng 30 ngày.
+          Đơn giản và dễ hiểu!
+        </p>
+      </div>
     </div>
   );
 };

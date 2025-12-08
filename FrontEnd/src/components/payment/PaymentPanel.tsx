@@ -43,18 +43,36 @@ const PaymentPanel = () => {
 
       {/* Phương thức thanh toán */}
       <div>
-        <h2 className="mb-2 text-lg font-bold text-gray-700">
-          Phương thức thanh toán
-        </h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-700">
+            Phương thức thanh toán
+          </h2>
+          <div className="flex items-center gap-1 text-gray-500">
+            <span className="text-sm">An toàn và được mã hóa</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="h-4 w-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+              />
+            </svg>
+          </div>
+        </div>
         <div className="space-y-3">
           {paymentMethods.map((method) => (
             <label
               key={method.id}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                selected === method.id
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selected === method.id
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-300 hover:border-gray-400"
-              }`}
+                }`}
             >
               <input
                 type="radio"

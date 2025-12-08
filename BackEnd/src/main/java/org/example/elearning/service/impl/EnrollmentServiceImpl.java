@@ -7,6 +7,7 @@ import org.example.elearning.dto.response.EnrollmentResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.EnrollmentEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CourseRepository;
@@ -46,10 +47,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         UserEntity user = getUserByEmail(email);
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy enrollment"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
         if (!enrollment.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền truy cập enrollment này");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
         }
 
         return mapToEnrollmentResponse(enrollment);
@@ -62,10 +63,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         UserEntity user = getUserByEmail(email);
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy enrollment"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
         if (!enrollment.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền cập nhật enrollment này");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
         }
 
         if (progress < 0 || progress > 100) {
@@ -82,14 +83,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         UserEntity user = getUserByEmail(email);
 
         CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         return enrollmentRepository.existsByUserAndCourse(user, course);
     }
 
     private UserEntity getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
 
     private EnrollmentResponse mapToEnrollmentResponse(EnrollmentEntity enrollment) {

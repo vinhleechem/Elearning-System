@@ -445,7 +445,7 @@ export default function UserInfoCard() {
       <Button
         variant="contained"
         sx={{
-          bgcolor: "#5624d0",
+          bgcolor: "#3b82f6",
           color: "white",
           textTransform: "none",
           fontWeight: 600,
@@ -453,7 +453,7 @@ export default function UserInfoCard() {
           px: 2.5,
           py: 1,
           "&:hover": {
-            bgcolor: "#3d1a99",
+            bgcolor: "#2563eb",
           },
         }}
       >

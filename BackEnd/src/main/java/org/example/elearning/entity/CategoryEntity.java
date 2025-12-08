@@ -8,7 +8,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +19,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -39,6 +44,7 @@ public class CategoryEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @JsonBackReference
     CategoryEntity parent;
 
     @Column(name = "level", nullable = false)
@@ -47,4 +53,8 @@ public class CategoryEntity extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     Boolean isActive = true;
+
+    @OneToMany(mappedBy = "parent")
+    @JsonManagedReference
+    List<CategoryEntity> children;
 }

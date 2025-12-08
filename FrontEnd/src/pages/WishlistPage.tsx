@@ -2,79 +2,28 @@ import {
   Container,
   Typography,
   Box,
-  Grid,
   Button,
   Card,
   CardMedia,
   CardContent,
   IconButton,
   Rating,
-  Chip,
   Tabs,
   Tab,
 } from "@mui/material";
-import {  Favorite} from "@mui/icons-material";
-import { useState } from "react";
+import { Favorite } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { formatCurrency } from "../libs/utils";
-
-interface WishlistCourse {
-  id: number;
-  slug: string;
-  title: string;
-  instructor: string;
-  rating: number;
-  reviews: number;
-  price: number;
-  oldPrice?: number;
-  image: string;
-  tag?: string;
-  level: string;
-  totalHours: string;
-  updatedAt: string;
-}
+import { useWishlistStore } from "../store/wishlistStore";
+import { useCartStore } from "../store/cartStore";
 
 const WishlistPage = () => {
   const navigate = useNavigate();
-  const [wishlistCourses, setWishlistCourses] = useState<WishlistCourse[]>([
-    {
-      id: 1,
-      slug: "java-spring-restful-apis",
-      title: "Java Spring RESTful APIs - Xây Dựng Backend với Spring Boot",
-      instructor: "Hỏi Dân IT với Eric",
-      rating: 4.8,
-      reviews: 143,
-      price: 1799000,
-      image: "https://i.ytimg.com/vi/CRGKTef6w2g/mqdefault.jpg",
-      tag: "Bán chạy nhất",
-      level: "Tất cả các cấp độ",
-      totalHours: "25,5 giờ",
-      updatedAt: "tháng 11 năm 2025",
-    },
-    {
-      id: 2,
-      slug: "docker-mastery",
-      title: "Thành Thạo Docker Từ Cơ Bản Đến Nâng Cao",
-      instructor: "Vinh Lê Quang",
-      rating: 5.0,
-      reviews: 1655,
-      price: 279000,
-      oldPrice: 659000,
-      image: "https://i.ytimg.com/vi/CRGKTef6w2g/mqdefault.jpg",
-      tag: "Hot",
-      level: "Trung cấp",
-      totalHours: "9,5 giờ",
-      updatedAt: "tháng 10 năm 2025",
-    },
-  ]);
+  const { items: wishlistCourses, removeFromWishlist } = useWishlistStore();
+  const { addToCart } = useCartStore();
 
-  const handleRemoveFromWishlist = (courseId: number) => {
-    setWishlistCourses(wishlistCourses.filter((c) => c.id !== courseId));
-  };
-
-  const handleAddToCart = (courseId: number) => {
-    console.log("Add to cart:", courseId);
-    // Logic thêm vào giỏ hàng
+  const handleRemoveFromWishlist = async (courseId: number) => {
+    await removeFromWishlist(courseId);
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -109,7 +58,7 @@ const WishlistPage = () => {
                 color: "#fff",
               },
               "& .MuiTabs-indicator": {
-                backgroundColor: "#a435f0",
+                backgroundColor: "#3b82f6",
                 height: 3,
               },
             }}
@@ -146,12 +95,12 @@ const WishlistPage = () => {
                 to="/"
                 variant="contained"
                 sx={{
-                  bgcolor: "#5624d0",
+                  bgcolor: "#3b82f6",
                   textTransform: "none",
                   fontWeight: 600,
                   px: 3,
                   "&:hover": {
-                    bgcolor: "#3d1a99",
+                    bgcolor: "#2563eb",
                   },
                 }}
               >
@@ -174,7 +123,7 @@ const WishlistPage = () => {
             >
               {wishlistCourses.map((course) => (
                 <Card
-                  key={course.id}
+                  key={course.courseId}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
@@ -189,7 +138,7 @@ const WishlistPage = () => {
                 >
                   {/* Heart Icon */}
                   <IconButton
-                    onClick={() => handleRemoveFromWishlist(course.id)}
+                    onClick={() => handleRemoveFromWishlist(course.courseId)}
                     sx={{
                       position: "absolute",
                       top: 8,
@@ -209,8 +158,8 @@ const WishlistPage = () => {
                   {/* Image */}
                   <CardMedia
                     component={Link}
-                    to={`/course/${course.slug}`}
-                    image={course.image}
+                    to={`/course/${course.courseId}`} // Fallback to ID since slug is missing
+                    image={course.courseImage}
                     sx={{
                       height: 135,
                       display: "block",
@@ -229,7 +178,7 @@ const WishlistPage = () => {
                   >
                     <Typography
                       component={Link}
-                      to={`/course/${course.slug}`}
+                      to={`/course/${course.courseId}`}
                       variant="h6"
                       fontWeight={700}
                       fontSize="0.95rem"
@@ -244,11 +193,11 @@ const WishlistPage = () => {
                         WebkitBoxOrient: "vertical",
                         minHeight: "2.8em",
                         "&:hover": {
-                          color: "#5624d0",
+                          color: "#3b82f6",
                         },
                       }}
                     >
-                      {course.title}
+                      {course.courseTitle}
                     </Typography>
 
                     <Typography
@@ -257,7 +206,7 @@ const WishlistPage = () => {
                       fontSize="0.75rem"
                       sx={{ mb: 0.5 }}
                     >
-                      {course.instructor}
+                      {course.instructorName}
                     </Typography>
 
                     <Box
@@ -274,32 +223,16 @@ const WishlistPage = () => {
                         color="#b4690e"
                         fontSize="0.85rem"
                       >
-                        {course.rating.toFixed(1)}
+                        {course.rating?.toFixed(1) || "0.0"}
                       </Typography>
                       <Rating
-                        value={course.rating}
+                        value={course.rating || 0}
                         readOnly
                         size="small"
                         precision={0.1}
                         sx={{ fontSize: "0.9rem" }}
                       />
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontSize="0.7rem"
-                      >
-                        ({course.reviews.toLocaleString()})
-                      </Typography>
                     </Box>
-
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontSize="0.7rem"
-                      sx={{ mb: 1 }}
-                    >
-                      {course.totalHours} • {course.level}
-                    </Typography>
 
                     <Box sx={{ mt: "auto" }}>
                       <Typography
@@ -307,16 +240,16 @@ const WishlistPage = () => {
                         fontWeight={700}
                         fontSize="1.1rem"
                       >
-                        {formatCurrency(course.price)}
+                        {formatCurrency(course.discountPrice || course.price)}
                       </Typography>
-                      {course.oldPrice && (
+                      {course.discountPrice && (
                         <Typography
                           variant="body2"
                           color="text.secondary"
                           sx={{ textDecoration: "line-through" }}
                           fontSize="0.8rem"
                         >
-                          {formatCurrency(course.oldPrice)}
+                          {formatCurrency(course.price)}
                         </Typography>
                       )}
                     </Box>

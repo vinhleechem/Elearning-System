@@ -1,4 +1,5 @@
 export interface CourseProps {
+  id: number;
   title: string;
   teacher: string;
   reviews: number;
@@ -16,6 +17,7 @@ export interface CourseProps {
 }
 
 export interface CourseDetailProps {
+  id: number;
   title: string;
   tag?: string;
   description?: string;

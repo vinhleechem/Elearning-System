@@ -7,6 +7,7 @@ import org.example.elearning.dto.response.WishlistResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.entity.WishlistEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CourseRepository;
@@ -47,11 +48,11 @@ public class WishlistServiceImpl implements WishlistService {
         UserEntity user = getUserByEmail(email);
 
         CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         // Kiểm tra đã có trong wishlist chưa
         if (wishlistRepository.existsByUserAndCourse(user, course)) {
-            throw new BusinessException("Khóa học đã có trong danh sách yêu thích");
+            throw new BusinessException(ErrorCode.COURSE_ALREADY_IN_WISHLIST.getMessage());
         }
 
         WishlistEntity wishlist = WishlistEntity.builder()
@@ -71,10 +72,10 @@ public class WishlistServiceImpl implements WishlistService {
         UserEntity user = getUserByEmail(email);
 
         WishlistEntity wishlist = wishlistRepository.findById(wishlistId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy wishlist"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.WISHLIST_ITEM_NOT_FOUND.getMessage()));
 
         if (!wishlist.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền xóa item này");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
         }
 
         wishlistRepository.delete(wishlist);

@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutLayout from "./pages/CheckoutLayout";
 import AuthLayout from "./pages/auth/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -17,6 +18,7 @@ import UserProfiles from "./pages/dashboard/UserProfiles";
 import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import CourseManagement from "./pages/admin/CourseManagement";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
@@ -35,10 +37,6 @@ export const router = createBrowserRouter([
       {
         path: "cart",
         element: <CartPage />,
-      },
-      {
-        path: "checkout",
-        element: <CheckoutPage />,
       },
       {
         path: "course/:slug",
@@ -85,6 +83,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/payment",
+    element: <CheckoutLayout />,
+    children: [
+      {
+        path: "checkout",
+        element: <CheckoutPage />,
+      },
+    ],
+  },
+  {
     element: <AuthLayout />,
     children: [
       {
@@ -120,6 +128,10 @@ export const router = createBrowserRouter([
       {
         path: "courses",
         element: <CourseManagement />,
+      },
+      {
+        path: "categories",
+        element: <CategoryManagement />,
       },
     ],
   },

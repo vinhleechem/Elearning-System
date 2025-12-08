@@ -1,9 +1,11 @@
 import {
   Box,
   Typography,
-  Popover,
+  Popper,
+  Paper,
   Divider,
   Button as MuiButton,
+  Fade,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { formatCurrency } from "../../libs/utils";
@@ -104,106 +106,124 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
   );
 
   return (
-    <Popover
+    <Popper
       open={open}
       anchorEl={anchorEl}
-      onClose={onClose}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "right",
-      }}
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "right",
-      }}
-      slotProps={{
-        paper: {
-          sx: {
-            width: 360,
-            mt: 1.5,
-            borderRadius: 3,
-            overflow: "visible",
-            boxShadow: "0 12px 32px rgba(15,23,42,0.18)",
-            border: "1px solid #e0e0e0",
+      placement="bottom-end"
+      transition
+      sx={{ zIndex: 1300 }} // Ensure it's above other elements
+      modifiers={[
+        {
+          name: "offset",
+          options: {
+            offset: [0, 12],
           },
-          onMouseEnter: onMouseEnter,
-          onMouseLeave: onMouseLeave,
         },
-      }}
-      disableRestoreFocus
+      ]}
     >
-      <Box sx={{ p: 2.5 }}>
-        {items.length === 0 ? (
-          <Typography variant="body2" sx={{ textAlign: "center", py: 2 }}>
-            Giỏ hàng trống
-          </Typography>
-        ) : (
-          <>
-            <Box
-              sx={{
-                maxHeight: 320,
-                overflow: "auto",
-              }}
-            >
-              {items.map((item, index) => (
-                <Box key={item.id}>
-                  {index > 0 && <Divider sx={{ my: 1 }} />}
-                  <CartDropdownItem {...item} />
+      {({ TransitionProps }) => (
+        <Fade {...TransitionProps} timeout={200}>
+          <Paper
+            sx={{
+              width: 360,
+              borderRadius: 3,
+              overflow: "visible",
+              boxShadow: "0 12px 32px rgba(15,23,42,0.18)",
+              border: "1px solid #e0e0e0",
+            }}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+          >
+            <Box sx={{ p: 2.5 }}>
+              {items.length === 0 ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    py: 2,
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/images/cart/empty-cart.png"
+                    alt="Empty Cart"
+                    sx={{ width: 100, mb: 1 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Chưa có sản phẩm nào trong giỏ hàng
+                  </Typography>
                 </Box>
-              ))}
-            </Box>
-            <Divider sx={{ my: 2 }} />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                mb: 2,
-              }}
-            >
-              <Typography variant="h6" fontWeight={700}>
-                Tổng cộng
-              </Typography>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="h6" fontWeight={700}>
-                  {formatCurrency(total)}
-                </Typography>
-                {originalTotal > total && (
-                  <Typography
-                    variant="body2"
+              ) : (
+                <>
+                  <Box
                     sx={{
-                      color: "text.secondary",
-                      textDecoration: "line-through",
+                      maxHeight: 320,
+                      overflow: "auto",
                     }}
                   >
-                    {formatCurrency(originalTotal)}
-                  </Typography>
-                )}
-              </Box>
+                    {items.map((item, index) => (
+                      <Box key={item.id}>
+                        {index > 0 && <Divider sx={{ my: 1 }} />}
+                        <CartDropdownItem {...item} />
+                      </Box>
+                    ))}
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight={700}>
+                      Tổng cộng
+                    </Typography>
+                    <Box sx={{ textAlign: "right" }}>
+                      <Typography variant="h6" fontWeight={700}>
+                        {formatCurrency(total)}
+                      </Typography>
+                      {originalTotal > total && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "text.secondary",
+                            textDecoration: "line-through",
+                          }}
+                        >
+                          {formatCurrency(originalTotal)}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                  <MuiButton
+                    component={Link}
+                    to="/cart"
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      bgcolor: "#3b82f6",
+                      borderRadius: 999,
+                      py: 1.2,
+                      fontSize: 16,
+                      "&:hover": {
+                        bgcolor: "#2563eb",
+                      },
+                    }}
+                  >
+                    Vào giỏ hàng
+                  </MuiButton>
+                </>
+              )}
             </Box>
-            <MuiButton
-              component={Link}
-              to="/cart"
-              variant="contained"
-              fullWidth
-              sx={{
-                textTransform: "none",
-                fontWeight: 700,
-                bgcolor: "#3b82f6",
-                borderRadius: 999,
-                py: 1.2,
-                fontSize: 16,
-                "&:hover": {
-                  bgcolor: "#2563eb",
-                },
-              }}
-            >
-              Vào giỏ hàng
-            </MuiButton>
-          </>
-        )}
-      </Box>
-    </Popover>
+          </Paper>
+        </Fade>
+      )}
+    </Popper>
   );
 };
 

@@ -8,6 +8,7 @@ import org.example.elearning.dto.response.OrderItemResponse;
 import org.example.elearning.dto.response.OrderResponse;
 import org.example.elearning.entity.*;
 import org.example.elearning.enums.OrderStatus;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.*;
@@ -43,13 +44,13 @@ public class OrderServiceImpl implements OrderService {
         List<CourseEntity> courses = courseRepository.findAllById(request.getCourseIds());
 
         if (courses.isEmpty()) {
-            throw new BusinessException("Không tìm thấy khóa học nào");
+            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND_LIST.getMessage());
         }
 
         // Kiểm tra đã enroll chưa
         for (CourseEntity course : courses) {
             if (enrollmentRepository.existsByUserAndCourse(user, course)) {
-                throw new BusinessException("Bạn đã đăng ký khóa học: " + course.getTitle());
+                throw new BusinessException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
             }
         }
 
@@ -102,10 +103,10 @@ public class OrderServiceImpl implements OrderService {
         UserEntity user = getUserByEmail(email);
 
         OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
 
         if (!order.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền truy cập đơn hàng này");
+            throw new BusinessException(ErrorCode.ORDER_UNAUTHORIZED.getMessage());
         }
 
         List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
@@ -133,10 +134,10 @@ public class OrderServiceImpl implements OrderService {
         UserEntity user = getUserByEmail(email);
 
         OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
 
         if (!order.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền hủy đơn hàng này");
+            throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL.getMessage());
         }
 
         if (order.getStatus() != OrderStatus.PENDING) {

@@ -1,9 +1,16 @@
-import { Box, Typography, Chip, Button } from "@mui/material";
+import { Box, Typography, Chip, Button, IconButton } from "@mui/material";
 import type { CourseDetailProps } from "../../types/course";
 import { TAGS_STYLE } from "../../libs/constants";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { Favorite, FavoriteBorder } from "@mui/icons-material";
+import { useSnackbar } from "notistack";
+import { useState } from "react";
+import { useCartStore } from "../../store/cartStore";
+import { useWishlistStore } from "../../store/wishlistStore";
+import { useNavigate } from "react-router-dom";
 
 const CourseDetailPanel: React.FC<CourseDetailProps> = ({
+  id,
   title,
   tag,
   description,
@@ -16,6 +23,52 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
   onMouseLeave,
 }) => {
   const style = tag ? TAGS_STYLE[tag] : null;
+  const { enqueueSnackbar } = useSnackbar();
+  const [loading, setLoading] = useState(false);
+  const { addToCart, isInCart } = useCartStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const navigate = useNavigate();
+  const inCart = isInCart(id);
+  const inWishlist = isInWishlist(id);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation if inside a link
+    setLoading(true);
+    try {
+      await addToCart(id);
+      enqueueSnackbar("Đã thêm khóa học vào giỏ hàng", { variant: "success" });
+    } catch (error: any) {
+      console.error("Add to cart error:", error);
+      enqueueSnackbar(error.message || "Không thể thêm vào giỏ hàng", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(id);
+        enqueueSnackbar("Đã xóa khỏi danh sách yêu thích", { variant: "info" });
+      } else {
+        await addToWishlist(id);
+        enqueueSnackbar("Đã thêm vào danh sách yêu thích", { variant: "success" });
+      }
+    } catch (error: any) {
+      console.error("Wishlist error:", error);
+      enqueueSnackbar(error.message || "Có lỗi xảy ra", { variant: "error" });
+    }
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (inCart) {
+      navigate("/cart");
+    } else {
+      handleAddToCart(e);
+    }
+  };
 
   return (
     <Box
@@ -100,26 +153,49 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
           </Box>
         ))}
       </Box>
-     
-      {/* Add to Cart Button */}
-      <Button
-        variant="contained"
-        fullWidth
-        startIcon={<ShoppingCartIcon />}
-        sx={{
-          backgroundColor: "#3b82f6",
-          textTransform: "none",
-          fontWeight: 700,
-          "&:hover": {
-            backgroundColor: "#2563eb",
-          },
-        }}
-      >
-        Thêm vào giỏ hàng
-      </Button>
+
+      {/* Buttons Container */}
+      <Box display="flex" alignItems="center" gap={1}>
+        {/* Add to Cart Button */}
+        <Button
+          variant="contained"
+          fullWidth
+          startIcon={<ShoppingCartIcon />}
+          onClick={handleButtonClick}
+          disabled={loading}
+          sx={{
+            backgroundColor: "#3b82f6", // System Blue
+            textTransform: "none",
+            fontWeight: 700,
+            height: 48,
+            fontSize: 16,
+            "&:hover": {
+              backgroundColor: "#2563eb",
+            },
+          }}
+        >
+          {loading ? "Đang thêm..." : inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
+        </Button>
+
+        {/* Wishlist Button */}
+        <IconButton
+          onClick={handleToggleWishlist}
+          sx={{
+            width: 48,
+            height: 48,
+            border: "1px solid #2d2f31", // Default border
+            borderColor: inWishlist ? "#3b82f6" : "#2d2f31",
+            color: inWishlist ? "#3b82f6" : "#2d2f31",
+            "&:hover": {
+              bgcolor: "rgba(59, 130, 246, 0.04)",
+            },
+          }}
+        >
+          {inWishlist ? <Favorite /> : <FavoriteBorder />}
+        </IconButton>
+      </Box>
     </Box>
   );
 };
 
 export default CourseDetailPanel;
-

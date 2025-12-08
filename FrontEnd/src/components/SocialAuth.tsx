@@ -1,6 +1,7 @@
 import { Box, Divider, IconButton, Typography } from "@mui/material";
 import { Facebook, Twitter, Google } from "@mui/icons-material";
 import { useGoogleLogin } from "@react-oauth/google";
+import { useSnackbar } from "notistack";
 import { authService } from "../service/authService";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 export default function SocialAuth() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
@@ -18,15 +20,18 @@ export default function SocialAuth() {
         setAuth(tokens.accessToken, tokens.refreshToken, user);
         navigate("/");
       } catch (error) {
-        console.error("Google login failed:", error);
-        alert(
+        enqueueSnackbar(
           `Đăng nhập Google thất bại: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { variant: "error" }
         );
+        console.error("Google login failed:", error);
       }
     },
     onError: (error) => {
+      enqueueSnackbar("Đăng nhập Google thất bại. Vui lòng thử lại.", {
+        variant: "error",
+      });
       console.error("Google login error:", error);
-      alert("Đăng nhập Google thất bại. Vui lòng thử lại.");
     },
     flow: "auth-code",
     ux_mode: "popup",

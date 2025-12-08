@@ -7,6 +7,7 @@ import org.example.elearning.dto.request.LessonRequest;
 import org.example.elearning.dto.response.LessonResponse;
 import org.example.elearning.entity.LessonEntity;
 import org.example.elearning.entity.SectionEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.LessonRepository;
 import org.example.elearning.repository.SectionRepository;
@@ -27,7 +28,7 @@ public class LessonServiceImpl implements LessonService {
     @Override
     public List<LessonResponse> getLessonsBySection(Long sectionId) {
         SectionEntity section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
         return lessonRepository.findBySectionOrderBySortOrderAsc(section)
                 .stream()
                 .map(this::toResponse)
@@ -37,7 +38,7 @@ public class LessonServiceImpl implements LessonService {
     @Override
     public LessonResponse getLessonById(Long lessonId) {
         LessonEntity entity = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
         return toResponse(entity);
     }
 
@@ -45,7 +46,13 @@ public class LessonServiceImpl implements LessonService {
     @Transactional
     public LessonResponse createLesson(Long sectionId, LessonRequest request) {
         SectionEntity section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+
+        Integer sortOrder = request.getSortOrder();
+        if (sortOrder == null) {
+            int currentSize = lessonRepository.findBySectionOrderBySortOrderAsc(section).size();
+            sortOrder = currentSize + 1;
+        }
 
         LessonEntity entity = LessonEntity.builder()
                 .section(section)
@@ -56,10 +63,10 @@ public class LessonServiceImpl implements LessonService {
                 .videoUrl(request.getVideoUrl())
                 .articleContent(request.getArticleContent())
                 .durationMinutes(request.getDurationMinutes())
-                .isPreview(request.getIsPreview())
-                .isDownloadable(request.getIsDownloadable())
-                .sortOrder(request.getSortOrder())
-                .isActive(request.getIsActive())
+                .isPreview(request.getIsPreview() != null && request.getIsPreview())
+                .isDownloadable(request.getIsDownloadable() != null && request.getIsDownloadable())
+                .sortOrder(sortOrder)
+                .isActive(request.getIsActive() != null && request.getIsActive())
                 .build();
 
         return toResponse(lessonRepository.save(entity));
@@ -69,7 +76,7 @@ public class LessonServiceImpl implements LessonService {
     @Transactional
     public LessonResponse updateLesson(Long lessonId, LessonRequest request) {
         LessonEntity entity = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
         if (request.getTitle() != null) entity.setTitle(request.getTitle());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
@@ -90,7 +97,7 @@ public class LessonServiceImpl implements LessonService {
     @Transactional
     public void deleteLesson(Long lessonId) {
         LessonEntity entity = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
         lessonRepository.delete(entity);
     }
 
@@ -112,5 +119,4 @@ public class LessonServiceImpl implements LessonService {
                 .build();
     }
 }
-
 

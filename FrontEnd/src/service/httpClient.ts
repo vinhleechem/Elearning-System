@@ -17,16 +17,26 @@ export class ApiError extends Error {
   }
 }
 
+import { getAuthStoreState } from "../store/authStore";
+import { enqueueSnackbar } from "notistack";
+
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export const httpClient = async <T>(
   path: string,
   options: RequestInit = {},
 ): Promise<StandardApiResponse<T>> => {
-  const headers: HeadersInit = {
+  const state = getAuthStoreState();
+  const accessToken = state.tokens?.accessToken;
+
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers ?? {}),
+    ...(options.headers as Record<string, string> ?? {}),
   };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -48,6 +58,7 @@ export const httpClient = async <T>(
       !path.startsWith("/auth/register") &&
       !path.startsWith("/auth/refresh")
     ) {
+      console.log("🔐 Nhận 401 Unauthorized, bắt đầu xử lý refresh token...");
       try {
         const raw = localStorage.getItem("auth-store");
         if (raw) {
@@ -64,6 +75,7 @@ export const httpClient = async <T>(
 
           if (refreshToken) {
             // Gọi thẳng API refresh token (không dùng httpClient để tránh đệ quy)
+            console.log("🔄 Đang thử refresh token...");
             const refreshResponse = await fetch(
               `${API_BASE_URL}/auth/refresh`,
               {
@@ -88,16 +100,25 @@ export const httpClient = async <T>(
               refreshBody?.success !== false &&
               refreshBody?.data?.accessToken
             ) {
+              console.log("✅ Refresh token thành công, nhận được access token mới");
               const newAccessToken = refreshBody.data.accessToken;
 
-              // Cập nhật accessToken mới vào localStorage (giữ nguyên refreshToken cũ)
-              // Sử dụng zustand store thay vì thao tác trực tiếp với localStorage
-              if (stored.state?.tokens) {
-                stored.state.tokens.accessToken = newAccessToken;
-                try {
-                  localStorage.setItem("auth-store", JSON.stringify(stored));
-                } catch (e) {
-                  console.warn("Lỗi khi cập nhật token:", e);
+              // Cập nhật accessToken mới vào zustand store (giữ nguyên refreshToken cũ)
+              try {
+                const currentState = getAuthStoreState();
+                if (currentState.tokens) {
+                  currentState.updateAccessToken(newAccessToken);
+                }
+              } catch (e) {
+                console.warn("Lỗi khi cập nhật token trong store:", e);
+                // Fallback: cập nhật localStorage trực tiếp nếu store không khả dụng
+                if (stored.state?.tokens) {
+                  stored.state.tokens.accessToken = newAccessToken;
+                  try {
+                    localStorage.setItem("auth-store", JSON.stringify(stored));
+                  } catch (storageError) {
+                    console.warn("Lỗi khi cập nhật token trong localStorage:", storageError);
+                  }
                 }
               }
 
@@ -135,6 +156,7 @@ export const httpClient = async <T>(
               }
 
               if (!retryResponse.ok || retryBody?.success === false) {
+                console.log("❌ Retry request vẫn thất bại sau khi refresh token, chuyển về login");
                 // Nếu retry vẫn lỗi -> refresh token cũng đã hết hạn, cần logout
                 // Xóa auth store và redirect về login
                 try {
@@ -148,6 +170,7 @@ export const httpClient = async <T>(
                   console.warn("Lỗi khi xóa auth-store sau refresh fail:", e);
                 }
               } else {
+                console.log("✅ Retry request thành công với access token mới");
                 if (!retryBody) {
                   throw new ApiError(
                     "Empty response body",
@@ -156,13 +179,34 @@ export const httpClient = async <T>(
                 }
                 return retryBody;
               }
+            } else {
+              console.log("❌ Refresh token thất bại hoặc không nhận được access token mới");
+              console.log("Refresh response status:", refreshResponse.status);
+              console.log("Refresh response body:", refreshBody);
+
+              // Refresh token đã hết hạn, cần đăng nhập lại
+              try {
+                localStorage.removeItem("auth-store");
+                enqueueSnackbar("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
+                  variant: "warning",
+                  autoHideDuration: 5000,
+                });
+                // Delay redirect một chút để user thấy toast
+                setTimeout(() => {
+                  if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+                    window.location.href = "/login";
+                  }
+                }, 500);
+              } catch (e) {
+                console.warn("Lỗi khi xử lý logout sau refresh fail:", e);
+              }
             }
           }
         }
       } catch (e) {
         // Nếu có lỗi trong quá trình refresh, tiếp tục xử lý 401 như bình thường
         // nhưng log nhẹ để debug nếu cần
-        console.warn("Lỗi khi refresh token:", e);
+        console.warn("❌ Lỗi khi refresh token:", e);
       }
     }
 
@@ -178,13 +222,13 @@ export const httpClient = async <T>(
       try {
         const raw = localStorage.getItem("auth-store");
         const hasValidTokens = raw && JSON.parse(raw)?.state?.tokens?.refreshToken;
-        
+
         // Chỉ logout nếu không có refresh token hoặc refresh token đã fail ở trên
         // Tránh logout khi đang trong quá trình hot reload hoặc component mount
         if (!hasValidTokens) {
           // Xóa thông tin auth đã persist
           localStorage.removeItem("auth-store");
-          
+
           // Nếu không đang ở trang login thì redirect về /login
           if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
             // Sử dụng setTimeout để tránh conflict với React rendering

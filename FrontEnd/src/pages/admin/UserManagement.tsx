@@ -49,6 +49,7 @@ import {
   Twitter,
   YouTube,
 } from "@mui/icons-material";
+import { useSnackbar } from "notistack";
 import { useAuthStore } from "../../store/authStore";
 import { adminUserService } from "../../service/adminUserService";
 
@@ -76,6 +77,7 @@ interface User {
 const UserManagement = () => {
   const theme = useTheme();
   const { tokens } = useAuthStore();
+  const { enqueueSnackbar } = useSnackbar();
   const [users, setUsers] = useState<User[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<"USERS" | "INSTRUCTORS">("USERS");
@@ -142,6 +144,9 @@ const UserManagement = () => {
         setUsers(mappedUsers);
         setTotalPages(pageResult.pagination?.totalPages || 1);
       } catch (error) {
+        enqueueSnackbar("Không thể tải danh sách người dùng", {
+          variant: "error",
+        });
         console.error("Không thể tải danh sách người dùng:", error);
       }
     };
@@ -244,7 +249,13 @@ const UserManagement = () => {
       setEditingUser((prev) =>
         prev ? { ...prev, avatar: updatedUser.avatarUrl } : prev,
       );
+      enqueueSnackbar("Cập nhật avatar thành công", {
+        variant: "success",
+      });
     } catch (error) {
+      enqueueSnackbar("Cập nhật avatar thất bại", {
+        variant: "error",
+      });
       console.error("Cập nhật avatar người dùng thất bại:", error);
     } finally {
       setAvatarUploading(false);

@@ -4,6 +4,7 @@ import org.example.elearning.dto.request.UserCreateRequest;
 import org.example.elearning.dto.request.UpdateProfileRequest;
 import org.example.elearning.dto.request.UserUpdateRequest;
 import org.example.elearning.dto.response.UserResponse;
+import org.example.elearning.entity.RoleEntity;
 import org.example.elearning.entity.UserEntity;
 import org.mapstruct.*;
 import org.mapstruct.ReportingPolicy;
@@ -21,7 +22,6 @@ public interface UserMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(@MappingTarget UserEntity userEntity, UpdateProfileRequest updateProfileRequest);
 
-    @Mapping(target = "updatedAt", source = "updated_At")
     @Mapping(target = "roles", expression = "java(mapRoles(userEntity))")
     UserResponse toEntityDTO(UserEntity userEntity);
 
@@ -34,7 +34,7 @@ public interface UserMapper {
         }
         return userEntity.getRoles()
                 .stream()
-                .map(role -> role.getRoleName())
+                .map(RoleEntity::getRoleName)
                 .toList();
     }
 }

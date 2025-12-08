@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { SnackbarProvider } from "notistack";
 import theme from "./configs/muiConfig";
 import router from "./routes";
 import "./index.css";
@@ -15,7 +16,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <RouterProvider router={router} />
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          autoHideDuration={3000}
+        >
+          <RouterProvider router={router} />
+        </SnackbarProvider>
       </ThemeProvider>
     </GoogleOAuthProvider>
   </React.StrictMode>,

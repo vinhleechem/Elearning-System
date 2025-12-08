@@ -309,7 +309,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (!StringUtils.hasText(facebookClientId)
                 || !StringUtils.hasText(facebookClientSecret)
                 || !StringUtils.hasText(facebookRedirectUri)) {
-            throw new IllegalStateException("Facebook OAuth configuration is missing");
+            throw new IllegalStateException(ErrorCode.FACEBOOK_CONFIG_MISSING.getMessage());
         }
     }
 }

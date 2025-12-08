@@ -7,6 +7,7 @@ import org.example.elearning.dto.request.UpdateInstructorProfileRequest;
 import org.example.elearning.dto.response.InstructorResponse;
 import org.example.elearning.entity.InstructorEntity;
 import org.example.elearning.entity.UserEntity;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.InstructorRepository;
@@ -26,7 +27,7 @@ public class InstructorServiceImpl implements InstructorService {
     @Override
     public InstructorResponse getInstructorById(Long instructorId) {
         InstructorEntity instructor = instructorRepository.findById(instructorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giảng viên"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
         return mapToInstructorResponse(instructor);
     }
@@ -37,7 +38,7 @@ public class InstructorServiceImpl implements InstructorService {
         UserEntity user = getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
-                .orElseThrow(() -> new BusinessException("Bạn chưa đăng ký làm giảng viên"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage()));
 
         return mapToInstructorResponse(instructor);
     }
@@ -49,7 +50,7 @@ public class InstructorServiceImpl implements InstructorService {
         UserEntity user = getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
-                .orElseThrow(() -> new BusinessException("Bạn chưa đăng ký làm giảng viên"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage()));
 
         if (request.getHeadline() != null) {
             instructor.setHeadline(request.getHeadline());
@@ -83,7 +84,7 @@ public class InstructorServiceImpl implements InstructorService {
 
         // Kiểm tra đã là instructor chưa
         if (instructorRepository.existsByUser(user)) {
-            throw new BusinessException("Bạn đã là giảng viên rồi");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
         }
 
         InstructorEntity instructor = InstructorEntity.builder()
@@ -99,7 +100,7 @@ public class InstructorServiceImpl implements InstructorService {
 
     private UserEntity getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
 
     private InstructorResponse mapToInstructorResponse(InstructorEntity instructor) {

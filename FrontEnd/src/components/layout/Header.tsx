@@ -19,15 +19,20 @@ import {
   Divider,
   IconButton,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { leftPages } from "../../libs/constants";
 import type { HeaderProps } from "../../types/header";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { CartItemProps } from "../../types/cartItem";
 import MegaMenu from "./MegaMenu";
-import { megaMenuPrimaryTitle, megaMenuTopics } from "../../data/megaMenu";
+import { megaMenuPrimaryTitle } from "../../data/megaMenu";
+import type { MegaMenuTopic } from "../../data/megaMenu";
+import { useWishlistStore } from "../../store/wishlistStore";
 import { useAuthStore } from "../../store/authStore";
+import { useCartStore } from "../../store/cartStore";
 import CartDropdown from "../cart/CartDropdown";
+import { categoryService } from "../../service/categoryService";
+import type { CategoryTreeResponse } from "../../service/categoryService";
 
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
@@ -36,6 +41,9 @@ const Header: React.FC<HeaderProps> = ({
   checkoutMode = false,
 }) => {
   const { user, logout } = useAuthStore();
+  const { items: cartItemsResponse, fetchCart } = useCartStore();
+  const { fetchWishlist } = useWishlistStore();
+  const navigate = useNavigate();
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
     null,
   );
@@ -45,34 +53,27 @@ const Header: React.FC<HeaderProps> = ({
 
   const [isMegaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isCartPinned, setCartPinned] = useState(false);
+  const [megaMenuTopics, setMegaMenuTopics] = useState<MegaMenuTopic[]>([]);
 
-  const cartItems: CartItemProps[] = [
-    {
-      id: 1,
-      title: "Thành Thạo Docker Từ Cơ Bản Đến Nâng Cao",
-      author: "Nguyễn Văn A",
-      reviews: 150,
-      rating: 4.5,
-      price: 779000,
-      oldPrice: 1000000,
-      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
-      tag: "AI",
-      duration: 10,
-      lesson: 50,
-    },
-    {
-      id: 2,
-      title: "React Advanced Patterns",
-      author: "John Doe",
-      reviews: 200,
-      rating: 4.8,
-      price: 899000,
-      image: "https://img-c.udemycdn.com/course/240x135/1565838_e54e_16.jpg",
-      duration: 12,
-      lesson: 60,
-    },
-  ];
+  useEffect(() => {
+    if (user) {
+      fetchCart();
+      fetchWishlist();
+    }
+  }, [user]);
+
+  const cartItems: CartItemProps[] = cartItemsResponse.map((item) => ({
+    id: item.courseId,
+    title: item.courseTitle,
+    author: "Giảng viên", // Placeholder
+    reviews: 0, // Placeholder
+    rating: 0, // Placeholder
+    price: item.discountPrice ?? item.price,
+    oldPrice: item.discountPrice ? item.price : null,
+    image: item.courseImage,
+    duration: 0, // Placeholder
+    lesson: 0, // Placeholder
+  }));
 
   const handleCartMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (cartTimeoutRef.current) {
@@ -103,18 +104,8 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleCartIconClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (cartTimeoutRef.current) {
-      clearTimeout(cartTimeoutRef.current);
-      cartTimeoutRef.current = null;
-    }
-
-    if (isCartPinned) {
-      handleCartClose();
-      return;
-    }
-
-    setCartPinned(true);
-    setCartAnchorEl(event.currentTarget);
+    handleCartClose();
+    navigate("/cart");
   };
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -134,6 +125,86 @@ const Header: React.FC<HeaderProps> = ({
       // Vẫn đóng menu và clear state đã được xử lý trong store
       handleUserMenuClose();
     }
+  };
+
+  // Load categories and transform to MegaMenu format
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await categoryService.getCategoryTree();
+        const topics = transformCategoriesToMegaMenu(categories);
+        setMegaMenuTopics(topics);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const transformCategoriesToMegaMenu = (
+    categories: CategoryTreeResponse[]
+  ): MegaMenuTopic[] => {
+    // Helper: chunk an array into smaller arrays of size n
+    const chunk = <T,>(arr: T[], size: number): T[][] => {
+      const res: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) {
+        res.push(arr.slice(i, i + size));
+      }
+      return res;
+    };
+
+    return categories
+      .filter((cat) => cat.level === 1 && cat.isActive)
+      .map((level1) => {
+        // Level 2 categories become columns
+        const level2Cats =
+          level1.children?.filter((cat) => cat.isActive) || [];
+
+        // Build columns: each level2 is a column, items are level3 (or itself if no level3)
+        const columns = level2Cats.map((level2) => {
+          const level3Items =
+            level2.children
+              ?.filter((cat) => cat.isActive)
+              .map((level3) => level3.name) || [];
+
+          const items = level3Items.length > 0 ? level3Items : [level2.name];
+
+          return {
+            title: level2.name,
+            items,
+          };
+        });
+
+        // If no level2 exists, fallback
+        if (columns.length === 0) {
+          return {
+            label: level1.name,
+            columns: [
+              {
+                title: "Khóa học",
+                items: ["Đang cập nhật..."],
+              },
+            ],
+          };
+        }
+
+        // Udemy style: split too-long columns into multiple columns of ~8 items
+        const normalizedColumns: typeof columns = [];
+        columns.forEach((col) => {
+          const chunks = chunk(col.items, 8);
+          chunks.forEach((items, idx) => {
+            normalizedColumns.push({
+              title: idx === 0 ? col.title : `${col.title} (${idx + 1})`,
+              items,
+            });
+          });
+        });
+
+        return {
+          label: level1.name,
+          columns: normalizedColumns,
+        };
+      });
   };
 
   const Search = styled("div")(({ theme }) => ({
@@ -168,7 +239,7 @@ const Header: React.FC<HeaderProps> = ({
       position="static"
       color="secondary"
       elevation={0}
-      sx={{ px: { xs: 2, md: 5 }, mb: 2, borderBottom: "1px solid #e5e5e5" }}
+      sx={{ px: { xs: 2, md: 5 }, borderBottom: "1px solid #e5e5e5" }}
     >
       <Toolbar disableGutters>
         <Typography
@@ -309,7 +380,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <Button
               component={Link}
-              to="/teaching"
+              to="/instructor/dashboard"
               color="inherit"
               sx={{
                 my: 2,
@@ -358,6 +429,7 @@ const Header: React.FC<HeaderProps> = ({
               sx={{ mx: 0.5 }}
               aria-label="Giỏ hàng"
               onMouseEnter={handleCartMouseEnter}
+              onMouseLeave={handleCartMouseLeave}
               onClick={handleCartIconClick}
             >
               <Badge

@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -31,13 +31,8 @@ public class CartEntity extends BaseEntity {
     UserEntity user;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "cart_items",
-            joinColumns = @JoinColumn(name = "cart_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id")
-    )
+    @JoinTable(name = "cart_items", joinColumns = @JoinColumn(name = "cart_id"), inverseJoinColumns = @JoinColumn(name = "course_id"))
+    @OrderColumn(name = "display_order")
     @Builder.Default
-    Set<CourseEntity> courses = new HashSet<>();
+    List<CourseEntity> courses = new ArrayList<>();
 }
-
-

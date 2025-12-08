@@ -10,6 +10,7 @@ import {
   Group,
   School,
   Notifications,
+  Category,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -34,6 +35,11 @@ const navItems: NavItem[] = [
     icon: <School />,
     name: "Quản lý khóa học",
     path: "/admin/courses",
+  },
+  {
+    icon: <Category />,
+    name: "Quản lý danh mục",
+    path: "/admin/categories",
   },
   {
     icon: <Notifications />,

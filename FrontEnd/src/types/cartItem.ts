@@ -10,4 +10,5 @@ export interface CartItemProps {
   tag?: string;
   duration: number;
   lesson: number;
+  onRemove?: () => void;
 }

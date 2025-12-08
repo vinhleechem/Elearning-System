@@ -7,7 +7,7 @@ const CheckoutPage = () => {
   return (
     <div>
       <Container maxWidth="lg">
-        <div className="flex h-screen">
+        <div className="flex min-h-screen">
           <div className="flex-[2] p-6">
             <PaymentPanel />
             <CheckoutItemList />

@@ -43,13 +43,13 @@ const sidebarItems: {
   hasDot?: boolean;
   section?: "COURSES" | "PROFILE";
 }[] = [
-  { label: "Khóa học", icon: <PlayCircleOutline />, section: "COURSES" },
-  { label: "Giao tiếp", icon: <ForumOutlined />, hasDot: true, section: "COURSES" },
-  { label: "Hiệu suất", icon: <EqualizerOutlined />, section: "COURSES" },
-  { label: "Công cụ", icon: <BuildOutlined />, section: "COURSES" },
-  { label: "Tài nguyên", icon: <HelpOutlineOutlined />, section: "COURSES" },
-  { label: "Hồ sơ", icon: <PersonOutline />, section: "PROFILE" },
-];
+    { label: "Khóa học", icon: <PlayCircleOutline />, section: "COURSES" },
+    { label: "Giao tiếp", icon: <ForumOutlined />, hasDot: true, section: "COURSES" },
+    { label: "Hiệu suất", icon: <EqualizerOutlined />, section: "COURSES" },
+    { label: "Công cụ", icon: <BuildOutlined />, section: "COURSES" },
+    { label: "Tài nguyên", icon: <HelpOutlineOutlined />, section: "COURSES" },
+    { label: "Hồ sơ", icon: <PersonOutline />, section: "PROFILE" },
+  ];
 
 const courseDrafts = [
   {
@@ -71,8 +71,10 @@ const courseDrafts = [
 ];
 
 import { userService } from "../../service/userService";
+import { useSnackbar } from "notistack";
 
 const InstructorDashboardPage = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">(
     "COURSES",
@@ -119,6 +121,9 @@ const InstructorDashboardPage = () => {
           youtube: data.youtube ?? "",
         });
       } catch (error) {
+        enqueueSnackbar("Không thể tải hồ sơ giảng viên", {
+          variant: "error",
+        });
         console.error("Không thể tải hồ sơ giảng viên:", error);
       } finally {
         setProfileLoading(false);
@@ -139,7 +144,13 @@ const InstructorDashboardPage = () => {
         profileForm,
       );
       setProfile(updated);
+      enqueueSnackbar("Cập nhật hồ sơ thành công", {
+        variant: "success",
+      });
     } catch (error) {
+      enqueueSnackbar("Không thể cập nhật hồ sơ giảng viên", {
+        variant: "error",
+      });
       console.error("Không thể cập nhật hồ sơ giảng viên:", error);
     } finally {
       setProfileSaving(false);
@@ -165,7 +176,13 @@ const InstructorDashboardPage = () => {
         file,
       );
       setUser(updatedUser);
+      enqueueSnackbar("Cập nhật ảnh đại diện thành công", {
+        variant: "success",
+      });
     } catch (error) {
+      enqueueSnackbar("Upload avatar thất bại", {
+        variant: "error",
+      });
       console.error("Upload avatar thất bại:", error);
     } finally {
       setAvatarUploading(false);
@@ -299,7 +316,7 @@ const InstructorDashboardPage = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                sx={{ textTransform: "none", bgcolor: "#a435f0" }}
+                sx={{ textTransform: "none", bgcolor: "#3b82f6" }}
               >
                 Khóa học mới
               </Button>
@@ -646,7 +663,7 @@ const InstructorDashboardPage = () => {
                   <Button
                     variant="contained"
                     sx={{ textTransform: "none" }}
-                    // Hiện tại chỉ lưu local state, chưa gọi API riêng.
+                  // Hiện tại chỉ lưu local state, chưa gọi API riêng.
                   >
                     Lưu
                   </Button>

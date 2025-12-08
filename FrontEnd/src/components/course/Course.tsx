@@ -16,20 +16,21 @@ import { formatCurrency } from "../../libs/utils";
 import CourseDetailPanel from "./CourseDetailPanel";
 
 const Course: React.FC<CourseProps> = ({
-                                         title,
-                                         teacher,
-                                         rating,
-                                         reviews,
-                                         price,
-                                         oldPrice,
-                                         image,
-                                         tag,
-                                         description,
-                                         totalHours,
-                                         level,
-                                         updatedAt,
-                                         learningPoints,
-                                       }) => {
+  id,
+  title,
+  teacher,
+  rating,
+  reviews,
+  price,
+  oldPrice,
+  image,
+  tag,
+  description,
+  totalHours,
+  level,
+  updatedAt,
+  learningPoints,
+}) => {
   const [ratingValue] = useState<number | null>(rating);
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
@@ -212,6 +213,7 @@ const Course: React.FC<CourseProps> = ({
       {showPanel &&
         createPortal(
           <CourseDetailPanel
+            id={id}
             title={title}
             tag={tag}
             description={description}
