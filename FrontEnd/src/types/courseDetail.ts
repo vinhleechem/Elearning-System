@@ -40,6 +40,7 @@ export interface ReviewsSummary {
 }
 
 export interface CourseDetail {
+  id: number;
   slug: string;
   title: string;
   subtitle?: string;

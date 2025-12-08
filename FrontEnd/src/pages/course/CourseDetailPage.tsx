@@ -1,5 +1,7 @@
 import { Container, Box } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { courseService } from "../../service/courseService";
 import CourseHero from "../../components/courseDetail/CourseHero";
 import WhatYouWillLearn from "../../components/courseDetail/WhatYouWillLearn";
 import Curriculum from "../../components/courseDetail/Curriculum";
@@ -137,11 +139,59 @@ const mockData: CourseDetail = {
 };
 
 const CourseDetailPage = () => {
+  const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<CourseDetail | null>(null);
 
   useEffect(() => {
-    setData(mockData);
-  }, []);
+    const fetchCourse = async () => {
+      if (!slug) return;
+      try {
+        const course = await courseService.getCourseBySlug(slug);
+
+        // Map API response to CourseDetail
+        const mappedData: CourseDetail = {
+          id: course.courseId,
+          slug: course.slug,
+          title: course.title,
+          subtitle: course.shortDescription,
+          badges: course.tags || [],
+          categoryPath: [], // API doesn't return this yet
+          rating: course.averageRating || 0,
+          students: course.totalStudents || 0,
+          lastUpdated: course.publishedAt ? new Date(course.publishedAt).toLocaleDateString() : "",
+          language: course.language || "Tiếng Việt",
+          captions: [],
+          whatYouWillLearn: course.whatYouLearn ? course.whatYouLearn.split("\n") : [],
+          sections: mockData.sections, // Use mock sections for now
+          requirements: course.requirements ? course.requirements.split("\n") : [],
+          descriptionHtml: course.description,
+          instructor: {
+            name: course.instructorName || "Unknown Instructor",
+            title: "Instructor",
+            avatarUrl: "/public/user/user-01.jpg", // Placeholder
+          },
+          previewUrl: course.previewVideoUrl,
+          price: course.price || 0,
+          oldPrice: course.discountPrice,
+          isPurchasable: course.status === "PUBLISHED",
+          reviewsSummary: {
+            average: course.averageRating || 0,
+            count: course.totalReviews || 0,
+            distribution: [0, 0, 0, 0, 0],
+          },
+          reviews: mockData.reviews, // Use mock reviews for now
+          related: mockData.related, // Use mock related for now
+        };
+        setData(mappedData);
+      } catch (error) {
+        console.error("Failed to fetch course", error);
+        // Fallback to mock data if fetch fails (optional, or just show error)
+        // setData(mockData); 
+      }
+    };
+
+    fetchCourse();
+  }, [slug]);
 
   if (!data) return <Container maxWidth="xl">Loading…</Container>;
 
@@ -181,6 +231,7 @@ const CourseDetailPage = () => {
             }}
           >
             <PurchaseSidebar
+              courseId={data.id}
               price={data.price}
               oldPrice={data.oldPrice}
               ctaDisabled={!data.isPurchasable}
@@ -205,6 +256,7 @@ const CourseDetailPage = () => {
       {/* Mobile PurchaseSidebar */}
       <Box sx={{ display: { xs: "block", md: "none" }, p: 2 }}>
         <PurchaseSidebar
+          courseId={data.id}
           price={data.price}
           oldPrice={data.oldPrice}
           ctaDisabled={!data.isPurchasable}

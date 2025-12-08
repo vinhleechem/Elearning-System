@@ -34,7 +34,7 @@ public class CartServiceImpl implements CartService {
         EnrollmentRepository enrollmentRepository;
 
         @Override
-        @Transactional(readOnly = true)
+        @Transactional(readOnly = false)
         public CartResponse getMyCart() {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
                 UserEntity user = getUserByEmail(email);

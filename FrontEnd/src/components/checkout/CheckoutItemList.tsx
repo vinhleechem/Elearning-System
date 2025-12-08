@@ -1,31 +1,30 @@
+import { useEffect } from "react";
+import { useCartStore } from "../../store/cartStore";
 import CheckoutItem from "./CheckoutItem";
 
 const CheckoutItemList = () => {
+  const { items, fetchCart } = useCartStore();
+
+  useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
+
   return (
     <>
       <p className="py-3">
-        <span className="font-bold">Thông tin đặt hàng</span> (6 khóa học)
+        <span className="font-bold">Thông tin đặt hàng</span> ({items.length} khóa học)
       </p>
       <div>
-        <CheckoutItem
-          id={1}
-          price={100000}
-          oldPrice={10000}
-          image="https://img-c.udemycdn.com/course/100x100/1360780_1421_6.jpg"
-          title="Practice Java by Building Projects"
-        />
-        <CheckoutItem
-          id={1}
-          price={100000}
-          image="https://img-c.udemycdn.com/course/100x100/1360780_1421_6.jpg"
-          title="Practice Java by Building Projects"
-        />
-        <CheckoutItem
-          id={1}
-          price={100000}
-          image="https://img-c.udemycdn.com/course/100x100/1360780_1421_6.jpg"
-          title="Practice Java by Building Projects"
-        />
+        {items.map((item) => (
+          <CheckoutItem
+            key={item.courseId}
+            id={item.courseId}
+            price={item.discountPrice ?? item.price}
+            oldPrice={item.discountPrice ? item.price : undefined}
+            image={item.courseImage}
+            title={item.courseTitle}
+          />
+        ))}
       </div>
     </>
   );

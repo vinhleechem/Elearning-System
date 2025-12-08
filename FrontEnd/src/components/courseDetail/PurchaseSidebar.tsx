@@ -12,8 +12,15 @@ import {
 import type { SxProps, Theme } from "@mui/material";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import CheckIcon from "@mui/icons-material/Check";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import { IconButton } from "@mui/material";
+import { useWishlistStore } from "../../store/wishlistStore";
+import { useAuthStore } from "../../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
+  courseId: number;
   price: number;
   oldPrice?: number | null;
   ctaDisabled?: boolean;
@@ -26,11 +33,29 @@ const formatCurrency = (num: number) =>
   );
 
 const PurchaseSidebar: React.FC<Props> = ({
+  courseId,
   price,
   oldPrice,
   ctaDisabled,
   sx,
 }) => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlistStore();
+  const inWishlist = isInWishlist(courseId);
+
+  const handleWishlistClick = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (inWishlist) {
+      await removeFromWishlist(courseId);
+    } else {
+      await addToWishlist(courseId);
+    }
+  };
+
   // reference oldPrice in a no-op to avoid any false-positive unused-var linting
   void oldPrice;
   return (
@@ -144,6 +169,23 @@ const PurchaseSidebar: React.FC<Props> = ({
         >
           Mua ngay
         </Button>
+
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <IconButton
+            onClick={handleWishlistClick}
+            sx={{
+              border: "1px solid",
+              borderColor: inWishlist ? "error.main" : "divider",
+              color: inWishlist ? "error.main" : "text.secondary",
+              "&:hover": {
+                borderColor: "error.dark",
+                color: "error.dark",
+              }
+            }}
+          >
+            {inWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
+        </Box>
 
         <Typography
           variant="caption"

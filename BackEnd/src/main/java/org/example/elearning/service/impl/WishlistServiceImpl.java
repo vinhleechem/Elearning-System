@@ -30,6 +30,7 @@ public class WishlistServiceImpl implements WishlistService {
     UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<WishlistResponse> getMyWishlist() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);

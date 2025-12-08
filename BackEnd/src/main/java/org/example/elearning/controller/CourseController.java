@@ -114,6 +114,7 @@ public class CourseController {
     @Operation(summary = "Xóa khóa học")
     @ApiResponse(responseCode = "200", description = "Xóa thành công")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public ResponseEntity<StandardResponse<String>> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.ok(success("Xóa khóa học thành công"));

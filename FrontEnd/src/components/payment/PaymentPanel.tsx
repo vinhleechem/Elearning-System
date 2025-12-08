@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 type PaymentMethod = "momo" | "vnpay" | "vietqr" | "payos";
 
@@ -27,6 +28,22 @@ const paymentMethods = [
 
 const PaymentPanel = () => {
   const [selected, setSelected] = useState<PaymentMethod>("momo");
+  const [countries, setCountries] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await axios.get("https://restcountries.com/v3.1/all?fields=name,flags");
+        const sortedCountries = response.data.sort((a: any, b: any) =>
+          a.name.common.localeCompare(b.name.common)
+        );
+        setCountries(sortedCountries);
+      } catch (error) {
+        console.error("Failed to fetch countries", error);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   return (
     <div className="flex-[2] rounded-lg">
@@ -37,7 +54,12 @@ const PaymentPanel = () => {
         </label>
         <p className="block py-1 text-lg font-bold text-gray-700">Quốc gia</p>
         <select className="mt-1 block w-full rounded border p-2">
-          <option>Việt Nam</option>
+          <option value="Vietnam">Vietnam</option>
+          {countries.map((country) => (
+            <option key={country.name.common} value={country.name.common}>
+              {country.name.common}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -70,8 +92,8 @@ const PaymentPanel = () => {
             <label
               key={method.id}
               className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selected === method.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 hover:border-gray-400"
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-300 hover:border-gray-400"
                 }`}
             >
               <input

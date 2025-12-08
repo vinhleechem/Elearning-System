@@ -19,6 +19,11 @@ export interface PublicCourseResponse {
   slug: string;
   shortDescription?: string;
   description?: string;
+  whatYouLearn?: string;
+  requirements?: string;
+  targetAudience?: string;
+  previewVideoUrl?: string;
+  language?: string;
   level?: string;
   status: "DRAFT" | "PUBLISHED" | "ACHIEVED";
   price?: number;
@@ -29,6 +34,8 @@ export interface PublicCourseResponse {
   totalReviews?: number;
   publishedAt?: string;
   totalDurationMinutes?: number;
+  totalLectures?: number;
+  tags?: string[];
 }
 
 export const courseService = {
@@ -55,6 +62,16 @@ export const courseService = {
       throw new Error(response.message || "Không lấy được danh sách khóa học");
     }
 
+    return response.data;
+  },
+
+  getCourseBySlug: async (slug: string): Promise<PublicCourseResponse> => {
+    const response = await httpClient<PublicCourseResponse>(`/courses/${slug}`, {
+      method: "GET",
+    });
+    if (!response.data) {
+      throw new Error(response.message || "Không tìm thấy khóa học");
+    }
     return response.data;
   },
 };
