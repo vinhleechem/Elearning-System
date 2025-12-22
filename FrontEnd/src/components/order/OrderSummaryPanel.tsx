@@ -1,22 +1,38 @@
 import { Lock } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
 
-const OrderSummaryPanel = () => {
+interface OrderSummaryPanelProps {
+  onCheckout: () => void;
+  totalAmount: number;
+  discountAmount?: number;
+  finalAmount: number;
+  loading?: boolean;
+}
+
+const OrderSummaryPanel = ({
+  onCheckout,
+  totalAmount,
+  discountAmount = 0,
+  finalAmount,
+  loading = false
+}: OrderSummaryPanelProps) => {
+  const discountPercent = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100) : 0;
+
   return (
     <div className="mt-10 flex-[1] p-6">
       <h1 className="mb-4 text-2xl font-bold">Tóm tắt đơn hàng</h1>
       <div className="mb-7 space-y-4">
         <p>
-          Giá gốc: <span className="float-right">8,834,000 đ</span>
+          Giá gốc: <span className="float-right">{totalAmount.toLocaleString()} đ</span>
         </p>
         <p>
-          Chiết khấu (Giảm 76%):{" "}
-          <span className="float-right">-6,720,000 đ</span>
+          Chiết khấu (Giảm {discountPercent}%):{" "}
+          <span className="float-right">-{discountAmount.toLocaleString()} đ</span>
         </p>
         <Divider className="!my-2" />
         <p>
-          <span className="font-bold">Tổng tiền</span> (6 khóa học)
-          <span className="float-right font-bold">2,114,000 đ</span>
+          <span className="font-bold">Tổng tiền</span>
+          <span className="float-right font-bold">{finalAmount.toLocaleString()} đ</span>
         </p>
       </div>
       <p className="text-[14px]">
@@ -26,6 +42,8 @@ const OrderSummaryPanel = () => {
       <Button
         startIcon={<Lock />}
         variant="contained"
+        onClick={onCheckout}
+        disabled={loading}
         sx={{
           textTransform: "none",
           fontWeight: "bold",
@@ -35,7 +53,7 @@ const OrderSummaryPanel = () => {
         }}
         className="!my-4 w-full"
       >
-        Hoàn tất thanh toán
+        {loading ? "Đang xử lý..." : "Hoàn tất thanh toán"}
       </Button>
 
       <div className="text-center text-sm text-gray-500">

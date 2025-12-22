@@ -66,6 +66,9 @@ public enum ErrorCode {
     ORDER_UNAUTHORIZED("Bạn không có quyền truy cập đơn hàng này", HttpStatus.FORBIDDEN.value()),
     ORDER_CANNOT_CANCEL("Bạn không có quyền hủy đơn hàng này", HttpStatus.FORBIDDEN.value()),
 
+    // Payment errors
+    PAYMENT_NOT_FOUND("Không tìm thấy thông tin thanh toán", HttpStatus.NOT_FOUND.value()),
+
     // Config errors
     FACEBOOK_CONFIG_MISSING("Facebook OAuth configuration is missing", HttpStatus.INTERNAL_SERVER_ERROR.value());
 

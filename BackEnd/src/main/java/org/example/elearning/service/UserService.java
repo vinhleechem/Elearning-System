@@ -22,6 +22,8 @@ public interface UserService {
 
     UserEntity getActiveUser(String email);
 
+    UserEntity getCurrentUser();
+
     // Admin APIs
     UserResponse createUser(UserCreateRequest userRequest);
 
@@ -55,4 +57,3 @@ public interface UserService {
     // Admin update avatar for specific user
     UserResponse updateUserAvatar(Long id, MultipartFile file);
 }
-

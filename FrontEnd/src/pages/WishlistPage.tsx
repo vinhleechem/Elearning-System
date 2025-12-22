@@ -27,8 +27,8 @@ const WishlistPage = () => {
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    if (newValue === 0) navigate("/my-learning");
-    else if (newValue === 1) navigate("/my-learning");
+    if (newValue === 0) navigate("/my-courses/learning");
+    else if (newValue === 1) navigate("/my-courses/learning");
     // Tab 2 là wishlist - đang ở đây rồi
   };
 

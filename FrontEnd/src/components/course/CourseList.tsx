@@ -4,11 +4,30 @@ import Course from "./Course";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import { courseService, type PublicCourseResponse } from "../../service/courseService";
+import { useAuthStore } from "../../store/authStore";
+import { httpClient } from "../../service/httpClient";
 
 const CourseList = () => {
   const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthStore();
+  const [purchasedIds, setPurchasedIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const fetchEnrollments = async () => {
+      if (!user) return;
+      try {
+        const res = await httpClient<{ courseId: number }[]>("/enrollments");
+        if (res.data) {
+          setPurchasedIds(new Set(res.data.map((item) => item.courseId)));
+        }
+      } catch (error) {
+        console.error("Failed to fetch enrollments for status check", error);
+      }
+    };
+    void fetchEnrollments();
+  }, [user]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -54,9 +73,10 @@ const CourseList = () => {
         level: c.level,
         updatedAt: c.publishedAt ?? undefined,
         slug: c.slug,
+        isPurchased: purchasedIds.has(c.courseId),
       };
     });
-  }, [courses]);
+  }, [courses, purchasedIds]);
 
   return (
     <div>
@@ -104,7 +124,9 @@ const CourseList = () => {
                   totalHours={course.totalHours}
                   level={course.level}
                   updatedAt={course.updatedAt}
+                  updatedAt={course.updatedAt}
                   slug={course.slug}
+                  isPurchased={course.isPurchased}
                 />
               </div>
             </SwiperSlide>

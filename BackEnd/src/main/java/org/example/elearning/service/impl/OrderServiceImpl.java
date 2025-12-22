@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,17 +58,45 @@ public class OrderServiceImpl implements OrderService {
 
         // Tính tổng tiền
         BigDecimal totalAmount = BigDecimal.ZERO;
-        List<OrderItemEntity> orderItems = new ArrayList<>();
-
         for (CourseEntity course : courses) {
             BigDecimal price = course.getPrice();
             BigDecimal discountPrice = course.getDiscountPrice();
             BigDecimal finalPrice = discountPrice != null ? discountPrice : price;
-
             totalAmount = totalAmount.add(finalPrice);
         }
 
-        // Tạo order
+        // --- CHECK REUSE: Check for reusable PENDING order ---
+        List<OrderEntity> oldPendingOrders = orderRepository.findByUserAndStatus(user, OrderStatus.PENDING);
+        Set<Long> requestCourseIds = new HashSet<>(request.getCourseIds());
+
+        for (OrderEntity oldOrder : oldPendingOrders) {
+            List<OrderItemEntity> oldItems = orderItemRepository.findByOrder(oldOrder);
+            Set<Long> oldCourseIds = oldItems.stream()
+                    .map(item -> item.getCourse().getCourseId())
+                    .collect(Collectors.toSet());
+
+            if (oldCourseIds.equals(requestCourseIds)) {
+                // Found reusable order. Cancel all OTHERS.
+                for (OrderEntity other : oldPendingOrders) {
+                    if (!other.getOrderId().equals(oldOrder.getOrderId())) {
+                        other.setStatus(OrderStatus.CANCELLED);
+                        orderRepository.save(other);
+                    }
+                }
+                return mapToOrderResponse(oldOrder, oldItems);
+            }
+        }
+
+        // If no reusable order found, cancel ALL old pending orders
+        if (!oldPendingOrders.isEmpty()) {
+            for (OrderEntity oldOrder : oldPendingOrders) {
+                oldOrder.setStatus(OrderStatus.CANCELLED);
+            }
+            orderRepository.saveAll(oldPendingOrders);
+        }
+        // -----------------------------------------------------------------------------
+
+        // Tạo order mới
         OrderEntity order = OrderEntity.builder()
                 .user(user)
                 .totalAmount(totalAmount)
@@ -78,6 +108,7 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);
 
         // Tạo order items
+        List<OrderItemEntity> orderItems = new ArrayList<>();
         for (CourseEntity course : courses) {
             BigDecimal price = course.getPrice();
             BigDecimal discountPrice = course.getDiscountPrice();

@@ -12,8 +12,8 @@ import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.EnrollmentRepository;
-import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.EnrollmentService;
+import org.example.elearning.service.UserService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,13 +26,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EnrollmentServiceImpl implements EnrollmentService {
     EnrollmentRepository enrollmentRepository;
-    UserRepository userRepository;
+    UserService userService;
     CourseRepository courseRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getMyEnrollments() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getCurrentUser();
 
         List<EnrollmentEntity> enrollments = enrollmentRepository.findByUser(user);
 
@@ -42,9 +42,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EnrollmentResponse getEnrollmentDetail(Long enrollmentId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getCurrentUser();
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
@@ -59,8 +59,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional
     public void updateProgress(Long enrollmentId, Float progress) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getCurrentUser();
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
@@ -79,8 +78,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public boolean isEnrolled(Long courseId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getCurrentUser();
 
         CourseEntity course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
@@ -88,9 +86,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollmentRepository.existsByUserAndCourse(user, course);
     }
 
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    @Override
+    @Transactional
+    public void createEnrollment(UserEntity user, CourseEntity course) {
+        if (!enrollmentRepository.existsByUserAndCourse(user, course)) {
+            EnrollmentEntity enrollment = EnrollmentEntity.builder()
+                    .user(user)
+                    .course(course)
+                    .enrolledAt(java.time.LocalDateTime.now())
+                    .progress(0f)
+                    .build();
+            enrollmentRepository.save(enrollment);
+        }
     }
 
     private EnrollmentResponse mapToEnrollmentResponse(EnrollmentEntity enrollment) {
@@ -107,6 +114,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .enrolledAt(enrollment.getEnrolledAt())
                 .totalLessons(0) // TODO: Calculate from course sections
                 .completedLessons(0) // TODO: Calculate from user progress
+                .slug(course.getSlug())
                 .build();
     }
 }

@@ -43,3 +43,13 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
+
+payment:
+  vnPay:
+    url: ${VNPAY_URL}
+    tmn-code: ${VNPAY_TMN_CODE}
+    secret-key: ${VNPAY_SECRET_KEY}
+    return-url: ${VNPAY_RETURN_URL}
+    version: 2.1.0
+    command: pay
+    order-type: other

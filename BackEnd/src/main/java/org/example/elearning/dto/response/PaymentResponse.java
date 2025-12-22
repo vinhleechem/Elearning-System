@@ -20,5 +20,10 @@ public class PaymentResponse {
     private String method;
     private PaymentStatus status;
     private LocalDateTime createdAt;
-}
 
+    // Additional fields for VNPay flow
+    private String code;
+    private String message;
+    private String paymentUrl;
+    private String redirectUrl;
+}

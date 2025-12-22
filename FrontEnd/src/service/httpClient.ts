@@ -22,6 +22,8 @@ import { enqueueSnackbar } from "notistack";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
+let isSessionExpiredNotified = false;
+
 export const httpClient = async <T>(
   path: string,
   options: RequestInit = {},
@@ -187,10 +189,13 @@ export const httpClient = async <T>(
               // Refresh token đã hết hạn, cần đăng nhập lại
               try {
                 localStorage.removeItem("auth-store");
-                enqueueSnackbar("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
-                  variant: "warning",
-                  autoHideDuration: 5000,
-                });
+                if (!isSessionExpiredNotified) {
+                  isSessionExpiredNotified = true;
+                  enqueueSnackbar("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
+                    variant: "warning",
+                    autoHideDuration: 5000,
+                  });
+                }
                 // Delay redirect một chút để user thấy toast
                 setTimeout(() => {
                   if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {

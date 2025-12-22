@@ -21,4 +21,5 @@ public class EnrollmentResponse {
     private LocalDateTime enrolledAt;
     private Integer totalLessons;
     private Integer completedLessons;
+    private String slug;
 }

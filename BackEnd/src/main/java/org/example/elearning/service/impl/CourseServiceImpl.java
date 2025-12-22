@@ -12,6 +12,8 @@ import org.example.elearning.mapper.CourseMapper;
 import org.example.elearning.repository.CategoryRepository;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.InstructorRepository;
+import org.example.elearning.repository.UserRepository;
+import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.specification.CourseSpecification;
 import org.springframework.data.domain.Page;
@@ -32,10 +34,13 @@ public class CourseServiceImpl implements CourseService {
     CategoryRepository categoryRepository;
     InstructorRepository instructorRepository;
     CourseMapper courseMapper;
+    UserRepository userRepository;
+    EnrollmentRepository enrollmentRepository;
 
     @Override
     @Transactional
-    public PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level) {
+    public PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId,
+            String level) {
         var spec = CourseSpecification.publishedCourses();
 
         if (search != null && !search.trim().isEmpty()) {
@@ -43,7 +48,6 @@ public class CourseServiceImpl implements CourseService {
         }
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
-
 
         var courseResponses = page.getContent().stream()
                 .map(courseMapper::toResponse)
@@ -53,13 +57,13 @@ public class CourseServiceImpl implements CourseService {
                 page.getNumber() + 1,
                 page.getSize(),
                 page.getTotalElements(),
-                page.getTotalPages()
-        ));
+                page.getTotalPages()));
     }
 
     @Override
     @Transactional
-    public PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search, CourseStatus status) {
+    public PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search,
+            CourseStatus status) {
         var spec = CourseSpecification.notDeleted();
 
         if (status != null) {
@@ -72,7 +76,6 @@ public class CourseServiceImpl implements CourseService {
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
-
         var courseResponses = page.getContent().stream()
                 .map(courseMapper::toResponse)
                 .toList();
@@ -81,8 +84,7 @@ public class CourseServiceImpl implements CourseService {
                 page.getNumber() + 1,
                 page.getSize(),
                 page.getTotalElements(),
-                page.getTotalPages()
-        ));
+                page.getTotalPages()));
     }
 
     @Override
@@ -90,7 +92,23 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourseBySlug(String slug) {
         CourseEntity entity = courseRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
-        return courseMapper.toResponse(entity);
+        CourseResponse response = courseMapper.toResponse(entity);
+
+        // Check if user is logged in
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && !authentication.getName().equals("anonymousUser")) {
+            String email = authentication.getName();
+            userRepository.findByEmail(email).ifPresent(user -> {
+                enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, entity).ifPresent(enrollment -> {
+                    response.setIsPurchased(true);
+                    response.setPurchasedAt(enrollment.getCreatedAt());
+                });
+            });
+        }
+
+        return response;
     }
 
     @Override
@@ -150,5 +168,3 @@ public class CourseServiceImpl implements CourseService {
     }
 
 }
-
-

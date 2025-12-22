@@ -250,7 +250,7 @@ const CourseLearningPage = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate("/my-learning")}
+            onClick={() => navigate("/my-courses/learning")}
             sx={{
               color: "white",
               textTransform: "none",

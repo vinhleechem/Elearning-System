@@ -14,6 +14,7 @@ import PurchaseSidebar from "../../components/courseDetail/PurchaseSidebar";
 import type { CourseDetail } from "../../types/courseDetail";
 
 const mockData: CourseDetail = {
+  id: 0,
   slug: "sample-course",
   title: "Thành Thạo Docker Từ Cơ Bản Đến Nâng Cao",
   subtitle:
@@ -174,6 +175,8 @@ const CourseDetailPage = () => {
           price: course.price || 0,
           oldPrice: course.discountPrice,
           isPurchasable: course.status === "PUBLISHED",
+          isPurchased: course.isPurchased,
+          purchasedAt: course.purchasedAt,
           reviewsSummary: {
             average: course.averageRating || 0,
             count: course.totalReviews || 0,
@@ -235,6 +238,8 @@ const CourseDetailPage = () => {
               price={data.price}
               oldPrice={data.oldPrice}
               ctaDisabled={!data.isPurchasable}
+              isPurchased={data.isPurchased}
+              purchasedAt={data.purchasedAt}
             />
           </Box>
         </Container>
@@ -260,6 +265,8 @@ const CourseDetailPage = () => {
           price={data.price}
           oldPrice={data.oldPrice}
           ctaDisabled={!data.isPurchasable}
+          isPurchased={data.isPurchased}
+          purchasedAt={data.purchasedAt}
         />
       </Box>
     </>

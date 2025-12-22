@@ -3,10 +3,12 @@ package org.example.elearning.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.example.elearning.enums.DiscountType;
+import org.example.elearning.enums.PromotionType;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -15,14 +17,14 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "promotions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+public class PromotionEntity extends BaseEntity {
 
-public class PromotionEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "promotion_id")
     Long promotionId;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 255)
     String name;
 
     @Lob
@@ -30,19 +32,26 @@ public class PromotionEntity extends BaseEntity{
     String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type", nullable = false)
+    @Column(name = "promotion_type", nullable = false)
     @Builder.Default
-    DiscountType discountType = DiscountType.PERCENTAGE;
+    PromotionType promotionType = PromotionType.SEASONAL;
 
-    @Column(name = "discount_value", precision = 10, scale = 2)
-    BigDecimal discountValue;
-
-    @Column(name = "max_uses")
-    Integer maxUses;
-
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     LocalDateTime startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     LocalDateTime endDate;
+
+    @Column(name = "is_active")
+    @Builder.Default
+    Boolean isActive = true;
+
+    @Column(name = "priority")
+    @Builder.Default
+    Integer priority = 0; // Số càng cao càng ưu tiên khi có nhiều promotion cùng lúc
+
+    // Relationship với PromotionRule
+    @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<PromotionRuleEntity> rules = new ArrayList<>();
 }

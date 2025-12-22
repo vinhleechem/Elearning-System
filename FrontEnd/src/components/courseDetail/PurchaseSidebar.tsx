@@ -25,6 +25,8 @@ interface Props {
   oldPrice?: number | null;
   ctaDisabled?: boolean;
   sx?: SxProps<Theme>;
+  isPurchased?: boolean;
+  purchasedAt?: string;
 }
 
 const formatCurrency = (num: number) =>
@@ -38,6 +40,8 @@ const PurchaseSidebar: React.FC<Props> = ({
   oldPrice,
   ctaDisabled,
   sx,
+  isPurchased,
+  purchasedAt,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -56,8 +60,14 @@ const PurchaseSidebar: React.FC<Props> = ({
     }
   };
 
-  // reference oldPrice in a no-op to avoid any false-positive unused-var linting
-  void oldPrice;
+  const handleGoToCourse = () => {
+    navigate(`/course/${courseId}/learn`);
+  };
+
+  const formattedDate = purchasedAt
+    ? new Date(purchasedAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' })
+    : "";
+
   return (
     <Card
       sx={{
@@ -76,6 +86,7 @@ const PurchaseSidebar: React.FC<Props> = ({
           component="img"
           src="/images/carousel/carousel-01.png"
           alt="preview"
+          sx={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
         <Box
           sx={{
@@ -126,49 +137,97 @@ const PurchaseSidebar: React.FC<Props> = ({
       </Box>
 
       <CardContent>
-        <Typography variant="h4" fontWeight={900} sx={{ mb: 0.5 }}>
-          {formatCurrency(price)}
-        </Typography>
-        {oldPrice ? (
-          <Typography
-            variant="body2"
-            sx={{
-              textDecoration: "line-through",
-              color: "text.secondary",
-              mb: 1,
-            }}
-          >
-            {formatCurrency(oldPrice)}
-          </Typography>
-        ) : null}
+        {isPurchased ? (
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+              <Box
+                sx={{
+                  bgcolor: '#8f2abd',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mr: 1.5,
+                  flexShrink: 0
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">i</Typography>
+              </Box>
+              <Typography variant="body1" color="text.primary">
+                Bạn đã mua khóa học này vào {formattedDate}
+              </Typography>
+            </Box>
 
-        <Button
-          fullWidth
-          variant="contained"
-          disabled={ctaDisabled}
-          sx={{
-            background: "linear-gradient(180deg,#7C2AE8,#6C2BD9)",
-            color: "#fff",
-            textTransform: "none",
-            py: 1.5,
-            fontWeight: 700,
-            borderRadius: 1,
-          }}
-        >
-          Chuyển đến giỏ hàng
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          sx={{
-            mt: 1,
-            textTransform: "none",
-            borderColor: "#6C2BD9",
-            color: "#6C2BD9",
-          }}
-        >
-          Mua ngay
-        </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleGoToCourse}
+              sx={{
+                mt: 1,
+                textTransform: "none",
+                borderColor: "#6C2BD9",
+                color: "#6C2BD9",
+                fontWeight: 700,
+                py: 1.5,
+                '&:hover': {
+                  borderColor: "#5b21b6",
+                  bgcolor: 'rgba(108, 43, 217, 0.04)'
+                }
+              }}
+            >
+              Chuyển đến khóa học
+            </Button>
+          </Box>
+        ) : (
+          <>
+            <Typography variant="h4" fontWeight={900} sx={{ mb: 0.5 }}>
+              {formatCurrency(price)}
+            </Typography>
+            {oldPrice ? (
+              <Typography
+                variant="body2"
+                sx={{
+                  textDecoration: "line-through",
+                  color: "text.secondary",
+                  mb: 1,
+                }}
+              >
+                {formatCurrency(oldPrice)}
+              </Typography>
+            ) : null}
+
+            <Button
+              fullWidth
+              variant="contained"
+              disabled={ctaDisabled}
+              sx={{
+                background: "linear-gradient(180deg,#7C2AE8,#6C2BD9)",
+                color: "#fff",
+                textTransform: "none",
+                py: 1.5,
+                fontWeight: 700,
+                borderRadius: 1,
+              }}
+            >
+              Chuyển đến giỏ hàng
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              sx={{
+                mt: 1,
+                textTransform: "none",
+                borderColor: "#6C2BD9",
+                color: "#6C2BD9",
+              }}
+            >
+              Mua ngay
+            </Button>
+          </>
+        )}
 
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <IconButton

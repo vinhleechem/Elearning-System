@@ -36,6 +36,8 @@ export interface PublicCourseResponse {
   totalDurationMinutes?: number;
   totalLectures?: number;
   tags?: string[];
+  isPurchased?: boolean;
+  purchasedAt?: string;
 }
 
 export const courseService = {

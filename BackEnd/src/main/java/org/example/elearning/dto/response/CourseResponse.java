@@ -48,6 +48,6 @@ public class CourseResponse {
     LocalDateTime publishedAt;
 
     List<String> tags;
+    Boolean isPurchased;
+    LocalDateTime purchasedAt;
 }
-
-

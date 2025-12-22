@@ -49,6 +49,7 @@ public class PaymentEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     PaymentStatus status;
+
+    @Column(name = "transaction_ref")
+    String transactionRef;
 }
-
-

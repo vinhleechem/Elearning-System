@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-type PaymentMethod = "momo" | "vnpay" | "vietqr" | "payos";
+export type PaymentMethod = "momo" | "vnpay" | "vietqr" | "payos";
 
 const paymentMethods = [
   {
@@ -26,8 +26,12 @@ const paymentMethods = [
   },
 ];
 
-const PaymentPanel = () => {
-  const [selected, setSelected] = useState<PaymentMethod>("momo");
+interface PaymentPanelProps {
+  selected: PaymentMethod;
+  onSelect: (method: PaymentMethod) => void;
+}
+
+const PaymentPanel = ({ selected, onSelect }: PaymentPanelProps) => {
   const [countries, setCountries] = useState<any[]>([]);
 
   useEffect(() => {
@@ -101,7 +105,7 @@ const PaymentPanel = () => {
                 name="payment"
                 value={method.id}
                 checked={selected === method.id}
-                onChange={() => setSelected(method.id as PaymentMethod)}
+                onChange={() => onSelect(method.id as PaymentMethod)}
               />
               <img
                 src={method.logo}

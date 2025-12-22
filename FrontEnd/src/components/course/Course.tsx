@@ -30,6 +30,7 @@ const Course: React.FC<CourseProps> = ({
   level,
   updatedAt,
   learningPoints,
+  isPurchased,
 }) => {
   const [ratingValue] = useState<number | null>(rating);
   const [showPanel, setShowPanel] = useState(false);
@@ -225,6 +226,7 @@ const Course: React.FC<CourseProps> = ({
             side={panelSide}
             onMouseEnter={handlePanelMouseEnter}
             onMouseLeave={handlePanelMouseLeave}
+            isPurchased={isPurchased}
           />,
           document.body,
         )}

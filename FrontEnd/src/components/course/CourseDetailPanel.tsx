@@ -21,6 +21,7 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
   position,
   onMouseEnter,
   onMouseLeave,
+  isPurchased,
 }) => {
   const style = tag ? TAGS_STYLE[tag] : null;
   const { enqueueSnackbar } = useSnackbar();
@@ -63,6 +64,10 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isPurchased) {
+      navigate(`/course/${id}/learn`);
+      return;
+    }
     if (inCart) {
       navigate("/cart");
     } else {
@@ -174,7 +179,7 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
             },
           }}
         >
-          {loading ? "Đang thêm..." : inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
+          {loading ? "Đang thêm..." : isPurchased ? "Vào học ngay" : inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
         </Button>
 
         {/* Wishlist Button */}

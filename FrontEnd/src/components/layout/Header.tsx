@@ -400,7 +400,7 @@ const Header: React.FC<HeaderProps> = ({
           <>
             <Button
               component={Link}
-              to="/my-learning"
+              to="/my-courses/learning"
               color="inherit"
               sx={{
                 my: 2,

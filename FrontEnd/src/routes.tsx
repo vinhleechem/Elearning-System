@@ -23,6 +23,8 @@ import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
 import WishlistPage from "./pages/WishlistPage";
+import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
+import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
 
 export const router = createBrowserRouter([
   {
@@ -43,10 +45,10 @@ export const router = createBrowserRouter([
         element: <CourseDetailPage />,
       },
       {
-        path: "my-learning",
+        path: "my-courses",
         children: [
           {
-            index: true,
+            path: "learning",
             element: <MyLearningPage />,
           },
           {
@@ -89,6 +91,14 @@ export const router = createBrowserRouter([
       {
         path: "checkout",
         element: <CheckoutPage />,
+      },
+      {
+        path: "success",
+        element: <PaymentSuccessPage />,
+      },
+      {
+        path: "failed",
+        element: <PaymentFailedPage />,
       },
     ],
   },

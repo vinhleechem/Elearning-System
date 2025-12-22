@@ -14,6 +14,7 @@ export interface CourseProps {
   level?: string;
   updatedAt?: string;
   learningPoints?: string[];
+  isPurchased?: boolean;
 }
 
 export interface CourseDetailProps {
@@ -29,4 +30,5 @@ export interface CourseDetailProps {
   side?: "left" | "right";
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  isPurchased?: boolean;
 }

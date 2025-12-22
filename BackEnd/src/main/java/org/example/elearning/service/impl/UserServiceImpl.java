@@ -55,8 +55,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email).orElseThrow(() ->
-                                        new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+        return email -> userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public UserEntity getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return getUserByEmail(email);
     }
 
     // ==================== User self-service APIs ====================
@@ -72,7 +78,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateMyProfile(UpdateProfileRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
-        
+
         userMapper.updateEntity(user, request);
 
         return userMapper.toEntityDTO(userRepository.save(user));
@@ -83,17 +89,17 @@ public class UserServiceImpl implements UserService {
     public void changePassword(ChangePasswordRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
-        
+
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD.getMessage());
         }
-        
+
         // Verify new password and confirm password match
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH.getMessage());
         }
-        
+
         // Update password
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -129,7 +135,7 @@ public class UserServiceImpl implements UserService {
     public void deleteAvatar() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
-        
+
         if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
             throw new BusinessException(ErrorCode.USER_NO_AVATAR.getMessage());
         }
@@ -164,8 +170,7 @@ public class UserServiceImpl implements UserService {
                 userPage.getNumber() + 1,
                 userPage.getSize(),
                 userPage.getTotalElements(),
-                userPage.getTotalPages()
-        ));
+                userPage.getTotalPages()));
     }
 
     @Override
@@ -175,23 +180,24 @@ public class UserServiceImpl implements UserService {
         enrichInstructorInfo(user, dto);
         return dto;
     }
+
     @Override
     public UserEntity getUserByIdEntity(Long id) {
-        return userRepository.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
 
     @Override
     public UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() ->
-                new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
 
     @Override
-    public UserEntity getActiveUser(String email){
-        UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() ->
-                new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
-        if(!userEntity.getStatus().equals(UserStatus.ACTIVE)){
+    public UserEntity getActiveUser(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
+        if (!userEntity.getStatus().equals(UserStatus.ACTIVE)) {
             throw new ForbiddenException(ErrorCode.USER_LOCKED.getMessage());
         }
         if (userEntity.isDeleted()) {
@@ -207,7 +213,7 @@ public class UserServiceImpl implements UserService {
         userRepository.findByEmail(userRequest.getEmail()).ifPresent(user -> {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
         });
-        
+
         UserEntity newUser = userMapper.toEntity(userRequest);
         return userMapper.toEntityDTO(userRepository.save(newUser));
     }
@@ -280,13 +286,13 @@ public class UserServiceImpl implements UserService {
     public UserResponse toggleUserStatus(Long id) {
         UserEntity user = getUserByIdEntity(id);
         user.getRoles().forEach(this::handleAdminUser);
-        
+
         if (user.getStatus() == UserStatus.ACTIVE) {
             user.setStatus(UserStatus.LOCKED);
         } else {
             user.setStatus(UserStatus.ACTIVE);
         }
-        
+
         return userMapper.toEntityDTO(userRepository.save(user));
     }
 
@@ -295,12 +301,12 @@ public class UserServiceImpl implements UserService {
     public UserResponse assignRoles(Long id, List<String> roleNames) {
         UserEntity user = getUserByIdEntity(id);
         user.getRoles().forEach(this::handleAdminUser);
-        
+
         Set<RoleEntity> roles = roleNames.stream()
                 .map(roleName -> roleRepository.findByRoleName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại: " + roleName)))
                 .collect(Collectors.toSet());
-        
+
         user.setRoles(roles);
         return userMapper.toEntityDTO(userRepository.save(user));
     }
@@ -310,11 +316,11 @@ public class UserServiceImpl implements UserService {
     public String resetPassword(Long id) {
         UserEntity user = getUserByIdEntity(id);
         user.getRoles().forEach(this::handleAdminUser);
-        
+
         String newPassword = generateRandomPassword(8);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        
+
         return newPassword;
     }
 
@@ -357,11 +363,11 @@ public class UserServiceImpl implements UserService {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);
-        
+
         for (int i = 0; i < length; i++) {
             password.append(chars.charAt(random.nextInt(chars.length())));
         }
-        
+
         return password.toString();
     }
 }

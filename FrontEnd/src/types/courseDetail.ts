@@ -61,6 +61,8 @@ export interface CourseDetail {
   price: number;
   oldPrice?: number | null;
   isPurchasable?: boolean;
+  isPurchased?: boolean;
+  purchasedAt?: string;
   reviewsSummary: ReviewsSummary;
   reviews: ReviewItem[];
   related: Array<{
