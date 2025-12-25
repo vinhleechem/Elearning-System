@@ -1,0 +1,178 @@
+package org.example.elearning.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.elearning.dto.request.PromotionRequest;
+import org.example.elearning.dto.request.PromotionRuleRequest;
+import org.example.elearning.dto.response.PromotionDetailResponse;
+import org.example.elearning.dto.response.PromotionResponse;
+import org.example.elearning.dto.response.PromotionRuleResponse;
+import org.example.elearning.entity.CategoryEntity;
+import org.example.elearning.entity.CourseEntity;
+import org.example.elearning.entity.PromotionEntity;
+import org.example.elearning.entity.PromotionRuleEntity;
+import org.example.elearning.enums.PromotionRuleType;
+import org.example.elearning.exception.ErrorCode;
+import org.example.elearning.exception.exceptions.ResourceNotFoundException;
+import org.example.elearning.mapper.PromotionMapper;
+import org.example.elearning.repository.CategoryRepository;
+import org.example.elearning.repository.CourseRepository;
+import org.example.elearning.repository.PromotionRepository;
+import org.example.elearning.service.PromotionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PromotionServiceImpl implements PromotionService {
+
+    private final PromotionRepository promotionRepository;
+    private final CourseRepository courseRepository;
+    private final CategoryRepository categoryRepository;
+    private final PromotionMapper promotionMapper;
+
+    @Override
+    @Transactional
+    public PromotionDetailResponse createPromotion(PromotionRequest request) {
+        log.info("Creating new promotion: {}", request.getName());
+        
+        // Create promotion entity using mapper
+        PromotionEntity promotion = promotionMapper.toEntity(request);
+        promotion.setRules(new ArrayList<>());
+        
+        // Create promotion rules
+        for (PromotionRuleRequest ruleRequest : request.getRules()) {
+            PromotionRuleEntity rule = PromotionRuleEntity.builder()
+                    .promotion(promotion)
+                    .ruleType(ruleRequest.getRuleType())
+                    .targetId(ruleRequest.getTargetId())
+                    .discountType(ruleRequest.getDiscountType())
+                    .discountValue(ruleRequest.getDiscountValue())
+                    .maxDiscountAmount(ruleRequest.getMaxDiscountAmount())
+                    .minPurchaseAmount(ruleRequest.getMinPurchaseAmount())
+                    .buyQuantity(ruleRequest.getBuyQuantity())
+                    .getQuantity(ruleRequest.getGetQuantity())
+                    .build();
+            
+            promotion.getRules().add(rule);
+        }
+        
+        promotion = promotionRepository.save(promotion);
+        log.info("Promotion created successfully with ID: {}", promotion.getPromotionId());
+        
+        return promotionMapper.toDetailResponse(promotion);
+    }
+
+    @Override
+    @Transactional
+    public PromotionDetailResponse updatePromotion(Long promotionId, PromotionRequest request) {
+        log.info("Updating promotion ID: {}", promotionId);
+
+        PromotionEntity promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
+
+        // Update basic fields using mapper
+        promotionMapper.updateEntity(promotion, request);
+
+        // Clear old rules and add new ones
+        promotion.getRules().clear();
+
+        for (PromotionRuleRequest ruleRequest : request.getRules()) {
+            PromotionRuleEntity rule = PromotionRuleEntity.builder()
+                    .promotion(promotion)
+                    .ruleType(ruleRequest.getRuleType())
+                    .targetId(ruleRequest.getTargetId())
+                    .discountType(ruleRequest.getDiscountType())
+                    .discountValue(ruleRequest.getDiscountValue())
+                    .maxDiscountAmount(ruleRequest.getMaxDiscountAmount())
+                    .minPurchaseAmount(ruleRequest.getMinPurchaseAmount())
+                    .buyQuantity(ruleRequest.getBuyQuantity())
+                    .getQuantity(ruleRequest.getGetQuantity())
+                    .build();
+
+            promotion.getRules().add(rule);
+        }
+
+        promotion = promotionRepository.save(promotion);
+        log.info("Promotion updated successfully");
+
+        return promotionMapper.toDetailResponse(promotion);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromotionDetailResponse getPromotionById(Long promotionId) {
+        PromotionEntity promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
+
+        return promotionMapper.toDetailResponse(promotion);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PromotionResponse> getAllPromotions(Pageable pageable) {
+        return promotionRepository.findAll(pageable)
+                .map(promotionMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromotionResponse> getActivePromotions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<PromotionEntity> promotions = promotionRepository.findActivePromotions(now);
+
+        return promotions.stream()
+                .map(promotionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deletePromotion(Long promotionId) {
+        log.info("Deleting promotion ID: {}", promotionId);
+
+        PromotionEntity promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
+
+        promotion.setDeleted(true);
+        promotionRepository.save(promotion);
+        log.info("Promotion soft deleted successfully");
+    }
+
+    @Override
+    @Transactional
+    public void activatePromotion(Long promotionId) {
+        log.info("Activating promotion ID: {}", promotionId);
+
+        PromotionEntity promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
+
+        promotion.setIsActive(true);
+        promotionRepository.save(promotion);
+
+        log.info("Promotion activated successfully");
+    }
+
+    @Override
+    @Transactional
+    public void deactivatePromotion(Long promotionId) {
+        log.info("Deactivating promotion ID: {}", promotionId);
+
+        PromotionEntity promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
+
+        promotion.setIsActive(false);
+        promotionRepository.save(promotion);
+
+        log.info("Promotion deactivated successfully");
+    }
+
+}

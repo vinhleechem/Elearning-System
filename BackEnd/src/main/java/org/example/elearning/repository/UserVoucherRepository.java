@@ -20,12 +20,15 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucherEntity, 
             "AND uv.isDeleted = false " +
             "AND v.isActive = true " +
             "AND :now BETWEEN v.startDate AND v.endDate")
-    List<UserVoucherEntity> findAvailableVouchersByUserId(
+    List<UserVoucherEntity> findAvailableVouchers(
             @Param("userId") Long userId,
             @Param("now") java.time.LocalDateTime now);
 
-    // Check user đã có voucher này chưa
-    Optional<UserVoucherEntity> findByUser_UserIdAndVoucher_VoucherIdAndIsDeletedFalse(
+    // Tìm tất cả vouchers của user
+    List<UserVoucherEntity> findByUser_UserIdAndIsDeletedFalse(Long userId);
+
+    // Check user đã có voucher này chưa (trả về tất cả instances)
+    List<UserVoucherEntity> findByUser_UserIdAndVoucher_VoucherIdAndIsDeletedFalse(
             Long userId,
             Long voucherId);
 
@@ -35,7 +38,7 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucherEntity, 
             "AND uv.voucher.voucherId = :voucherId " +
             "AND uv.isUsed = true " +
             "AND uv.isDeleted = false")
-    Long countUsedVouchersByUserAndVoucher(
+    Long countUsedVouchers(
             @Param("userId") Long userId,
             @Param("voucherId") Long voucherId);
 }

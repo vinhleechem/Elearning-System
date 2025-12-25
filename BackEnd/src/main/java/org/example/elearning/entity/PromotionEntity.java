@@ -27,8 +27,7 @@ public class PromotionEntity extends BaseEntity {
     @Column(name = "name", nullable = false, length = 255)
     String name;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     String description;
 
     @Enumerated(EnumType.STRING)

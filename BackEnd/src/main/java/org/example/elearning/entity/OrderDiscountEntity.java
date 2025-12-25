@@ -23,10 +23,6 @@ public class OrderDiscountEntity extends BaseEntity {
     @Column(name = "order_discount_id")
     Long orderDiscountId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    OrderEntity order;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
     OrderDiscountType discountType;
@@ -43,4 +39,8 @@ public class OrderDiscountEntity extends BaseEntity {
 
     @Column(name = "description")
     String description; // Mô tả chi tiết (VD: "Flash Sale 50%", "Voucher WELCOME2024")
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    OrderEntity order;
 }

@@ -1,28 +1,82 @@
-import { Container } from "@mui/material";
-import PaymentPanel, { type PaymentMethod } from "../components/payment/PaymentPanel";
+import { Container, Paper, Box, Typography } from "@mui/material";
+import PaymentPanel, {
+  type PaymentMethod,
+} from "../components/payment/PaymentPanel";
 import OrderSummaryPanel from "../components/order/OrderSummaryPanel";
 import CheckoutItemList from "../components/checkout/CheckoutItemList";
-import { useState, useMemo } from "react";
+import { VoucherSection, DiscountSummary } from "../components/voucher";
+import { useState, useEffect, useCallback } from "react";
 import { httpClient } from "../service/httpClient";
 import { useCartStore } from "../store/cartStore";
 import { orderService } from "../service/orderService";
+import { voucherService } from "../service/voucherService";
+import { useAuthStore } from "../store/authStore";
 import { enqueueSnackbar } from "notistack";
+import type {
+  DiscountCalculationRequest,
+  DiscountCalculationResponse,
+} from "../types/voucher";
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
-  // const [bankCode, setBankCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const { items } = useCartStore();
+  const [appliedVoucherCode, setAppliedVoucherCode] = useState<string>();
+  const [discountCalculation, setDiscountCalculation] =
+    useState<DiscountCalculationResponse | null>(null);
 
-  const { totalAmount, discountAmount, finalAmount } = useMemo(() => {
-    const total = items.reduce((sum, item) => sum + item.price, 0);
-    const final = items.reduce((sum, item) => sum + (item.discountPrice ?? item.price), 0);
-    return {
-      totalAmount: total,
-      finalAmount: final,
-      discountAmount: total - final
-    };
-  }, [items]);
+  const { items } = useCartStore();
+  const { user } = useAuthStore();
+
+  const calculateDiscount = useCallback(async () => {
+    if (!user || items.length === 0) {
+      setDiscountCalculation(null);
+      return;
+    }
+
+    try {
+      const request: DiscountCalculationRequest = {
+        userId: user.userId,
+        cartItems: items.map((item) => ({
+          courseId: item.courseId,
+          price: item.price,
+        })),
+        voucherCode: appliedVoucherCode,
+      };
+
+      const result = await voucherService.calculateDiscount(request);
+      setDiscountCalculation(result);
+    } catch (error) {
+      console.error("Failed to calculate discount:", error);
+      // Fallback to simple calculation
+      const total = items.reduce((sum, item) => sum + item.price, 0);
+      const final = items.reduce(
+        (sum, item) => sum + (item.discountPrice ?? item.price),
+        0,
+      );
+      setDiscountCalculation({
+        subtotal: total,
+        totalDiscount: total - final,
+        finalAmount: final,
+        discounts: [],
+        itemPrices: [],
+      });
+    }
+  }, [user, items, appliedVoucherCode]);
+
+  // Calculate discount when cart items or voucher changes
+  useEffect(() => {
+    calculateDiscount();
+  }, [calculateDiscount]);
+
+  const handleVoucherApply = (code: string) => {
+    setAppliedVoucherCode(code);
+    enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
+  };
+
+  const handleVoucherRemove = () => {
+    setAppliedVoucherCode(undefined);
+    enqueueSnackbar("Đã xóa voucher", { variant: "info" });
+  };
 
   const handleCheckout = async () => {
     if (items.length === 0) {
@@ -32,9 +86,12 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // 1. Create Order
-      const courseIds = items.map(item => item.courseId);
-      const orderRes = await orderService.createOrder({ courseIds });
+      // 1. Create Order with voucher code
+      const courseIds = items.map((item) => item.courseId);
+      const orderRes = await orderService.createOrder({
+        courseIds,
+        voucherCode: appliedVoucherCode,
+      });
 
       if (!orderRes.data) {
         throw new Error(orderRes.message || "Không thể tạo đơn hàng");
@@ -45,29 +102,40 @@ const CheckoutPage = () => {
 
       // 2. Process Payment based on method
       if (paymentMethod === "vnpay") {
-        const paymentRes = await httpClient<{ paymentUrl: string }>("/payment/create_payment", {
-          method: "POST",
-          body: JSON.stringify({
-            orderId: orderId,
-            amount: orderAmount,
-            bankCode: "", // Default to empty to let user select bank on payment gateway
-            language: "vn"
-          })
-        });
+        const paymentRes = await httpClient<{ paymentUrl: string }>(
+          "/payment/create_payment",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              orderId: orderId,
+              amount: orderAmount,
+              bankCode: "", // Default to empty to let user select bank on payment gateway
+              language: "vn",
+            }),
+          },
+        );
 
-        if (paymentRes.success && paymentRes.data && paymentRes.data.paymentUrl) {
+        if (
+          paymentRes.success &&
+          paymentRes.data &&
+          paymentRes.data.paymentUrl
+        ) {
           window.location.href = paymentRes.data.paymentUrl;
         } else {
           throw new Error(paymentRes.message || "Lỗi tạo thanh toán VNPay");
         }
       } else {
-        enqueueSnackbar(`Phương thức thanh toán ${paymentMethod} đang được phát triển.`, { variant: "info" });
+        enqueueSnackbar(
+          `Phương thức thanh toán ${paymentMethod} đang được phát triển.`,
+          { variant: "info" },
+        );
         setLoading(false);
       }
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Checkout failed", error);
-      enqueueSnackbar(error.message || "Có lỗi xảy ra khi thanh toán", { variant: "error" });
+      const errorMessage =
+        error instanceof Error ? error.message : "Có lỗi xảy ra khi thanh toán";
+      enqueueSnackbar(errorMessage, { variant: "error" });
       setLoading(false);
     }
   };
@@ -75,22 +143,60 @@ const CheckoutPage = () => {
   return (
     <div>
       <Container maxWidth="lg">
-        <div className="flex min-h-screen">
-          <div className="flex-[2] p-6">
-            <PaymentPanel
-              selected={paymentMethod}
-              onSelect={setPaymentMethod}
+        <Typography variant="h4" fontWeight={700} sx={{ py: 3 }}>
+          Thanh toán
+        </Typography>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 3,
+          }}
+        >
+          {/* Left Column - Payment & Items */}
+          <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 66%" } }}>
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+              <PaymentPanel
+                selected={paymentMethod}
+                onSelect={setPaymentMethod}
+              />
+            </Paper>
+
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+              <CheckoutItemList />
+            </Paper>
+
+            {/* Voucher Section */}
+            <Paper elevation={2} sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight={600} mb={2}>
+                Mã giảm giá
+              </Typography>
+              <VoucherSection
+                appliedVoucherCode={appliedVoucherCode}
+                onVoucherApply={handleVoucherApply}
+                onVoucherRemove={handleVoucherRemove}
+              />
+            </Paper>
+          </Box>
+
+          {/* Right Column - Order Summary */}
+          <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 33%" } }}>
+            {/* Discount Summary with detailed breakdown */}
+            <Box mb={3}>
+              <DiscountSummary discountCalculation={discountCalculation} />
+            </Box>
+
+            {/* Order Summary Panel */}
+            <OrderSummaryPanel
+              onCheckout={handleCheckout}
+              totalAmount={discountCalculation?.subtotal || 0}
+              discountAmount={discountCalculation?.totalDiscount || 0}
+              finalAmount={discountCalculation?.finalAmount || 0}
+              loading={loading}
             />
-            <CheckoutItemList />
-          </div>
-          <OrderSummaryPanel
-            onCheckout={handleCheckout}
-            totalAmount={totalAmount}
-            discountAmount={discountAmount}
-            finalAmount={finalAmount}
-            loading={loading}
-          />
-        </div>
+          </Box>
+        </Box>
       </Container>
     </div>
   );

@@ -19,6 +19,8 @@ import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import CourseManagement from "./pages/admin/CourseManagement";
 import CategoryManagement from "./pages/admin/CategoryManagement";
+import PromotionManagement from "./pages/admin/PromotionManagement";
+import VoucherManagement from "./pages/admin/VoucherManagement";
 import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
@@ -142,6 +144,14 @@ export const router = createBrowserRouter([
       {
         path: "categories",
         element: <CategoryManagement />,
+      },
+      {
+        path: "promotions",
+        element: <PromotionManagement />,
+      },
+      {
+        path: "vouchers",
+        element: <VoucherManagement />,
       },
     ],
   },

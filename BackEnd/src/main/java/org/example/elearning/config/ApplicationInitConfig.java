@@ -916,18 +916,15 @@ public class ApplicationInitConfig {
                         reactVoucher = voucherRepository.save(reactVoucher);
                         log.info("Created REACTLOVE voucher");
 
-                        // Link voucher với React course (giả sử courseId = 2)
+                        // Link voucher với React course using @ManyToMany
                         List<CourseEntity> allCourses = courseRepository.findAll();
                         for (CourseEntity course : allCourses) {
                                 if (course.getTitle().toLowerCase().contains("react")) {
-                                        VoucherCourseEntity voucherCourse = VoucherCourseEntity.builder()
-                                                        .voucher(reactVoucher)
-                                                        .course(course)
-                                                        .build();
-                                        voucherCourseRepository.save(voucherCourse);
+                                        reactVoucher.getApplicableCourses().add(course);
                                         log.info("Linked REACTLOVE voucher to course: {}", course.getTitle());
                                 }
                         }
+                        voucherRepository.save(reactVoucher); // Save để persist ManyToMany relationship
                 }
 
                 // Voucher 5: LOYALTY500 - Voucher khách hàng thân thiết
@@ -1034,6 +1031,6 @@ public class ApplicationInitConfig {
                 log.info("   - Total Promotion Rules: {}", promotionRuleRepository.count());
                 log.info("   - Total Vouchers: {}", voucherRepository.count());
                 log.info("   - Total User Vouchers: {}", userVoucherRepository.count());
-                log.info("   - Total Voucher-Course Links: {}", voucherCourseRepository.count());
+
         }
 }

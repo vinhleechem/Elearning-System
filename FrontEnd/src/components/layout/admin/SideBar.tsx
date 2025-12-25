@@ -11,6 +11,8 @@ import {
   School,
   Notifications,
   Category,
+  LocalOffer,
+  CardGiftcard,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -40,6 +42,16 @@ const navItems: NavItem[] = [
     icon: <Category />,
     name: "Quản lý danh mục",
     path: "/admin/categories",
+  },
+  {
+    icon: <LocalOffer />,
+    name: "Quản lý khuyến mãi",
+    path: "/admin/promotions",
+  },
+  {
+    icon: <CardGiftcard />,
+    name: "Quản lý voucher",
+    path: "/admin/vouchers",
   },
   {
     icon: <Notifications />,

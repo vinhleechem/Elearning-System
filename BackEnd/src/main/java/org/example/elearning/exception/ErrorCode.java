@@ -70,7 +70,29 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND("Không tìm thấy thông tin thanh toán", HttpStatus.NOT_FOUND.value()),
 
     // Config errors
-    FACEBOOK_CONFIG_MISSING("Facebook OAuth configuration is missing", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    FACEBOOK_CONFIG_MISSING("Facebook OAuth configuration is missing", HttpStatus.INTERNAL_SERVER_ERROR.value()),
+
+    // Promotion errors
+    PROMOTION_NOT_FOUND("Promotion không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    PROMOTION_ALREADY_EXISTS("Promotion đã tồn tại", HttpStatus.CONFLICT.value()),
+
+    // Voucher errors
+    VOUCHER_NOT_FOUND("Voucher không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    VOUCHER_CODE_NOT_FOUND("Không tìm thấy voucher với mã này", HttpStatus.NOT_FOUND.value()),
+    VOUCHER_ALREADY_EXISTS("Mã voucher đã tồn tại", HttpStatus.CONFLICT.value()),
+    VOUCHER_EXPIRED("Voucher đã hết hạn", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_NOT_STARTED("Voucher chưa bắt đầu", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_NOT_ACTIVE("Voucher không còn hoạt động", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_TOTAL_LIMIT_REACHED("Voucher đã hết lượt sử dụng", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_USER_LIMIT_REACHED("Bạn đã sử dụng hết lượt cho voucher này", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_ALREADY_OWNED("Bạn đã sở hữu voucher này", HttpStatus.CONFLICT.value()),
+    VOUCHER_ALREADY_USED("Voucher đã được sử dụng", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_MIN_PURCHASE_NOT_MET("Đơn hàng chưa đạt giá trị tối thiểu để sử dụng voucher", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_NOT_APPLICABLE("Voucher không áp dụng được cho đơn hàng này", HttpStatus.BAD_REQUEST.value()),
+
+    // Discount errors
+    DISCOUNT_CALCULATION_FAILED("Không thể tính toán giảm giá", HttpStatus.INTERNAL_SERVER_ERROR.value()),
+    INVALID_DISCOUNT_VALUE("Giá trị giảm giá không hợp lệ", HttpStatus.BAD_REQUEST.value());
 
     public String message;
     public int code;

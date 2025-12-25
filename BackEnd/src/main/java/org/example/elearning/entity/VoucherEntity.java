@@ -33,14 +33,17 @@ public class VoucherEntity extends BaseEntity {
     @Column(name = "name", length = 255)
     String name; // Tên voucher để hiển thị (VD: "Voucher Sinh nhật")
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "voucher_type", nullable = false)
     @Builder.Default
     VoucherType voucherType = VoucherType.PUBLIC;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id")
+    InstructorEntity instructor; // Instructor tạo voucher (null = system voucher)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotion_id")

@@ -3,7 +3,10 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import Course from "./Course";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import { courseService, type PublicCourseResponse } from "../../service/courseService";
+import {
+  courseService,
+  type PublicCourseResponse,
+} from "../../service/courseService";
 import { useAuthStore } from "../../store/authStore";
 import { httpClient } from "../../service/httpClient";
 
@@ -48,9 +51,10 @@ const CourseList = () => {
 
   const mappedCourses = useMemo(() => {
     return courses.map((c) => {
-      const hasDiscount = c.discountPrice !== undefined && c.discountPrice !== null;
-      const price = hasDiscount ? c.discountPrice! : c.price ?? 0;
-      const oldPrice = hasDiscount ? c.price ?? undefined : undefined;
+      const hasDiscount =
+        c.discountPrice !== undefined && c.discountPrice !== null;
+      const price = hasDiscount ? c.discountPrice! : (c.price ?? 0);
+      const oldPrice = hasDiscount ? (c.price ?? undefined) : undefined;
 
       // Convert minutes to hours if available
       const totalHours =
@@ -123,7 +127,6 @@ const CourseList = () => {
                   description={course.description}
                   totalHours={course.totalHours}
                   level={course.level}
-                  updatedAt={course.updatedAt}
                   updatedAt={course.updatedAt}
                   slug={course.slug}
                   isPurchased={course.isPurchased}
