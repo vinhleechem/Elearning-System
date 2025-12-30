@@ -6,11 +6,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
+
 @SpringBootApplication
 @Slf4j
 @EnableFeignClients
 public class ELearningApplication {
 
+    // Trigger rebuild 6 (final)
 	public static void main(String[] args) {
         try {
             Dotenv dotenv = Dotenv.configure()

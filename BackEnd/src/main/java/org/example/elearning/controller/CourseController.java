@@ -80,6 +80,14 @@ public class CourseController {
         return ResponseEntity.ok(success("Lấy khóa học thành công", result));
     }
 
+    @Operation(summary = "Lấy chi tiết khóa học theo ID (Student/Public)")
+    @ApiResponse(responseCode = "200", description = "Lấy thành công")
+    @GetMapping("/{id}/info")
+    public ResponseEntity<StandardResponse<CourseResponse>> getCourseInfoById(@PathVariable Long id) {
+        CourseResponse result = courseService.getCourseById(id);
+        return ResponseEntity.ok(success("Lấy khóa học thành công", result));
+    }
+
     @Operation(summary = "Lấy chi tiết khóa học theo slug")
     @ApiResponse(responseCode = "200", description = "Lấy thành công")
     @GetMapping("/{slug}")
@@ -89,6 +97,19 @@ public class CourseController {
     }
 
     // Các API dưới đây dành cho instructor/admin
+    
+    @Operation(summary = "Lấy danh sách khóa học của giảng viên hiện tại")
+    @ApiResponse(responseCode = "200", description = "Lấy thành công")
+    @GetMapping("/my-courses")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    public ResponseEntity<StandardResponse<PaginatedResponse<CourseResponse>>> getMyCourses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        PaginatedResponse<CourseResponse> result = courseService.getMyCourses(pageable, search);
+        return ResponseEntity.ok(success("Lấy danh sách khóa học thành công", result));
+    }
 
     @Operation(summary = "Tạo khóa học mới")
     @ApiResponse(responseCode = "200", description = "Tạo thành công")
@@ -118,5 +139,32 @@ public class CourseController {
     public ResponseEntity<StandardResponse<String>> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.ok(success("Xóa khóa học thành công"));
+    }
+
+    @Operation(summary = "Gửi yêu cầu duyệt khóa học (Giảng viên)")
+    @ApiResponse(responseCode = "200", description = "Gửi yêu cầu thành công")
+    @PutMapping("/{id}/submit-approval")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    public ResponseEntity<StandardResponse<String>> submitCourseForApproval(@PathVariable Long id) {
+        courseService.submitCourseForApproval(id);
+        return ResponseEntity.ok(success("Gửi yêu cầu duyệt khóa học thành công"));
+    }
+
+    @Operation(summary = "Duyệt khóa học (Admin)")
+    @ApiResponse(responseCode = "200", description = "Duyệt thành công")
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<String>> approveCourse(@PathVariable Long id) {
+        courseService.approveCourse(id);
+        return ResponseEntity.ok(success("Duyệt khóa học thành công"));
+    }
+
+    @Operation(summary = "Từ chối khóa học (Admin)")
+    @ApiResponse(responseCode = "200", description = "Từ chối thành công")
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<String>> rejectCourse(@PathVariable Long id) {
+        courseService.rejectCourse(id);
+        return ResponseEntity.ok(success("Từ chối khóa học thành công"));
     }
 }

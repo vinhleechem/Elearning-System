@@ -42,7 +42,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
     <Box
       sx={{
         width: 400,
-        height: "100vh",
+        height: "100%",
         bgcolor: "#fff",
         borderLeft: "1px solid #d1d7dc",
         overflowY: "auto",

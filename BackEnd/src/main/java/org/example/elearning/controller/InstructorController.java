@@ -40,7 +40,7 @@ public class InstructorController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     @Operation(summary = "Lấy thông tin giảng viên của tôi")
     public ApiResponse<InstructorResponse> getMyInstructorProfile() {
         return ApiResponse.<InstructorResponse>builder()
@@ -51,7 +51,7 @@ public class InstructorController {
     }
 
     @PutMapping("/me")
-    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     @Operation(summary = "Cập nhật thông tin giảng viên")
     public ApiResponse<InstructorResponse> updateMyInstructorProfile(
             @Valid @RequestBody UpdateInstructorProfileRequest request) {

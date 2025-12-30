@@ -125,7 +125,11 @@ const CartItem: React.FC<CartItemProps> = ({
             gap: 1,
           }}
         >
-          <Button variant="text" sx={{ p: 0, textTransform: "none" }} onClick={onRemove}>
+          <Button
+            variant="text"
+            sx={{ p: 0, textTransform: "none" }}
+            onClick={onRemove}
+          >
             Xóa
           </Button>
           <Button variant="text" sx={{ p: 0, textTransform: "none" }}>
@@ -147,13 +151,15 @@ const CartItem: React.FC<CartItemProps> = ({
           >
             {formatCurrency(price)} <Sell fontSize="small" />
           </Typography>
-          <Typography
-            fontSize={12}
-            color="primary.light"
-            sx={{ textDecoration: "line-through" }}
-          >
-            {formatCurrency(oldPrice || 0)}
-          </Typography>
+          {oldPrice && (
+            <Typography
+              fontSize={12}
+              color="primary.light"
+              sx={{ textDecoration: "line-through" }}
+            >
+              {formatCurrency(oldPrice)}
+            </Typography>
+          )}
         </Box>
       </Card>
     </>

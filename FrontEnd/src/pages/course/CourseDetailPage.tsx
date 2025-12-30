@@ -11,6 +11,7 @@ import StudentFeedback from "../../components/courseDetail/StudentFeedback";
 import Reviews from "../../components/courseDetail/Reviews";
 import RelatedCourses from "../../components/courseDetail/RelatedCourses";
 import PurchaseSidebar from "../../components/courseDetail/PurchaseSidebar";
+import CourseRequirements from "../../components/courseDetail/CourseRequirements";
 import type { CourseDetail } from "../../types/courseDetail";
 
 const mockData: CourseDetail = {
@@ -97,6 +98,8 @@ const mockData: CourseDetail = {
   previewUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
   price: 779000,
   oldPrice: 2499000,
+  discountPercentage: 64,
+  promotionEndDate: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString(), // 9 hours from now
   isPurchasable: true,
   reviewsSummary: {
     average: 5.0,
@@ -142,14 +145,29 @@ const mockData: CourseDetail = {
 const CourseDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<CourseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
-      if (!slug) return;
+      if (!slug) {
+        setError("No slug provided");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Fetching course with slug:", slug);
+      setLoading(true);
+      setError(null);
+
       try {
         const course = await courseService.getCourseBySlug(slug);
+        console.log("Course data received:", course);
 
         // Map API response to CourseDetail
+        const hasDiscount =
+          course.discountPrice !== undefined && course.discountPrice !== null;
+
         const mappedData: CourseDetail = {
           id: course.courseId,
           slug: course.slug,
@@ -159,12 +177,18 @@ const CourseDetailPage = () => {
           categoryPath: [], // API doesn't return this yet
           rating: course.averageRating || 0,
           students: course.totalStudents || 0,
-          lastUpdated: course.publishedAt ? new Date(course.publishedAt).toLocaleDateString() : "",
+          lastUpdated: course.publishedAt
+            ? new Date(course.publishedAt).toLocaleDateString()
+            : "",
           language: course.language || "Tiếng Việt",
           captions: [],
-          whatYouWillLearn: course.whatYouLearn ? course.whatYouLearn.split("\n") : [],
+          whatYouWillLearn: course.whatYouLearn
+            ? course.whatYouLearn.split("\n")
+            : [],
           sections: mockData.sections, // Use mock sections for now
-          requirements: course.requirements ? course.requirements.split("\n") : [],
+          requirements: course.requirements
+            ? course.requirements.split("\n")
+            : [],
           descriptionHtml: course.description,
           instructor: {
             name: course.instructorName || "Unknown Instructor",
@@ -172,11 +196,16 @@ const CourseDetailPage = () => {
             avatarUrl: "/public/user/user-01.jpg", // Placeholder
           },
           previewUrl: course.previewVideoUrl,
-          price: course.price || 0,
-          oldPrice: course.discountPrice,
+          price: hasDiscount ? course.discountPrice! : course.price || 0,
+          oldPrice: hasDiscount ? course.price : null,
           isPurchasable: course.status === "PUBLISHED",
           isPurchased: course.isPurchased,
           purchasedAt: course.purchasedAt,
+          // Promotion info
+          promotionName: course.promotionName,
+          promotionType: course.promotionType,
+          discountPercentage: course.discountPercentage,
+          promotionEndDate: course.promotionEndDate,
           reviewsSummary: {
             average: course.averageRating || 0,
             count: course.totalReviews || 0,
@@ -185,18 +214,22 @@ const CourseDetailPage = () => {
           reviews: mockData.reviews, // Use mock reviews for now
           related: mockData.related, // Use mock related for now
         };
+        console.log("Mapped data:", mappedData);
         setData(mappedData);
+        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch course", error);
-        // Fallback to mock data if fetch fails (optional, or just show error)
-        // setData(mockData); 
+        setError(error instanceof Error ? error.message : "Failed to load course");
+        setLoading(false);
       }
     };
 
     fetchCourse();
   }, [slug]);
 
-  if (!data) return <Container maxWidth="xl">Loading…</Container>;
+  if (loading) return <Container maxWidth="xl" sx={{ py: 4 }}>Đang tải khóa học...</Container>;
+  if (error) return <Container maxWidth="xl" sx={{ py: 4 }}>Lỗi: {error}</Container>;
+  if (!data) return <Container maxWidth="xl" sx={{ py: 4 }}>Không tìm thấy khóa học</Container>;
 
   return (
     <>
@@ -240,6 +273,8 @@ const CourseDetailPage = () => {
               ctaDisabled={!data.isPurchasable}
               isPurchased={data.isPurchased}
               purchasedAt={data.purchasedAt}
+              promotionEndDate={data.promotionEndDate}
+              discountPercentage={data.discountPercentage}
             />
           </Box>
         </Container>
@@ -250,6 +285,7 @@ const CourseDetailPage = () => {
         <Box sx={{ maxWidth: { xs: "100%", md: "60%" } }}>
           <WhatYouWillLearn items={data.whatYouWillLearn} />
           <Curriculum sections={data.sections} />
+          <CourseRequirements requirements={data.requirements || []} />
           <Description html={data.descriptionHtml} />
           <Instructor instructor={data.instructor} />
           <StudentFeedback summary={data.reviewsSummary} />
@@ -267,6 +303,8 @@ const CourseDetailPage = () => {
           ctaDisabled={!data.isPurchasable}
           isPurchased={data.isPurchased}
           purchasedAt={data.purchasedAt}
+          promotionEndDate={data.promotionEndDate}
+          discountPercentage={data.discountPercentage}
         />
       </Box>
     </>

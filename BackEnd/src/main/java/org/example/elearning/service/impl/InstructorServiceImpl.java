@@ -10,26 +10,30 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
+import org.example.elearning.mapper.InstructorMapper;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.InstructorService;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Primary
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class InstructorServiceImpl implements InstructorService {
     InstructorRepository instructorRepository;
     UserRepository userRepository;
+    InstructorMapper instructorMapper;
 
     @Override
     public InstructorResponse getInstructorById(Long instructorId) {
         InstructorEntity instructor = instructorRepository.findById(instructorId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
-        return mapToInstructorResponse(instructor);
+        return instructorMapper.toResponse(instructor);
     }
 
     @Override
@@ -38,9 +42,9 @@ public class InstructorServiceImpl implements InstructorService {
         UserEntity user = getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage()));
+                .orElseGet(() -> createDefaultInstructorProfile(user));
 
-        return mapToInstructorResponse(instructor);
+        return instructorMapper.toResponse(instructor);
     }
 
     @Override
@@ -50,30 +54,13 @@ public class InstructorServiceImpl implements InstructorService {
         UserEntity user = getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage()));
+                .orElseGet(() -> createDefaultInstructorProfile(user));
 
-        if (request.getHeadline() != null) {
-            instructor.setHeadline(request.getHeadline());
-        }
-        if (request.getBiography() != null) {
-            instructor.setBiography(request.getBiography());
-        }
-        if (request.getWebsite() != null) {
-            instructor.setWebsite(request.getWebsite());
-        }
-        if (request.getLinkedin() != null) {
-            instructor.setLinkedin(request.getLinkedin());
-        }
-        if (request.getTwitter() != null) {
-            instructor.setTwitter(request.getTwitter());
-        }
-        if (request.getYoutube() != null) {
-            instructor.setYoutube(request.getYoutube());
-        }
+        instructorMapper.updateEntity(instructor, request);
 
         instructor = instructorRepository.save(instructor);
 
-        return mapToInstructorResponse(instructor);
+        return instructorMapper.toResponse(instructor);
     }
 
     @Override
@@ -87,15 +74,9 @@ public class InstructorServiceImpl implements InstructorService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
         }
 
-        InstructorEntity instructor = InstructorEntity.builder()
-                .user(user)
-                .totalStudents(0)
-                .totalCourses(0)
-                .build();
+        InstructorEntity instructor = createDefaultInstructorProfile(user);
 
-        instructor = instructorRepository.save(instructor);
-
-        return mapToInstructorResponse(instructor);
+        return instructorMapper.toResponse(instructor);
     }
 
     private UserEntity getUserByEmail(String email) {
@@ -103,23 +84,13 @@ public class InstructorServiceImpl implements InstructorService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
     }
 
-    private InstructorResponse mapToInstructorResponse(InstructorEntity instructor) {
-        UserEntity user = instructor.getUser();
-        return InstructorResponse.builder()
-                .instructorId(instructor.getInstructorId())
-                .userId(user.getUserId())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .avatarUrl(user.getAvatarUrl())
-                .headline(instructor.getHeadline())
-                .biography(instructor.getBiography())
-                .website(instructor.getWebsite())
-                .linkedin(instructor.getLinkedin())
-                .twitter(instructor.getTwitter())
-                .youtube(instructor.getYoutube())
-                .totalStudents(instructor.getTotalStudents())
-                .totalCourses(instructor.getTotalCourses())
+    private InstructorEntity createDefaultInstructorProfile(UserEntity user) {
+        InstructorEntity newInstructor = InstructorEntity.builder()
+                .user(user)
+                .totalStudents(0)
+                .totalCourses(0)
                 .build();
+        return instructorRepository.save(newInstructor);
     }
 }
 

@@ -56,6 +56,13 @@ const CourseList = () => {
       const price = hasDiscount ? c.discountPrice! : (c.price ?? 0);
       const oldPrice = hasDiscount ? (c.price ?? undefined) : undefined;
 
+      // Calculate discount percentage if not provided by backend
+      const discountPercentage =
+        c.discountPercentage ??
+        (hasDiscount && c.price && c.price > 0
+          ? Math.round(((c.price - c.discountPrice!) / c.price) * 100)
+          : undefined);
+
       // Convert minutes to hours if available
       const totalHours =
         c.totalDurationMinutes && c.totalDurationMinutes > 0
@@ -77,7 +84,13 @@ const CourseList = () => {
         level: c.level,
         updatedAt: c.publishedAt ?? undefined,
         slug: c.slug,
+        learningPoints: c.whatYouLearn ? c.whatYouLearn.split("\n") : undefined,
         isPurchased: purchasedIds.has(c.courseId),
+        // Promotion info from backend
+        promotionName: c.promotionName,
+        promotionType: c.promotionType,
+        discountPercentage,
+        promotionEndDate: c.promotionEndDate,
       };
     });
   }, [courses, purchasedIds]);
@@ -129,7 +142,12 @@ const CourseList = () => {
                   level={course.level}
                   updatedAt={course.updatedAt}
                   slug={course.slug}
+                  learningPoints={course.learningPoints}
                   isPurchased={course.isPurchased}
+                  promotionName={course.promotionName}
+                  promotionType={course.promotionType}
+                  discountPercentage={course.discountPercentage}
+                  promotionEndDate={course.promotionEndDate}
                 />
               </div>
             </SwiperSlide>

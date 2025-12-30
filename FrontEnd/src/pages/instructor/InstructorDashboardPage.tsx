@@ -17,17 +17,10 @@ import {
   Checkbox,
 } from "@mui/material";
 import {
-  PlayCircleOutline,
-  ForumOutlined,
-  EqualizerOutlined,
-  BuildOutlined,
-  HelpOutlineOutlined,
   Search,
   FilterList,
   Add,
   MoreVert,
-  Menu as MenuIcon,
-  PersonOutline,
 } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
@@ -37,50 +30,25 @@ import {
   type UpdateInstructorProfileRequest,
 } from "../../service/instructorService";
 
-const sidebarItems: {
-  label: string;
-  icon: JSX.Element;
-  hasDot?: boolean;
-  section?: "COURSES" | "PROFILE";
-}[] = [
-    { label: "Khóa học", icon: <PlayCircleOutline />, section: "COURSES" },
-    { label: "Giao tiếp", icon: <ForumOutlined />, hasDot: true, section: "COURSES" },
-    { label: "Hiệu suất", icon: <EqualizerOutlined />, section: "COURSES" },
-    { label: "Công cụ", icon: <BuildOutlined />, section: "COURSES" },
-    { label: "Tài nguyên", icon: <HelpOutlineOutlined />, section: "COURSES" },
-    { label: "Hồ sơ", icon: <PersonOutline />, section: "PROFILE" },
-  ];
-
-const courseDrafts = [
-  {
-    id: 1,
-    title: "đSaaaaaaaaaa",
-    status: "BẢN NHÁP",
-    visibility: "Công khai",
-    progress: 45,
-    description: "Kết thúc khóa học của bạn",
-  },
-  {
-    id: 2,
-    title: "Xây dựng ứng dụng React + TypeScript",
-    status: "BẢN NHÁP",
-    visibility: "Riêng tư",
-    progress: 30,
-    description: "Hoàn thiện nội dung và bài tập",
-  },
-];
-
 import { userService } from "../../service/userService";
+import { courseService, type CreateCourseRequest, type PublicCourseResponse } from "../../service/courseService";
 import { useSnackbar } from "notistack";
+import { useNavigate, useLocation } from "react-router-dom";
+import CreateCourseDialog from "../../components/instructor/CreateCourseDialog";
 
 const InstructorDashboardPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">(
-    "COURSES",
-  );
-  const [activeSidebarItem, setActiveSidebarItem] =
-    useState<string>("Khóa học");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">("COURSES");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    if (section === "PROFILE") setActiveSection("PROFILE");
+    else setActiveSection("COURSES");
+  }, [location.search]);
+
   const { tokens, user, setUser } = useAuthStore();
   const [profile, setProfile] = useState<InstructorResponse | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -104,6 +72,38 @@ const InstructorDashboardPage = () => {
     showProfileToLoggedInUsers: true,
     showEnrolledCoursesOnProfile: true,
   });
+  const [createCourseDialogOpen, setCreateCourseDialogOpen] = useState(false);
+
+  const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!tokens?.accessToken) return;
+      setCoursesLoading(true);
+      try {
+        const response = await courseService.getMyCourses({
+          token: tokens.accessToken,
+          search: searchTerm,
+          size: 100 // Fetch more for now
+        });
+        setCourses(response.data);
+      } catch (error) {
+        console.error("Failed to fetch courses", error);
+        enqueueSnackbar("Không thể tải danh sách khóa học", { variant: "error" });
+      } finally {
+        setCoursesLoading(false);
+      }
+    };
+
+    if (activeSection === "COURSES") {
+      const timeoutId = setTimeout(() => {
+        void fetchCourses();
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeSection, searchTerm, tokens?.accessToken, enqueueSnackbar]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -121,19 +121,14 @@ const InstructorDashboardPage = () => {
           youtube: data.youtube ?? "",
         });
       } catch (error) {
-        enqueueSnackbar("Không thể tải hồ sơ giảng viên", {
-          variant: "error",
-        });
         console.error("Không thể tải hồ sơ giảng viên:", error);
       } finally {
         setProfileLoading(false);
       }
     };
 
-    if (activeSection === "PROFILE" && activeProfileTab === "INFO") {
-      void fetchProfile();
-    }
-  }, [activeSection, activeProfileTab, tokens?.accessToken]);
+    void fetchProfile();
+  }, [tokens?.accessToken]);
 
   const handleSaveProfile = async () => {
     if (!tokens?.accessToken) return;
@@ -190,99 +185,61 @@ const InstructorDashboardPage = () => {
     }
   };
 
-  return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f8f9fb" }}>
-      <Box
-        sx={{
-          width: sidebarCollapsed ? 80 : 240,
-          bgcolor: "#0e0f1a",
-          color: "white",
-          display: { xs: "none", md: "flex" },
-          flexDirection: "column",
-          py: 3,
-          px: 2,
-          gap: 3,
-          transition: "width 0.3s ease",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: sidebarCollapsed ? "center" : "space-between",
-            gap: 1,
-          }}
-        >
-          {!sidebarCollapsed && (
-            <Typography variant="h5" fontWeight={700}>
-              vidi
-            </Typography>
-          )}
-          <IconButton
-            onClick={() => setSidebarCollapsed((prev) => !prev)}
-            sx={{
-              color: "white",
-              bgcolor: "rgba(255,255,255,0.08)",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-        </Box>
-        <Stack spacing={1} alignItems={sidebarCollapsed ? "center" : "stretch"}>
-          {sidebarItems.map((item) => {
-            const isActive = item.label === activeSidebarItem;
-            return (
-              <Button
-                key={item.label}
-                startIcon={!sidebarCollapsed ? item.icon : undefined}
-                onClick={() => {
-                  setActiveSidebarItem(item.label);
-                  if (item.section === "PROFILE") {
-                    setActiveSection("PROFILE");
-                  } else if (item.section === "COURSES") {
-                    setActiveSection("COURSES");
-                  }
-                }}
-                sx={{
-                  justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                  color: isActive ? "#fff" : "rgba(255,255,255,0.7)",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: sidebarCollapsed ? 0 : 2,
-                  py: 1.25,
-                  bgcolor: isActive ? "#3b82f6" : "transparent",
-                  position: "relative",
-                  minWidth: sidebarCollapsed ? 48 : "auto",
-                  "&:hover": { bgcolor: "#1f1f2b" },
-                }}
-              >
-                {sidebarCollapsed ? item.icon : item.label}
-                {item.hasDot && (
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      bgcolor: "#3b82f6",
-                      borderRadius: "50%",
-                      ml: "auto",
-                    }}
-                  />
-                )}
-              </Button>
-            );
-          })}
-        </Stack>
-      </Box>
+  const handleCreateCourse = async (request: CreateCourseRequest) => {
+    if (!tokens?.accessToken || !profile?.instructorId) {
+      enqueueSnackbar("Không tìm thấy thông tin giảng viên", { variant: "error" });
+      return;
+    }
+    try {
+      const newCourse = await courseService.createCourse(tokens.accessToken, {
+        ...request,
+        instructorId: profile.instructorId
+      });
+      enqueueSnackbar("Tạo khóa học thành công!", { variant: "success" });
+      navigate(`/instructor/courses/${newCourse.courseId}/content`);
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Không thể tạo khóa học", { variant: "error" });
+      throw error;
+    }
+  };
 
-      <Box
-        sx={{
-          flex: 1,
-          p: { xs: 2, md: 4 },
-          transition: "margin-left 0.3s ease",
-        }}
-      >
+  const handleSubmitForApproval = async (courseId: number) => {
+    if (!tokens?.accessToken) return;
+    try {
+      await courseService.submitForApproval(tokens.accessToken, courseId);
+      enqueueSnackbar("Đã gửi yêu cầu duyệt khóa học", { variant: "success" });
+      // Refresh courses
+      const response = await courseService.getMyCourses({ token: tokens.accessToken, search: searchTerm, size: 100 });
+      setCourses(response.data);
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Không thể gửi yêu cầu", { variant: "error" });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PUBLISHED': return 'success';
+      case 'WAITING_FOR_APPROVAL': return 'warning';
+      case 'REJECTED': return 'error';
+      case 'ARCHIVED': return 'default';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PUBLISHED': return 'Đã xuất bản';
+      case 'WAITING_FOR_APPROVAL': return 'Chờ duyệt';
+      case 'REJECTED': return 'Bị từ chối';
+      case 'ARCHIVED': return 'Lưu trữ';
+      case 'DRAFT': return 'Nháp';
+      default: return status;
+    }
+  };
+
+  return (
+    <Box>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
           <Typography variant="h4" fontWeight={700}>
             {activeSection === "COURSES" ? "Khóa học" : "Hồ sơ & cài đặt"}
@@ -300,6 +257,8 @@ const InstructorDashboardPage = () => {
               <TextField
                 placeholder="Tìm kiếm khóa học của bạn"
                 fullWidth
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <Search sx={{ mr: 1, color: "text.secondary" }} />
@@ -316,109 +275,100 @@ const InstructorDashboardPage = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
+                onClick={() => setCreateCourseDialogOpen(true)}
                 sx={{ textTransform: "none", bgcolor: "#3b82f6" }}
               >
                 Khóa học mới
               </Button>
             </Stack>
 
-            <Card
-              sx={{
-                mb: 3,
-                p: { xs: 2, md: 3 },
-                border: "1px solid #edeff1",
-                boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-              }}
-            >
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ mb: 2 }}
-              >
-                <Chip label="Mới" color="success" size="small" />
-                <Typography fontWeight={700}>
-                  Chúng tôi đã nâng cấp các bài kiểm tra thực hành để bạn có
-                  thể nâng cấp bài kiểm tra của bạn.
-                </Typography>
-              </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Với những cải tiến về sáng tạo câu hỏi, các câu hỏi mới và các
-                tính năng AI tạo sinh, sẽ tăng tối đa tiềm năng luyện thi chứng
-                chỉ cho bài kiểm tra thực hành của bạn.
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="contained"
-                  sx={{ textTransform: "none", bgcolor: "#3b82f6" }}
-                >
-                  Tìm hiểu thêm
-                </Button>
-                <Button variant="text" sx={{ textTransform: "none" }}>
-                  Hủy bỏ
-                </Button>
-              </Stack>
-            </Card>
+            <CreateCourseDialog
+              open={createCourseDialogOpen}
+              onClose={() => setCreateCourseDialogOpen(false)}
+              onSubmit={handleCreateCourse}
+              instructorId={profile?.instructorId || 0}
+            />
 
             <Stack spacing={2}>
-              {courseDrafts.map((course) => (
-                <Card
-                  key={course.id}
-                  sx={{
-                    p: { xs: 2, md: 3 },
-                    border: "1px solid #edeff1",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <Box
+              {coursesLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : courses.length === 0 ? (
+                <Typography textAlign="center" color="text.secondary" sx={{ py: 4 }}>
+                  Không tìm thấy khóa học nào.
+                </Typography>
+              ) : (
+                courses.map((course) => (
+                  <Card
+                    key={course.courseId}
                     sx={{
+                      p: { xs: 2, md: 3 },
+                      border: "1px solid #edeff1",
                       display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
+                      flexDirection: "column",
+                      gap: 2,
                     }}
-                  >
-                    <Typography variant="h6" fontWeight={700}>
-                      {course.title}
-                    </Typography>
-                    <IconButton>
-                      <MoreVert />
-                    </IconButton>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {course.status} · {course.visibility}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {course.description}
-                  </Typography>
-                  <Divider />
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: 2 }}
                   >
                     <Box
                       sx={{
-                        flex: 1,
-                        height: 8,
-                        bgcolor: "#edeff1",
-                        borderRadius: 4,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
                       }}
                     >
-                      <Box
-                        sx={{
-                          width: `${course.progress}%`,
-                          bgcolor: "#3b82f6",
-                          height: "100%",
-                          borderRadius: 4,
-                        }}
-                      />
+                      <Typography variant="h6" fontWeight={700}>
+                        {course.title}
+                      </Typography>
+                      <Box>
+                        <Chip
+                          label={getStatusLabel(course.status)}
+                          color={getStatusColor(course.status) as any}
+                          size="small"
+                          variant="outlined"
+                          sx={{ mr: 1 }}
+                        />
+                        <IconButton>
+                          <MoreVert />
+                        </IconButton>
+                      </Box>
                     </Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      {course.progress}%
+                    <Typography variant="body2" color="text.secondary">
+                      {course.shortDescription || course.description || "Chưa có mô tả"}
                     </Typography>
-                  </Box>
-                </Card>
-              ))}
+                    <Divider />
+
+                    <Box sx={{ display: "flex", gap: 2, mt: 1, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+                      <Box sx={{ display: "flex", gap: 2 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          href={`/instructor/courses/${course.courseId}/content`}
+                          sx={{ textTransform: "none" }}
+                        >
+                          Quản lý nội dung
+                        </Button>
+                        <Button
+                          variant="text"
+                          size="small"
+                          sx={{ textTransform: "none" }}
+                        >
+                          Chỉnh sửa
+                        </Button>
+                      </Box>
+                      {(course.status === "DRAFT" || course.status === "REJECTED") && (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleSubmitForApproval(course.courseId)}
+                        >
+                          Gửi duyệt
+                        </Button>
+                      )}
+                    </Box>
+                  </Card>
+                )))}
             </Stack>
           </>
         )}
@@ -498,7 +448,7 @@ const InstructorDashboardPage = () => {
                       }
                     />
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="Trang web"
                           fullWidth
@@ -511,7 +461,7 @@ const InstructorDashboardPage = () => {
                           }
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="LinkedIn"
                           fullWidth
@@ -524,7 +474,7 @@ const InstructorDashboardPage = () => {
                           }
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="Twitter / X"
                           fullWidth
@@ -537,7 +487,7 @@ const InstructorDashboardPage = () => {
                           }
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="YouTube"
                           fullWidth
@@ -678,4 +628,3 @@ const InstructorDashboardPage = () => {
 };
 
 export default InstructorDashboardPage;
-

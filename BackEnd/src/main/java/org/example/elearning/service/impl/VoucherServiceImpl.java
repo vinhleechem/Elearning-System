@@ -35,7 +35,6 @@ public class VoucherServiceImpl implements VoucherService {
     private final UserVoucherRepository userVoucherRepository;
     private final UserRepository userRepository;
     private final InstructorRepository instructorRepository;
-    private final PromotionRepository promotionRepository;
     private final CourseRepository courseRepository;
     private final VoucherMapper voucherMapper;
 
@@ -59,13 +58,6 @@ public class VoucherServiceImpl implements VoucherService {
             InstructorEntity instructor = instructorRepository.findById(request.getInstructorId())
                     .orElseThrow(() -> new RuntimeException("Instructor not found"));
             voucher.setInstructor(instructor);
-        }
-
-        // Set promotion if provided
-        if (request.getPromotionId() != null) {
-            PromotionEntity promotion = promotionRepository.findById(request.getPromotionId())
-                    .orElseThrow(() -> new RuntimeException("Promotion not found"));
-            voucher.setPromotion(promotion);
         }
 
         voucher = voucherRepository.save(voucher);

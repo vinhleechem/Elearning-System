@@ -21,6 +21,14 @@ public interface CourseService {
     CourseResponse updateCourse(Long id, CourseRequest request);
 
     void deleteCourse(Long id);
+
+    PaginatedResponse<CourseResponse> getMyCourses(Pageable pageable, String search);
+
+    void submitCourseForApproval(Long id);
+
+    void approveCourse(Long id);
+
+    void rejectCourse(Long id);
 }
 
 

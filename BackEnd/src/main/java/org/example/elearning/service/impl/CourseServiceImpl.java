@@ -14,12 +14,22 @@ import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.repository.EnrollmentRepository;
+import org.example.elearning.repository.PromotionRepository;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.specification.CourseSpecification;
+import org.example.elearning.entity.PromotionEntity;
+import org.example.elearning.entity.PromotionRuleEntity;
+import org.example.elearning.enums.DiscountType;
+import org.example.elearning.enums.PromotionRuleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +46,7 @@ public class CourseServiceImpl implements CourseService {
     CourseMapper courseMapper;
     UserRepository userRepository;
     EnrollmentRepository enrollmentRepository;
+    PromotionRepository promotionRepository;
 
     @Override
     @Transactional
@@ -49,8 +60,15 @@ public class CourseServiceImpl implements CourseService {
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
+        // Fetch active promotions
+        List<PromotionEntity> activePromotions = promotionRepository.findActivePromotions(LocalDateTime.now());
+
         var courseResponses = page.getContent().stream()
-                .map(courseMapper::toResponse)
+                .map(course -> {
+                    CourseResponse response = courseMapper.toResponse(course);
+                    applyBestPromotion(response, course, activePromotions);
+                    return response;
+                })
                 .toList();
 
         return new PaginatedResponse<>(courseResponses, new PaginatedResponse.Pagination(
@@ -58,6 +76,70 @@ public class CourseServiceImpl implements CourseService {
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages()));
+    }
+
+    private void applyBestPromotion(CourseResponse response, CourseEntity course,
+            List<PromotionEntity> activePromotions) {
+        if (course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+            return;
+        }
+
+        BigDecimal bestDiscountAmount = BigDecimal.ZERO;
+        PromotionEntity bestPromotion = null;
+
+        for (PromotionEntity promotion : activePromotions) {
+            for (PromotionRuleEntity rule : promotion.getRules()) {
+                if (isRuleApplicable(rule, course)) {
+                    BigDecimal discountAmount = calculateDiscountAmount(rule, course.getPrice());
+                    if (discountAmount.compareTo(bestDiscountAmount) > 0) {
+                        bestDiscountAmount = discountAmount;
+                        bestPromotion = promotion;
+                    }
+                }
+            }
+        }
+
+        if (bestPromotion != null) {
+            response.setPromotionName(bestPromotion.getName());
+            response.setPromotionType(bestPromotion.getPromotionType().name());
+            response.setPromotionEndDate(bestPromotion.getEndDate());
+
+            BigDecimal finalPrice = course.getPrice().subtract(bestDiscountAmount);
+            if (finalPrice.compareTo(BigDecimal.ZERO) < 0)
+                finalPrice = BigDecimal.ZERO;
+
+            response.setDiscountPrice(finalPrice);
+
+            // Calculate percentage
+            int percentage = bestDiscountAmount.divide(course.getPrice(), 2, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100)).intValue();
+            response.setDiscountPercentage(percentage);
+        }
+    }
+
+    private boolean isRuleApplicable(PromotionRuleEntity rule, CourseEntity course) {
+        if (rule.getRuleType() == PromotionRuleType.ALL) {
+            return true;
+        }
+        if (rule.getRuleType() == PromotionRuleType.COURSE) {
+            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCourseId());
+        }
+        if (rule.getRuleType() == PromotionRuleType.CATEGORY) {
+            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCategory().getId());
+        }
+        return false;
+    }
+
+    private BigDecimal calculateDiscountAmount(PromotionRuleEntity rule, BigDecimal price) {
+        if (rule.getDiscountType() == DiscountType.FIXED) {
+            return rule.getDiscountValue();
+        } else {
+            BigDecimal discount = price.multiply(rule.getDiscountValue().divide(new BigDecimal(100)));
+            if (rule.getMaxDiscountAmount() != null && discount.compareTo(rule.getMaxDiscountAmount()) > 0) {
+                return rule.getMaxDiscountAmount();
+            }
+            return discount;
+        }
     }
 
     @Override
@@ -93,6 +175,10 @@ public class CourseServiceImpl implements CourseService {
         CourseEntity entity = courseRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
         CourseResponse response = courseMapper.toResponse(entity);
+
+        // Apply active promotions
+        List<PromotionEntity> activePromotions = promotionRepository.findActivePromotions(LocalDateTime.now());
+        applyBestPromotion(response, entity, activePromotions);
 
         // Check if user is logged in
         var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
@@ -167,4 +253,101 @@ public class CourseServiceImpl implements CourseService {
         courseRepository.save(entity);
     }
 
+    @Override
+    @Transactional
+    public PaginatedResponse<CourseResponse> getMyCourses(Pageable pageable, String search) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
+        }
+
+        String email = authentication.getName();
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        var instructorOptional = instructorRepository.findByUser(user);
+        
+        if (instructorOptional.isEmpty()) {
+             return new PaginatedResponse<>(java.util.Collections.emptyList(), new PaginatedResponse.Pagination(
+                pageable.getPageNumber() + 1,
+                pageable.getPageSize(),
+                0,
+                0));
+        }
+        
+        var instructor = instructorOptional.get();
+
+        var spec = CourseSpecification.notDeleted()
+                .and(CourseSpecification.filterByInstructorId(instructor.getInstructorId()));
+
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
+        }
+
+        Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
+
+        var courseResponses = page.getContent().stream()
+                .map(courseMapper::toResponse)
+                .toList();
+
+        return new PaginatedResponse<>(courseResponses, new PaginatedResponse.Pagination(
+                page.getNumber() + 1,
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()));
+    }
+    @Override
+    @Transactional
+    public void submitCourseForApproval(Long id) {
+        CourseEntity course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        String email = authentication.getName();
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Check if course belongs to the instructor
+        if (!course.getInstructor().getUser().getUserId().equals(user.getUserId())) {
+             throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this course");
+        }
+
+        if (course.getStatus() != CourseStatus.DRAFT && course.getStatus() != CourseStatus.REJECTED) {
+            throw new IllegalStateException("Only Draft or Rejected courses can be submitted for approval");
+        }
+
+        course.setStatus(CourseStatus.WAITING_FOR_APPROVAL);
+        courseRepository.save(course);
+    }
+
+    @Override
+    @Transactional
+    public void approveCourse(Long id) {
+        CourseEntity course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        if (course.getStatus() != CourseStatus.WAITING_FOR_APPROVAL) {
+            throw new IllegalStateException("Course is not waiting for approval");
+        }
+
+        course.setStatus(CourseStatus.PUBLISHED);
+        course.setPublishedAt(LocalDateTime.now());
+        courseRepository.save(course);
+    }
+
+    @Override
+    @Transactional
+    public void rejectCourse(Long id) {
+        CourseEntity course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        if (course.getStatus() != CourseStatus.WAITING_FOR_APPROVAL) {
+            throw new IllegalStateException("Course is not waiting for approval");
+        }
+
+        course.setStatus(CourseStatus.REJECTED);
+        courseRepository.save(course);
+    }
 }

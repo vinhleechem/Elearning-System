@@ -7,214 +7,132 @@ import {
   Button,
   Avatar,
   Rating,
+  CircularProgress,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import VideoPlayer from "../../components/learning/VideoPlayer";
+import VideoPlayer, { type VideoPlayerRef } from "../../components/learning/VideoPlayer";
 import CourseSidebar from "../../components/learning/CourseSidebar";
-import type { CourseLearning, Section } from "../../types/lecture";
+import CourseQA from "../../components/learning/CourseQA";
+import CourseNotes from "../../components/learning/CourseNotes";
+import type { CourseLearning, Section as SectionType, Lecture } from "../../types/lecture";
 import { ArrowBack, Share, Bookmark } from "@mui/icons-material";
+import { courseService } from "../../service/courseService";
+import { sectionService } from "../../service/sectionService";
+import { lessonService } from "../../service/lessonService";
 
 const CourseLearningPage = () => {
-  const { courseId } = useParams();
+  const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
-  const [currentLectureId, setCurrentLectureId] = useState<number>(1);
+  const [currentLectureId, setCurrentLectureId] = useState<number | null>(null);
+  const [courseData, setCourseData] = useState<CourseLearning | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [playerCurrentTime, setPlayerCurrentTime] = useState(0);
+  const playerRef = useRef<VideoPlayerRef>(null);
 
-  // Mock data - sẽ lấy từ API dựa trên courseId
-  const courseData: CourseLearning = {
-    id: 1,
-    title: "Viết ứng dụng bán hàng với Java Springboot API và Angular",
-    instructor: "Nguyen Duc Hoang",
-    rating: 4.5,
-    totalStudents: 3003,
-    lastUpdated: "24 giờ",
-    sections: [
-      {
-        id: 1,
-        title: "Phần 1: Giới thiệu khóa học",
-        totalDuration: 3600,
-        completedLectures: 3,
-        lectures: [
-          {
-            id: 1,
-            title: "1. Giới thiệu khóa học",
-            duration: 300,
-            isCompleted: true,
-            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-          },
-          {
-            id: 2,
-            title: "2. Cài đặt môi trường",
-            duration: 600,
-            isCompleted: true,
-          },
-          {
-            id: 3,
-            title: "3. Tạo project đầu tiên",
-            duration: 900,
-            isCompleted: true,
-          },
-        ],
-      },
-      {
-        id: 2,
-        title: "Phần 2: Các action cơ bản với ProductController",
-        totalDuration: 5400,
-        completedLectures: 1,
-        lectures: [
-          {
-            id: 4,
-            title: "8. Các action cơ bản với ProductController",
-            duration: 720,
-            isCompleted: true,
-          },
-          {
-            id: 5,
-            title: "9. Viết request upload và đổi tên 1 file ảnh",
-            duration: 960,
-            isCompleted: false,
-          },
-          {
-            id: 6,
-            title: "10. Upload nhiều file ảnh-multiple uploading",
-            duration: 720,
-            isCompleted: false,
-          },
-          {
-            id: 7,
-            title: "11. Các method với UserController",
-            duration: 1140,
-            isCompleted: false,
-          },
-          {
-            id: 8,
-            title: "12. Hướng dẫn download source code",
-            duration: 60,
-            isCompleted: false,
-          },
-        ],
-      },
-      {
-        id: 3,
-        title: "Phần 3: Xây dựng ứng dụng Java Spring Backend phần 2",
-        totalDuration: 14400,
-        completedLectures: 0,
-        lectures: [
-          {
-            id: 9,
-            title: "1. Giới thiệu phần 2",
-            duration: 300,
-            isCompleted: false,
-          },
-          {
-            id: 10,
-            title: "2. Tạo database và models",
-            duration: 1200,
-            isCompleted: false,
-          },
-          {
-            id: 11,
-            title: "3. Xây dựng API CRUD",
-            duration: 1800,
-            isCompleted: false,
-          },
-        ],
-      },
-      {
-        id: 4,
-        title: "Phần 4: Xây dựng ứng dụng Java Spring Backend phần 3",
-        totalDuration: 10800,
-        completedLectures: 0,
-        lectures: [
-          {
-            id: 12,
-            title: "1. Authentication và Authorization",
-            duration: 1800,
-            isCompleted: false,
-          },
-          {
-            id: 13,
-            title: "2. JWT Token Implementation",
-            duration: 2400,
-            isCompleted: false,
-          },
-        ],
-      },
-      {
-        id: 5,
-        title: "Phần 5: Spring Security quản lý đăng nhập với JwtToken",
-        totalDuration: 18000,
-        completedLectures: 0,
-        lectures: [
-          {
-            id: 14,
-            title: "1. Cài đặt Spring Security",
-            duration: 1200,
-            isCompleted: false,
-          },
-          {
-            id: 15,
-            title: "2. Cấu hình JWT",
-            duration: 1800,
-            isCompleted: false,
-          },
-        ],
-      },
-      {
-        id: 6,
-        title: "Phần 6: Tạo ứng dụng Angular và viết giao diện phía Client",
-        totalDuration: 19800,
-        completedLectures: 0,
-        lectures: [
-          {
-            id: 16,
-            title: "1. Setup Angular Project",
-            duration: 900,
-            isCompleted: false,
-          },
-          {
-            id: 17,
-            title: "2. Tạo components",
-            duration: 1500,
-            isCompleted: false,
-          },
-        ],
-      },
-      {
-        id: 7,
-        title: "Phần 7: Ghép API từ Angular sang Java Spring Boot Backend-phần 1",
-        totalDuration: 30600,
-        completedLectures: 0,
-        lectures: [
-          {
-            id: 18,
-            title: "1. Tạo services",
-            duration: 1200,
-            isCompleted: false,
-          },
-          {
-            id: 19,
-            title: "2. Kết nối API",
-            duration: 1800,
-            isCompleted: false,
-          },
-        ],
-      },
-    ],
-    currentLectureId: 1,
-  };
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (!courseId) return;
+      setLoading(true);
+      try {
+        // 1. Fetch Course Detail
+        const courseDetail = await courseService.getCourseById(Number(courseId));
+
+        // 2. Fetch Sections
+        const sectionsRes = await sectionService.getSectionsByCourse(
+          Number(courseId)
+        );
+
+        // 3. Fetch Lessons for each section
+        const sectionsMapped: SectionType[] = await Promise.all(
+          sectionsRes.map(async (sec) => {
+            const lessons = await lessonService.getLessonsBySection(
+              sec.sectionId
+            );
+
+            const lectures: Lecture[] = lessons.map((l) => ({
+              id: l.lessonId,
+              title: l.title,
+              duration: l.durationSeconds || 0,
+              isCompleted: false, // TODO: Implement progress tracking
+              videoUrl: l.videoUrl,
+              description: l.description,
+            }));
+
+            return {
+              id: sec.sectionId,
+              title: sec.title,
+              lectures: lectures,
+              totalDuration: lectures.reduce(
+                (acc, curr) => acc + curr.duration,
+                0
+              ),
+              completedLectures: 0,
+            };
+          })
+        );
+
+        // Sắp xếp sections theo sortOrder hoặc position nếu có (backend thường trả về đúng thứ tự)
+        // Nếu cần sort: sectionsMapped.sort(...)
+
+        const mappedCourseData: CourseLearning = {
+          id: courseDetail.courseId,
+          title: courseDetail.title,
+          instructor: courseDetail.instructorName || "Giảng viên",
+          rating: courseDetail.averageRating || 4.5,
+          totalStudents: courseDetail.totalStudents || 0,
+          lastUpdated: courseDetail.publishedAt
+            ? new Date(courseDetail.publishedAt).toLocaleDateString("vi-VN")
+            : "Mới cập nhật",
+          sections: sectionsMapped,
+          currentLectureId: undefined,
+        };
+
+        setCourseData(mappedCourseData);
+
+        // Set initial lecture if available
+        if (
+          sectionsMapped.length > 0 &&
+          sectionsMapped[0].lectures.length > 0 &&
+          !currentLectureId
+        ) {
+          setCurrentLectureId(sectionsMapped[0].lectures[0].id);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourseData();
+  }, [courseId]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
-  const currentLecture = courseData.sections
-    .flatMap((s) => s.lectures)
-    .find((l) => l.id === currentLectureId);
+  const getSafeVideoUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
 
-  const allLectures = courseData.sections.flatMap((s) => s.lectures);
-  const currentIndex = allLectures.findIndex((l) => l.id === currentLectureId);
+    // Construct absolute URL
+    try {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8080";
+      // If url starts with /uploads, we want the root origin (e.g. localhost:8080), not the API base (e.g. localhost:8080/api/v1)
+      if (url.startsWith("/uploads")) {
+        const urlObj = new URL(baseUrl);
+        return `${urlObj.origin}${url.startsWith("/") ? "" : "/"}${url}`;
+      }
+      return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+    } catch (e) {
+      return `http://localhost:8080${url.startsWith("/") ? "" : "/"}${url}`;
+    }
+  };
+
+  const allLectures = courseData?.sections.flatMap(s => s.lectures) || [];
+  const currentIndex = allLectures.findIndex(l => l.id === currentLectureId);
+  const currentLecture = allLectures[currentIndex];
 
   const handleNext = () => {
     if (currentIndex < allLectures.length - 1) {
@@ -232,8 +150,40 @@ const CourseLearningPage = () => {
     setCurrentLectureId(lectureId);
   };
 
+  const handleSeek = (time: number) => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(time);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          height: "100vh",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!courseData) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h5" gutterBottom>Không tìm thấy khóa học</Typography>
+        <Button variant="contained" onClick={() => navigate('/my-courses/learning')}>
+          Quay lại trang học tập
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ display: "flex", height: "100vh", flexDirection: "column" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", flexDirection: "column", width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -288,17 +238,19 @@ const CourseLearningPage = () => {
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <Box sx={{ display: "flex", flex: 1 }}>
         {/* Video Player Section */}
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Box sx={{ flex: 1, bgcolor: "#000" }}>
             <VideoPlayer
-              videoUrl={currentLecture?.videoUrl}
+              ref={playerRef}
+              videoUrl={getSafeVideoUrl(currentLecture?.videoUrl)}
               title={currentLecture?.title || ""}
               onNext={handleNext}
               onPrevious={handlePrevious}
               hasNext={currentIndex < allLectures.length - 1}
               hasPrevious={currentIndex > 0}
+              onTimeUpdate={setPlayerCurrentTime}
             />
           </Box>
 
@@ -318,10 +270,12 @@ const CourseLearningPage = () => {
                   },
                   "& .Mui-selected": {
                     color: "#1c1d1f !important",
+                    backgroundColor: "transparent",
+                    borderBottom: "2px solid #1c1d1f",
                   },
                   "& .MuiTabs-indicator": {
                     backgroundColor: "#1c1d1f",
-                    height: 3,
+                    height: 0,
                   },
                 }}
               >
@@ -341,8 +295,7 @@ const CourseLearningPage = () => {
               {activeTab === 0 && (
                 <Box>
                   <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-                    Thực chiến, xây dựng ứng dụng bán hàng với Java Springboot
-                    API và Angular
+                    {courseData.title}
                   </Typography>
 
                   <Box
@@ -392,38 +345,17 @@ const CourseLearningPage = () => {
                       Mô tả
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                      Khóa học này sẽ hướng dẫn bạn từng bước xây dựng một ứng
-                      dụng bán hàng hoàn chỉnh với Java Spring Boot làm backend
-                      và Angular làm frontend. Bạn sẽ học được cách tạo RESTful
-                      API, xác thực người dùng với JWT, và tích hợp frontend
-                      với backend.
+                      {/* TODO: Add description to courseDetail API response if needed */}
+                      Khóa học chất lượng cao.
                     </Typography>
                   </Box>
                 </Box>
               )}
-
-              {activeTab === 1 && (
-                <Box>
-                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                    Tất cả các câu hỏi trong khóa học này
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Chưa có câu hỏi nào. Hãy là người đầu tiên đặt câu hỏi!
-                  </Typography>
-                </Box>
-              )}
-
-              {activeTab === 2 && (
-                <Box>
-                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                    Ghi chú của tôi
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Bạn chưa có ghi chú nào. Tạo ghi chú để lưu lại những điểm
-                    quan trọng!
-                  </Typography>
-                </Box>
-              )}
+              {activeTab === 1 && <CourseQA />}
+              {activeTab === 2 && <CourseNotes currentTime={playerCurrentTime} onSeek={handleSeek} />}
+              {activeTab === 3 && <Typography sx={{ p: 2 }}>Chưa có thông báo</Typography>}
+              {activeTab === 4 && <Typography sx={{ p: 2 }}>Chức năng đánh giá</Typography>}
+              {activeTab === 5 && <Typography sx={{ p: 2 }}>Công cụ học tập</Typography>}
             </Container>
           </Box>
         </Box>
@@ -431,7 +363,7 @@ const CourseLearningPage = () => {
         {/* Sidebar */}
         <CourseSidebar
           sections={courseData.sections}
-          currentLectureId={currentLectureId}
+          currentLectureId={currentLectureId || 0}
           onLectureClick={handleLectureClick}
         />
       </Box>
@@ -440,4 +372,3 @@ const CourseLearningPage = () => {
 };
 
 export default CourseLearningPage;
-

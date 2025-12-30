@@ -63,6 +63,11 @@ export interface CourseDetail {
   isPurchasable?: boolean;
   isPurchased?: boolean;
   purchasedAt?: string;
+  // Promotion info
+  promotionName?: string;
+  promotionType?: string;
+  discountPercentage?: number;
+  promotionEndDate?: string;
   reviewsSummary: ReviewsSummary;
   reviews: ReviewItem[];
   related: Array<{

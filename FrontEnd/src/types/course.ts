@@ -15,6 +15,11 @@ export interface CourseProps {
   updatedAt?: string;
   learningPoints?: string[];
   isPurchased?: boolean;
+  // Promotion info
+  promotionName?: string;
+  promotionType?: string;
+  discountPercentage?: number;
+  promotionEndDate?: string;
 }
 
 export interface CourseDetailProps {

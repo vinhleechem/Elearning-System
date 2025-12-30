@@ -30,8 +30,6 @@ public class VoucherRequest {
 
     private Long instructorId; // Nullable - null = system voucher
 
-    private Long promotionId; // Nullable - link to promotion
-
     @NotNull(message = "Discount type is required")
     private DiscountType discountType;
 

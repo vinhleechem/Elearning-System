@@ -27,7 +27,7 @@ public class LessonRequest {
 
     String articleContent;
 
-    Integer durationMinutes;
+    Integer durationSeconds;
 
     Boolean isPreview;
 
@@ -37,5 +37,3 @@ public class LessonRequest {
 
     Boolean isActive;
 }
-
-

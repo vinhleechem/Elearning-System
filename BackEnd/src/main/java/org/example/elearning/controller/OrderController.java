@@ -9,12 +9,16 @@ import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.request.CreateOrderRequest;
 import org.example.elearning.dto.response.ApiResponse;
 import org.example.elearning.dto.response.OrderResponse;
+import org.example.elearning.enums.OrderStatus;
 import org.example.elearning.service.OrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -51,6 +55,22 @@ public class OrderController {
                 .code(HttpStatus.OK.value())
                 .message("Lấy danh sách đơn hàng thành công")
                 .data(orderService.getMyOrders(pageable))
+                .build();
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lấy danh sách tất cả đơn hàng (Admin)")
+    public ApiResponse<Page<OrderResponse>> getAllOrders(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+            Pageable pageable) {
+        return ApiResponse.<Page<OrderResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Lấy danh sách đơn hàng thành công")
+                .data(orderService.getAllOrders(search, status, fromDate, toDate, pageable))
                 .build();
     }
 

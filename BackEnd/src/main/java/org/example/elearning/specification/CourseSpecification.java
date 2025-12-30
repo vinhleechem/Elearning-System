@@ -60,5 +60,17 @@ public final class CourseSpecification {
     public static Specification<CourseEntity> notDeleted() {
         return filterByDeleted(false);
     }
+
+    /**
+     * Filter courses by instructor ID
+     */
+    public static Specification<CourseEntity> filterByInstructorId(Long instructorId) {
+        return (root, query, criteriaBuilder) -> {
+            if (instructorId == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("instructor").get("instructorId"), instructorId);
+        };
+    }
 }
 

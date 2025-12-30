@@ -31,6 +31,13 @@ export const TAGS_STYLE: Record<string, { bg: string; text: string }> = {
   "Mới nhất": { bg: "#bbe7d3", text: "#0F2F1F" },
   "Giảm giá": { bg: "#fee2e2", text: "#b91c1c" },
   Hot: { bg: "#fef3c7", text: "#b45309" },
+  // Promotion tags
+  BLACK_FRIDAY: { bg: "#1a1a1a", text: "#ffd700" },
+  FLASH_SALE: { bg: "#ff4757", text: "#ffffff" },
+  NEW_YEAR: { bg: "#e74c3c", text: "#ffffff" },
+  SEASONAL: { bg: "#3498db", text: "#ffffff" },
+  CLEARANCE: { bg: "#9b59b6", text: "#ffffff" },
+  SPECIAL_EVENT: { bg: "#f39c12", text: "#ffffff" },
 };
 
 export const trendingData = [

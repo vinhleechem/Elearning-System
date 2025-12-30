@@ -24,8 +24,7 @@ public class CouponEntity extends BaseEntity{
     @Column(name = "code", nullable = false, unique = true, length = 50)
     String code;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     String description;
 
     @Enumerated(EnumType.STRING)

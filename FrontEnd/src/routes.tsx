@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "./pages/RootLayout";
 import HomePage from "./pages/HomePage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -21,9 +21,13 @@ import CourseManagement from "./pages/admin/CourseManagement";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import PromotionManagement from "./pages/admin/PromotionManagement";
 import VoucherManagement from "./pages/admin/VoucherManagement";
+import OrderManagement from "./pages/admin/OrderManagement";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import MyLearningPage from "./pages/learning/MyLearningPage";
 import CourseLearningPage from "./pages/learning/CourseLearningPage";
 import InstructorDashboardPage from "./pages/instructor/InstructorDashboardPage";
+import CourseContentManagementPage from "./pages/instructor/CourseContentManagementPage";
+import InstructorLayout from "./pages/instructor/InstructorLayout";
 import WishlistPage from "./pages/WishlistPage";
 import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
@@ -65,11 +69,12 @@ export const router = createBrowserRouter([
       },
       {
         path: "instructor",
+        element: <InstructorLayout />,
         children: [
-          // {
-          //   index: true,
-          //   element: <InstructorListPage />
-          // },
+          {
+            index: true,
+            element: <Navigate to="dashboard" replace />,
+          },
           // {
           //   path: ':instructorId',
           //   // element: <InstructorDetailPage />
@@ -78,6 +83,16 @@ export const router = createBrowserRouter([
             path: "dashboard",
             element: <InstructorDashboardPage />,
           },
+          {
+            path: "courses/:courseId/content",
+            element: <CourseContentManagementPage />,
+          },
+          // Placeholder routes for other sidebar items to prevent 404 if clicked
+          { path: "communication", element: <InstructorDashboardPage /> },
+          { path: "performance", element: <InstructorDashboardPage /> },
+          { path: "tools", element: <InstructorDashboardPage /> },
+          { path: "resources", element: <InstructorDashboardPage /> },
+          { path: "profile", element: <InstructorDashboardPage /> },
         ],
       },
       {
@@ -152,6 +167,18 @@ export const router = createBrowserRouter([
       {
         path: "vouchers",
         element: <VoucherManagement />,
+      },
+      {
+        path: "orders",
+        element: <OrderManagement />,
+      },
+      {
+        path: "orders/:orderId",
+        element: <AdminOrderDetail />,
+      },
+      {
+        path: "courses/:courseId/content",
+        element: <CourseContentManagementPage />,
       },
     ],
   },

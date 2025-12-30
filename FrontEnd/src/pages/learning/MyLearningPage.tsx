@@ -11,10 +11,10 @@ import {
 } from "@mui/material";
 // ... imports
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PurchasedCourseCard from "../../components/learning/PurchasedCourseCard";
 import type { PurchasedCourse } from "../../types/purchasedCourse";
-import { Schedule } from "@mui/icons-material";
+
 import { httpClient } from "../../service/httpClient";
 import { enqueueSnackbar } from "notistack";
 
@@ -73,7 +73,7 @@ const MyLearningPage = () => {
     setActiveTab(newValue);
     if (newValue === 2) {
       // Tab "Danh sách mong ước"
-      navigate("/my-learning/wishlist");
+      navigate("/my-courses/wishlist");
     }
   };
 

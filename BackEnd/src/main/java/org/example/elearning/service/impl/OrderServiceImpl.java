@@ -15,11 +15,14 @@ import org.example.elearning.repository.*;
 import org.example.elearning.service.OrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -129,6 +132,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
@@ -146,12 +150,51 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getMyOrders(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
 
         Page<OrderEntity> orders = orderRepository.findByUser(user, pageable);
 
+        return orders.map(order -> {
+            List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
+            return mapToOrderResponse(order, orderItems);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getAllOrders(String search, OrderStatus status, LocalDateTime fromDate,
+            LocalDateTime toDate, Pageable pageable) {
+        Specification<OrderEntity> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isEmpty()) {
+                try {
+                    Long orderId = Long.parseLong(search);
+                    predicates.add(cb.equal(root.get("orderId"), orderId));
+                } catch (NumberFormatException e) {
+                    predicates.add(cb.like(cb.lower(root.get("user").get("email")), "%" + search.toLowerCase() + "%"));
+                }
+            }
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            if (fromDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromDate));
+            }
+
+            if (toDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), toDate));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<OrderEntity> orders = orderRepository.findAll(spec, pageable);
         return orders.map(order -> {
             List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
             return mapToOrderResponse(order, orderItems);
@@ -191,6 +234,8 @@ public class OrderServiceImpl implements OrderService {
 
         return OrderResponse.builder()
                 .orderId(order.getOrderId())
+                .userId(order.getUser().getUserId())
+                .userName(order.getUser().getFullName())
                 .items(itemResponses)
                 .totalAmount(order.getTotalAmount())
                 .discountAmount(order.getDiscountAmount())

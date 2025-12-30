@@ -50,4 +50,10 @@ public class CourseResponse {
     List<String> tags;
     Boolean isPurchased;
     LocalDateTime purchasedAt;
+
+    // Promotion info
+    String promotionName;
+    String promotionType;
+    Integer discountPercentage;
+    LocalDateTime promotionEndDate;
 }

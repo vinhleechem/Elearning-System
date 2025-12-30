@@ -46,8 +46,7 @@ public class NotificationEntity extends BaseEntity {
     @Column(name = "title", length = 200)
     String title;
 
-    @Lob
-    @Column(name = "message")
+    @Column(name = "message", columnDefinition = "TEXT")
     String message;
 
     @Column(name = "is_read")

@@ -13,6 +13,7 @@ import {
   Category,
   LocalOffer,
   CardGiftcard,
+  ShoppingCart,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -52,6 +53,11 @@ const navItems: NavItem[] = [
     icon: <CardGiftcard />,
     name: "Quản lý voucher",
     path: "/admin/vouchers",
+  },
+  {
+    icon: <ShoppingCart />,
+    name: "Quản lý đơn hàng",
+    path: "/admin/orders",
   },
   {
     icon: <Notifications />,

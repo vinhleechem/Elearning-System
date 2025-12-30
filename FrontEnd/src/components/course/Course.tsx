@@ -31,6 +31,7 @@ const Course: React.FC<CourseProps> = ({
   updatedAt,
   learningPoints,
   isPurchased,
+  slug,
 }) => {
   const [ratingValue] = useState<number | null>(rating);
   const [showPanel, setShowPanel] = useState(false);
@@ -96,7 +97,7 @@ const Course: React.FC<CourseProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       <Link
-        to={`/course/${encodeURIComponent(title.toLowerCase().replace(/\s+/g, "-").slice(0, 60))}`}
+        to={`/course/${slug || encodeURIComponent(title.toLowerCase().replace(/\s+/g, "-").slice(0, 60))}`}
         style={{ textDecoration: "none", color: "inherit", display: "block" }}
       >
         <Card

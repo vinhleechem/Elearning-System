@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Box,
   Typography,
@@ -8,10 +9,8 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Chip,
   Stack,
-  Button,
-  Paper
+  Button
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
@@ -45,139 +44,148 @@ const getSectionDuration = (section: SectionItem) => {
   return formatSeconds(secs);
 };
 
-const Curriculum: React.FC<Props> = ({ sections = [], totalDuration = "" }) => {
+const Curriculum: React.FC<Props> = ({ sections = [] }) => {
+  const [expanded, setExpanded] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    if (sections.length > 0) {
+      setExpanded([Number(sections[0].id)]);
+    }
+  }, [sections]);
+
   const totalLectures = sections.reduce((sum, s) => sum + (s.lectures?.length || 0), 0);
   const allDuration = sections.reduce((sum, s) => sum + (s.lectures || []).reduce((sSum, l) => sSum + parseDurationToSeconds(l.duration), 0), 0);
+
+  const handleExpandAll = () => {
+    if (expanded.length === sections.length) {
+      setExpanded([]);
+    } else {
+      setExpanded(sections.map(s => Number(s.id)));
+    }
+  };
+
+  const handleChange = (panelId: number) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(prev =>
+      isExpanded ? [...prev, panelId] : prev.filter(id => id !== panelId)
+    );
+  };
 
   if (!sections.length) return null;
 
   return (
-    <Paper variant="outlined" sx={{ p: 0, mb: 3, borderColor: 'divider' }}>
-      <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="h5" fontWeight={700} mb={2}>
-          Nội dung khóa học
-        </Typography>
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h5" fontWeight={700} mb={2}>
+        Nội dung khóa học
+      </Typography>
 
-        <Typography variant="body2" color="text.secondary" mb={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="body2" color="text.secondary">
           {sections.length} phần • {totalLectures} bài giảng • {formatSeconds(allDuration)} tổng thời lượng
         </Typography>
-
         <Button
           variant="text"
           size="small"
-          sx={{ p: 0, textTransform: 'none', color: 'primary.main', fontWeight: 600 }}
+          onClick={handleExpandAll}
+          sx={{ p: 0, textTransform: 'none', color: '#5624d0', fontWeight: 700 }}
         >
-          Mở rộng tất cả các phần
+          {expanded.length === sections.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả các phần'}
         </Button>
       </Box>
 
-      {sections.map((section: SectionItem, index: number) => (
-        <Accordion
-          key={section.id}
-          defaultExpanded={index === 0}
-          disableGutters
-          elevation={0}
-          sx={{
-            '&:before': { display: 'none' },
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+      <Box sx={{ border: '1px solid #d1d7dc' }}>
+        {sections.map((section: SectionItem, _index: number) => (
+          <Accordion
+            key={section.id}
+            expanded={expanded.includes(Number(section.id))}
+            onChange={handleChange(Number(section.id))}
+            disableGutters
+            elevation={0}
             sx={{
-              px: 3,
-              py: 2,
-              '& .MuiAccordionSummary-content': { margin: 0 }
+              '&:before': { display: 'none' },
+              borderBottom: '1px solid #d1d7dc',
+              '&:last-child': { borderBottom: 'none' },
+              bgcolor: '#f7f9fa'
             }}
           >
-            <Box sx={{ width: '100%' }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography fontWeight={700} variant="subtitle1">
-                  {section.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {section.lectures?.length || 0} bài giảng • {getSectionDuration(section)}
-                </Typography>
-              </Stack>
-            </Box>
-          </AccordionSummary>
-
-          <AccordionDetails sx={{ px: 3, py: 0, pb: 2 }}>
-            <List dense disablePadding>
-              {(section.lectures || []).map((lecture: LectureItem) => (
-                <ListItem
-                  key={lecture.id}
-                  sx={{
-                    pl: 0,
-                    pr: 0,
-                    py: 1,
-                    borderRadius: 1,
-                    '&:hover': { bgcolor: 'action.hover' }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    {lecture.previewable ? (
-                      <PlayCircleOutlineIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                    ) : (
-                      <OndemandVideoIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
-                    )}
-                  </ListItemIcon>
-
-                  <ListItemText
-                    primary={lecture.title}
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      color: lecture.previewable ? 'primary.main' : 'text.primary',
-                      sx: { textDecoration: lecture.previewable ? 'underline' : 'none' }
-                    }}
-                    sx={{ flex: 1 }}
-                  />
-
-                  {lecture.previewable && (
-                    <Chip
-                      label="Xem trước"
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        mr: 2,
-                        fontSize: '0.75rem',
-                        height: 24,
-                        borderColor: 'primary.main',
-                        color: 'primary.main'
-                      }}
-                    />
-                  )}
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ minWidth: 50, textAlign: 'right' }}
-                  >
-                    {lecture.duration || ""}
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                px: 2,
+                py: 0,
+                minHeight: 48,
+                '& .MuiAccordionSummary-content': { margin: '12px 0' }
+              }}
+            >
+              <Box sx={{ width: '100%' }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography fontWeight={700} variant="subtitle1" fontSize={15}>
+                    {section.title}
                   </Typography>
-                </ListItem>
-              ))}
-            </List>
-          </AccordionDetails>
-        </Accordion>
-      ))}
+                  <Typography variant="caption" color="text.secondary">
+                    {section.lectures?.length || 0} bài giảng • {getSectionDuration(section)}
+                  </Typography>
+                </Stack>
+              </Box>
+            </AccordionSummary>
 
-      <Box sx={{ p: 3, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button
-          variant="outlined"
-          sx={{
-            borderStyle: 'dashed',
-            borderColor: 'primary.main',
-            color: 'primary.main',
-            textTransform: 'none',
-            fontWeight: 600
-          }}
-        >
-          4 phần nữa
-        </Button>
+            <AccordionDetails sx={{ px: 2, py: 2, bgcolor: 'white' }}>
+              <List dense disablePadding>
+                {(section.lectures || []).map((lecture: LectureItem) => (
+                  <ListItem
+                    key={lecture.id}
+                    sx={{ pl: 0, pr: 0, py: 0.5 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      {lecture.previewable ? (
+                        <PlayCircleOutlineIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+                      ) : (
+                        <OndemandVideoIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+                      )}
+                    </ListItemIcon>
+
+                    <ListItemText
+                      primary={lecture.title}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        color: lecture.previewable ? '#5624d0' : 'text.primary',
+                        sx: {
+                          textDecoration: lecture.previewable ? 'underline' : 'none',
+                          cursor: lecture.previewable ? 'pointer' : 'default',
+                          fontSize: 14
+                        }
+                      }}
+                      sx={{ flex: 1 }}
+                    />
+
+                    {lecture.previewable && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          mr: 2,
+                          color: '#5624d0',
+                          textDecoration: 'underline',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Xem trước
+                      </Typography>
+                    )}
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ minWidth: 40, textAlign: 'right' }}
+                    >
+                      {lecture.duration || ""}
+                    </Typography>
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionDetails>
+          </Accordion>
+        ))}
       </Box>
-    </Paper>
+    </Box>
   );
 };
 

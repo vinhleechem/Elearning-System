@@ -4,10 +4,14 @@ export interface OrderItemResponse {
   courseId: number;
   courseTitle: string;
   price: number;
+  discountPrice?: number;
+  finalPrice?: number;
 }
 
 export interface OrderResponse {
   orderId: number;
+  userId: number;
+  userName: string;
   items: OrderItemResponse[];
   totalAmount: number;
   discountAmount: number;

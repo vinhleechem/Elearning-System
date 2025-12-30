@@ -58,8 +58,8 @@ public class LessonEntity extends BaseEntity {
     @Column(name = "article_content", columnDefinition = "TEXT")
     String articleContent;
 
-    @Column(name = "duration_minutes")
-    Integer durationMinutes;
+    @Column(name = "duration_seconds")
+    Integer durationSeconds;
 
     @Column(name = "is_preview")
     Boolean isPreview;

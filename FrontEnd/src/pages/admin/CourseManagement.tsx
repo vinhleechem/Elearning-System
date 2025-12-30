@@ -39,6 +39,7 @@ import {
   FilterList,
   Add,
   FolderOpen,
+  VideoLibrary,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { useAuthStore } from "../../store/authStore";
@@ -612,8 +613,8 @@ const CourseManagement = () => {
                                     catInfo.level === 1
                                       ? "primary.main"
                                       : catInfo.level === 2
-                                      ? "secondary.main"
-                                      : "text.secondary",
+                                        ? "secondary.main"
+                                        : "text.secondary",
                                 }}
                               />
                               <Box>
@@ -700,6 +701,16 @@ const CourseManagement = () => {
                             title="Xem chi tiết"
                           >
                             <Visibility fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="secondary"
+                            onClick={() =>
+                              navigate(`/admin/courses/${course.courseId}/content`)
+                            }
+                            title="Quản lý nội dung"
+                          >
+                            <VideoLibrary fontSize="small" />
                           </IconButton>
                           <IconButton
                             size="small"
@@ -831,8 +842,8 @@ const CourseManagement = () => {
                             cat.level === 1
                               ? "primary.main"
                               : cat.level === 2
-                              ? "secondary.main"
-                              : "text.secondary",
+                                ? "secondary.main"
+                                : "text.secondary",
                         }}
                       />
                       <Typography variant="body2" fontWeight={500}>
@@ -873,8 +884,8 @@ const CourseManagement = () => {
                             cat.level === 1
                               ? "primary.main"
                               : cat.level === 2
-                              ? "secondary.main"
-                              : "text.secondary",
+                                ? "secondary.main"
+                                : "text.secondary",
                         }}
                       />
                       <Typography

@@ -41,14 +41,6 @@ public class VoucherEntity extends BaseEntity {
     @Builder.Default
     VoucherType voucherType = VoucherType.PUBLIC;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instructor_id")
-    InstructorEntity instructor; // Instructor tạo voucher (null = system voucher)
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "promotion_id")
-    PromotionEntity promotion; // Liên kết với promotion nếu có
-
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
     @Builder.Default
@@ -100,4 +92,8 @@ public class VoucherEntity extends BaseEntity {
     @OneToMany(mappedBy = "voucher", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     List<UserVoucherEntity> userVouchers = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id")
+    InstructorEntity instructor; // Instructor tạo voucher (null = system voucher)
 }

@@ -4,7 +4,7 @@ import PaymentPanel, {
 } from "../components/payment/PaymentPanel";
 import OrderSummaryPanel from "../components/order/OrderSummaryPanel";
 import CheckoutItemList from "../components/checkout/CheckoutItemList";
-import { VoucherSection, DiscountSummary } from "../components/voucher";
+import { VoucherSection } from "../components/voucher";
 import { useState, useEffect, useCallback } from "react";
 import { httpClient } from "../service/httpClient";
 import { useCartStore } from "../store/cartStore";
@@ -18,14 +18,16 @@ import type {
 } from "../types/voucher";
 
 const CheckoutPage = () => {
+  const { items, voucherCode, setVoucherCode } = useCartStore();
+  const { user } = useAuthStore();
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
   const [loading, setLoading] = useState(false);
-  const [appliedVoucherCode, setAppliedVoucherCode] = useState<string>();
+  const [appliedVoucherCode, setAppliedVoucherCode] = useState<
+    string | undefined
+  >(voucherCode || undefined);
   const [discountCalculation, setDiscountCalculation] =
     useState<DiscountCalculationResponse | null>(null);
-
-  const { items } = useCartStore();
-  const { user } = useAuthStore();
 
   const calculateDiscount = useCallback(async () => {
     if (!user || items.length === 0) {
@@ -70,11 +72,13 @@ const CheckoutPage = () => {
 
   const handleVoucherApply = (code: string) => {
     setAppliedVoucherCode(code);
+    setVoucherCode(code);
     enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
   };
 
   const handleVoucherRemove = () => {
     setAppliedVoucherCode(undefined);
+    setVoucherCode(null);
     enqueueSnackbar("Đã xóa voucher", { variant: "info" });
   };
 
@@ -182,11 +186,6 @@ const CheckoutPage = () => {
 
           {/* Right Column - Order Summary */}
           <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 33%" } }}>
-            {/* Discount Summary with detailed breakdown */}
-            <Box mb={3}>
-              <DiscountSummary discountCalculation={discountCalculation} />
-            </Box>
-
             {/* Order Summary Panel */}
             <OrderSummaryPanel
               onCheckout={handleCheckout}
@@ -194,6 +193,7 @@ const CheckoutPage = () => {
               discountAmount={discountCalculation?.totalDiscount || 0}
               finalAmount={discountCalculation?.finalAmount || 0}
               loading={loading}
+              discounts={discountCalculation?.discounts || []}
             />
           </Box>
         </Box>

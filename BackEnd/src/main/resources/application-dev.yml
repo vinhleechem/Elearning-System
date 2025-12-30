@@ -8,11 +8,16 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
   data:
     redis:
       port: 6379
       host: localhost
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB
+      max-request-size: 500MB
 open:
   api:
     title: API Document
@@ -53,3 +58,9 @@ payment:
     version: 2.1.0
     command: pay
     order-type: other
+
+# File upload configuration
+file:
+  upload:
+    dir: uploads/videos
+

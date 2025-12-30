@@ -23,16 +23,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, Filter filter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(requests ->
-                        requests
-                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .cors(cors -> cors
-                        .configurationSource(corsConfigurationSource())
-                )
+                        .configurationSource(corsConfigurationSource()))
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(new JwtAccessDenied())
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));

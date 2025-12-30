@@ -24,11 +24,9 @@ public class LessonResponse {
     Long videoAssetId;
     String videoUrl;
     String articleContent;
-    Integer durationMinutes;
+    Integer durationSeconds;
     Boolean isPreview;
     Boolean isDownloadable;
     Integer sortOrder;
     Boolean isActive;
 }
-
-

@@ -416,7 +416,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <IconButton
               component={Link}
-              to="/my-learning/wishlist"
+              to="/my-courses/wishlist"
               color="inherit"
               sx={{ mx: 0.5 }}
               aria-label="Wishlist"

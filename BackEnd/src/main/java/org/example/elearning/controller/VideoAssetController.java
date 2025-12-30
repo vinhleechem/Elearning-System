@@ -10,8 +10,11 @@ import org.example.elearning.dto.request.VideoAssetRequest;
 import org.example.elearning.dto.response.StandardResponse;
 import org.example.elearning.dto.response.VideoAssetResponse;
 import org.example.elearning.service.VideoAssetService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import static org.example.elearning.dto.response.StandardResponse.success;
 
@@ -22,6 +25,17 @@ import static org.example.elearning.dto.response.StandardResponse.success;
 public class VideoAssetController {
 
     VideoAssetService videoAssetService;
+
+    @Operation(summary = "Upload video file")
+    @ApiResponse(responseCode = "200", description = "Upload thành công")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    public ResponseEntity<StandardResponse<VideoAssetResponse>> uploadVideo(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "title", required = false) String title) {
+        VideoAssetResponse result = videoAssetService.uploadVideo(file, title);
+        return ResponseEntity.ok(success("Upload video thành công", result));
+    }
 
     @Operation(summary = "Tạo video asset (metadata)")
     @ApiResponse(responseCode = "200", description = "Tạo thành công")
@@ -58,5 +72,3 @@ public class VideoAssetController {
         return ResponseEntity.ok(success("Xóa video asset thành công"));
     }
 }
-
-

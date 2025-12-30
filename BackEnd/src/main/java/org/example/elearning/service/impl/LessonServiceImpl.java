@@ -62,7 +62,7 @@ public class LessonServiceImpl implements LessonService {
                 .videoAssetId(request.getVideoAssetId())
                 .videoUrl(request.getVideoUrl())
                 .articleContent(request.getArticleContent())
-                .durationMinutes(request.getDurationMinutes())
+                .durationSeconds(request.getDurationSeconds())
                 .isPreview(request.getIsPreview() != null && request.getIsPreview())
                 .isDownloadable(request.getIsDownloadable() != null && request.getIsDownloadable())
                 .sortOrder(sortOrder)
@@ -78,17 +78,28 @@ public class LessonServiceImpl implements LessonService {
         LessonEntity entity = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
-        if (request.getTitle() != null) entity.setTitle(request.getTitle());
-        if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getType() != null) entity.setType(request.getType());
-        if (request.getVideoAssetId() != null) entity.setVideoAssetId(request.getVideoAssetId());
-        if (request.getVideoUrl() != null) entity.setVideoUrl(request.getVideoUrl());
-        if (request.getArticleContent() != null) entity.setArticleContent(request.getArticleContent());
-        if (request.getDurationMinutes() != null) entity.setDurationMinutes(request.getDurationMinutes());
-        if (request.getIsPreview() != null) entity.setIsPreview(request.getIsPreview());
-        if (request.getIsDownloadable() != null) entity.setIsDownloadable(request.getIsDownloadable());
-        if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
-        if (request.getIsActive() != null) entity.setIsActive(request.getIsActive());
+        if (request.getTitle() != null)
+            entity.setTitle(request.getTitle());
+        if (request.getDescription() != null)
+            entity.setDescription(request.getDescription());
+        if (request.getType() != null)
+            entity.setType(request.getType());
+        if (request.getVideoAssetId() != null)
+            entity.setVideoAssetId(request.getVideoAssetId());
+        if (request.getVideoUrl() != null)
+            entity.setVideoUrl(request.getVideoUrl());
+        if (request.getArticleContent() != null)
+            entity.setArticleContent(request.getArticleContent());
+        if (request.getDurationSeconds() != null)
+            entity.setDurationSeconds(request.getDurationSeconds());
+        if (request.getIsPreview() != null)
+            entity.setIsPreview(request.getIsPreview());
+        if (request.getIsDownloadable() != null)
+            entity.setIsDownloadable(request.getIsDownloadable());
+        if (request.getSortOrder() != null)
+            entity.setSortOrder(request.getSortOrder());
+        if (request.getIsActive() != null)
+            entity.setIsActive(request.getIsActive());
 
         return toResponse(lessonRepository.save(entity));
     }
@@ -111,7 +122,7 @@ public class LessonServiceImpl implements LessonService {
                 .videoAssetId(entity.getVideoAssetId())
                 .videoUrl(entity.getVideoUrl())
                 .articleContent(entity.getArticleContent())
-                .durationMinutes(entity.getDurationMinutes())
+                .durationSeconds(entity.getDurationSeconds())
                 .isPreview(entity.getIsPreview())
                 .isDownloadable(entity.getIsDownloadable())
                 .sortOrder(entity.getSortOrder())
@@ -119,4 +130,3 @@ public class LessonServiceImpl implements LessonService {
                 .build();
     }
 }
-

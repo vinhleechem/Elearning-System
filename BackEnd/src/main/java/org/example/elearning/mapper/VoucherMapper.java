@@ -23,14 +23,12 @@ public interface VoucherMapper {
 
     @Mapping(target = "voucherId", ignore = true)
     @Mapping(target = "instructor", ignore = true)
-    @Mapping(target = "promotion", ignore = true)
     @Mapping(target = "applicableCourses", ignore = true)
     VoucherEntity toEntity(VoucherRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "voucherId", ignore = true)
     @Mapping(target = "instructor", ignore = true)
-    @Mapping(target = "promotion", ignore = true)
     @Mapping(target = "applicableCourses", ignore = true)
     void updateEntity(@MappingTarget VoucherEntity entity, VoucherRequest request);
 }

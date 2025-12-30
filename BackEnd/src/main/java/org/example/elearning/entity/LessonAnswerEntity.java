@@ -18,8 +18,7 @@ public class LessonAnswerEntity extends BaseEntity{
     @Column(name = "answer_id")
     Long answerId;
 
-    @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     String content;
 
 
