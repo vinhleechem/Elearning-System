@@ -31,6 +31,8 @@ import InstructorLayout from "./pages/instructor/InstructorLayout";
 import WishlistPage from "./pages/WishlistPage";
 import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
+import NotificationManagement from "./pages/admin/NotificationManagement";
+import RevenueDashboard from "./pages/admin/RevenueDashboard";
 
 export const router = createBrowserRouter([
   {
@@ -179,6 +181,14 @@ export const router = createBrowserRouter([
       {
         path: "courses/:courseId/content",
         element: <CourseContentManagementPage />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationManagement />,
+      },
+      {
+        path: "revenue",
+        element: <RevenueDashboard />,
       },
     ],
   },

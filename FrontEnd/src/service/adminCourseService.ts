@@ -80,12 +80,15 @@ export const adminCourseService = {
     accessToken: string,
     courseId: number,
   ): Promise<CourseResponse> => {
-    const response = await httpClient<CourseResponse>(`/courses/admin/${courseId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+    const response = await httpClient<CourseResponse>(
+      `/courses/admin/${courseId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    });
+    );
 
     if (!response.data) {
       throw new Error("Không lấy được thông tin khóa học");
@@ -108,17 +111,14 @@ export const adminCourseService = {
       language?: string;
     },
   ): Promise<CourseResponse> => {
-    const response = await httpClient<CourseResponse>(
-      `/courses/${courseId}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+    const response = await httpClient<CourseResponse>(`/courses/${courseId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(data),
+    });
 
     if (!response.data) {
       throw new Error(response.message || "Cập nhật khóa học thất bại");
@@ -172,5 +172,34 @@ export const adminCourseService = {
       throw new Error(response.message || "Xóa khóa học thất bại");
     }
   },
-};
 
+  updateCourseStatus: async (
+    accessToken: string,
+    courseId: number,
+    status:
+      | "DRAFT"
+      | "PUBLISHED"
+      | "ACHIEVED"
+      | "PENDING"
+      | "REJECTED"
+      | "ARCHIVED",
+  ): Promise<CourseResponse> => {
+    const response = await httpClient<CourseResponse>(
+      `/courses/${courseId}/status`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      },
+    );
+
+    if (!response.data) {
+      throw new Error(response.message || "Cập nhật trạng thái thất bại");
+    }
+
+    return response.data;
+  },
+};

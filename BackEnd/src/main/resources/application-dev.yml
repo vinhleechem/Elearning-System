@@ -8,7 +8,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
   data:
     redis:
       port: 6379
@@ -63,4 +63,10 @@ payment:
 file:
   upload:
     dir: uploads/videos
+
+# Logging configuration
+logging:
+  level:
+    org.springframework.messaging: DEBUG
+    org.springframework.web.socket: DEBUG
 

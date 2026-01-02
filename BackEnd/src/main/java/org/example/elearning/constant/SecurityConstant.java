@@ -5,7 +5,9 @@ public final class SecurityConstant {
             "/api/v1/auth/**",
             "/api/v1/categories/**",
             "/api/v1/courses/**",
-            "/api/v1/payment/vn-pay-callback"
+            "/api/v1/payment/vn-pay-callback",
+            "/ws/**",
+            "/api/v1/ws/**"
     };
 
     // Permissions for User

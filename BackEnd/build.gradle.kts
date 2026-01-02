@@ -43,6 +43,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.6")
     implementation ("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("com.cloudinary:cloudinary-http45:1.39.0")
+    
+    // WebSocket for real-time notifications
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 
     // Devtools (chỉ dùng ở môi trường dev, hot reload)
     developmentOnly("org.springframework.boot:spring-boot-devtools")

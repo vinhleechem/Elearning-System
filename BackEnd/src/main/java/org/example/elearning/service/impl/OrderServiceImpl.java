@@ -13,6 +13,8 @@ import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.*;
 import org.example.elearning.service.OrderService;
+import org.example.elearning.service.NotificationService;
+import org.example.elearning.dto.request.NotificationRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
     CourseRepository courseRepository;
     UserRepository userRepository;
     EnrollmentRepository enrollmentRepository;
+    NotificationService notificationService;
 
     @Override
     @Transactional
@@ -127,6 +130,9 @@ public class OrderServiceImpl implements OrderService {
 
             orderItems.add(orderItemRepository.save(orderItem));
         }
+
+        // Send notification to all admins about new order
+        sendNewOrderNotification(order, user);
 
         return mapToOrderResponse(order, orderItems);
     }
@@ -225,6 +231,25 @@ public class OrderServiceImpl implements OrderService {
     private UserEntity getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+    }
+
+    private void sendNewOrderNotification(OrderEntity order, UserEntity user) {
+        // Get all admins
+        List<UserEntity> admins = userRepository.findAllAdmins();
+        
+        for (UserEntity admin : admins) {
+            NotificationRequest notification = NotificationRequest.builder()
+                    .title("Đơn hàng mới")
+                    .message(String.format("%s đã đặt hàng với tổng giá trị %s VNĐ", 
+                            user.getFullName(), 
+                            order.getFinalAmount()))
+                    .type("SYSTEM")
+                    .userId(admin.getUserId())
+                    .link("/admin/orders")
+                    .build();
+            
+            notificationService.createAndSendNotification(notification);
+        }
     }
 
     private OrderResponse mapToOrderResponse(OrderEntity order, List<OrderItemEntity> orderItems) {

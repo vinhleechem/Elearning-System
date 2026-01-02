@@ -305,36 +305,104 @@ const PromotionManagement = () => {
       {/* Stats Cards */}
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+            }}
+          >
             <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                Total Promotions
-              </Typography>
-              <Typography variant="h4">{promotions.length}</Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    Total Promotions
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700}>
+                    {promotions.length}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <LocalOffer fontSize="large" />
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+              color: "white",
+            }}
+          >
             <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                Active Promotions
-              </Typography>
-              <Typography variant="h4">
-                {promotions.filter((p) => p.isActive).length}
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    Active Promotions
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700}>
+                    {promotions.filter((p) => p.isActive).length}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <CheckCircle fontSize="large" />
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+              color: "white",
+            }}
+          >
             <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                Inactive Promotions
-              </Typography>
-              <Typography variant="h4">
-                {promotions.filter((p) => !p.isActive).length}
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    Inactive Promotions
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700}>
+                    {promotions.filter((p) => !p.isActive).length}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Cancel fontSize="large" />
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>

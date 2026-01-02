@@ -49,6 +49,9 @@ public class NotificationEntity extends BaseEntity {
     @Column(name = "message", columnDefinition = "TEXT")
     String message;
 
+    @Column(name = "link", length = 500)
+    String link;
+
     @Column(name = "is_read")
     @Builder.Default
     Boolean isRead = false;

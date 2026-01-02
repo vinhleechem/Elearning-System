@@ -33,6 +33,7 @@ import { useCartStore } from "../../store/cartStore";
 import CartDropdown from "../cart/CartDropdown";
 import { categoryService } from "../../service/categoryService";
 import type { CategoryTreeResponse } from "../../service/categoryService";
+import NotificationBell from "../common/NotificationBell";
 
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
@@ -142,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const transformCategoriesToMegaMenu = (
-    categories: CategoryTreeResponse[]
+    categories: CategoryTreeResponse[],
   ): MegaMenuTopic[] => {
     // Helper: chunk an array into smaller arrays of size n
     const chunk = <T,>(arr: T[], size: number): T[][] => {
@@ -157,8 +158,7 @@ const Header: React.FC<HeaderProps> = ({
       .filter((cat) => cat.level === 1 && cat.isActive)
       .map((level1) => {
         // Level 2 categories become columns
-        const level2Cats =
-          level1.children?.filter((cat) => cat.isActive) || [];
+        const level2Cats = level1.children?.filter((cat) => cat.isActive) || [];
 
         // Build columns: each level2 is a column, items are level3 (or itself if no level3)
         const columns = level2Cats.map((level2) => {
@@ -450,11 +450,7 @@ const Header: React.FC<HeaderProps> = ({
               onMouseLeave={handleCartMouseLeave}
             />
 
-            <IconButton color="inherit" sx={{ mx: 0.5 }} aria-label="Thông báo">
-              <Badge color="error" variant="dot">
-                <NotificationsOutlined />
-              </Badge>
-            </IconButton>
+            {user && <NotificationBell />}
 
             <IconButton
               onClick={handleUserMenuOpen}

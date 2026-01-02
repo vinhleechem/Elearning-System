@@ -16,12 +16,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
-import {
-  Search,
-  FilterList,
-  Add,
-  MoreVert,
-} from "@mui/icons-material";
+import { Search, FilterList, Add, MoreVert } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import {
@@ -31,7 +26,11 @@ import {
 } from "../../service/instructorService";
 
 import { userService } from "../../service/userService";
-import { courseService, type CreateCourseRequest, type PublicCourseResponse } from "../../service/courseService";
+import {
+  courseService,
+  type CreateCourseRequest,
+  type PublicCourseResponse,
+} from "../../service/courseService";
 import { useSnackbar } from "notistack";
 import { useNavigate, useLocation } from "react-router-dom";
 import CreateCourseDialog from "../../components/instructor/CreateCourseDialog";
@@ -40,7 +39,9 @@ const InstructorDashboardPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">("COURSES");
+  const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">(
+    "COURSES",
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -56,16 +57,15 @@ const InstructorDashboardPage = () => {
   const [activeProfileTab, setActiveProfileTab] = useState<
     "INFO" | "AVATAR" | "SECURITY"
   >("INFO");
-  const [profileForm, setProfileForm] = useState<UpdateInstructorProfileRequest>(
-    {
+  const [profileForm, setProfileForm] =
+    useState<UpdateInstructorProfileRequest>({
       headline: "",
       biography: "",
       website: "",
       linkedin: "",
       twitter: "",
       youtube: "",
-    },
-  );
+    });
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [securitySettings, setSecuritySettings] = useState({
@@ -86,12 +86,14 @@ const InstructorDashboardPage = () => {
         const response = await courseService.getMyCourses({
           token: tokens.accessToken,
           search: searchTerm,
-          size: 100 // Fetch more for now
+          size: 100, // Fetch more for now
         });
         setCourses(response.data);
       } catch (error) {
         console.error("Failed to fetch courses", error);
-        enqueueSnackbar("Không thể tải danh sách khóa học", { variant: "error" });
+        enqueueSnackbar("Không thể tải danh sách khóa học", {
+          variant: "error",
+        });
       } finally {
         setCoursesLoading(false);
       }
@@ -187,18 +189,22 @@ const InstructorDashboardPage = () => {
 
   const handleCreateCourse = async (request: CreateCourseRequest) => {
     if (!tokens?.accessToken || !profile?.instructorId) {
-      enqueueSnackbar("Không tìm thấy thông tin giảng viên", { variant: "error" });
+      enqueueSnackbar("Không tìm thấy thông tin giảng viên", {
+        variant: "error",
+      });
       return;
     }
     try {
       const newCourse = await courseService.createCourse(tokens.accessToken, {
         ...request,
-        instructorId: profile.instructorId
+        instructorId: profile.instructorId,
       });
       enqueueSnackbar("Tạo khóa học thành công!", { variant: "success" });
       navigate(`/instructor/courses/${newCourse.courseId}/content`);
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Không thể tạo khóa học", { variant: "error" });
+      enqueueSnackbar(error.message || "Không thể tạo khóa học", {
+        variant: "error",
+      });
       throw error;
     }
   };
@@ -209,31 +215,48 @@ const InstructorDashboardPage = () => {
       await courseService.submitForApproval(tokens.accessToken, courseId);
       enqueueSnackbar("Đã gửi yêu cầu duyệt khóa học", { variant: "success" });
       // Refresh courses
-      const response = await courseService.getMyCourses({ token: tokens.accessToken, search: searchTerm, size: 100 });
+      const response = await courseService.getMyCourses({
+        token: tokens.accessToken,
+        search: searchTerm,
+        size: 100,
+      });
       setCourses(response.data);
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Không thể gửi yêu cầu", { variant: "error" });
+      enqueueSnackbar(error.message || "Không thể gửi yêu cầu", {
+        variant: "error",
+      });
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PUBLISHED': return 'success';
-      case 'WAITING_FOR_APPROVAL': return 'warning';
-      case 'REJECTED': return 'error';
-      case 'ARCHIVED': return 'default';
-      default: return 'default';
+      case "PUBLISHED":
+        return "success";
+      case "PENDING":
+        return "warning";
+      case "REJECTED":
+        return "error";
+      case "ARCHIVED":
+        return "default";
+      default:
+        return "default";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'PUBLISHED': return 'Đã xuất bản';
-      case 'WAITING_FOR_APPROVAL': return 'Chờ duyệt';
-      case 'REJECTED': return 'Bị từ chối';
-      case 'ARCHIVED': return 'Lưu trữ';
-      case 'DRAFT': return 'Nháp';
-      default: return status;
+      case "PUBLISHED":
+        return "Đã xuất bản";
+      case "PENDING":
+        return "Chờ duyệt";
+      case "REJECTED":
+        return "Bị từ chối";
+      case "ARCHIVED":
+        return "Lưu trữ";
+      case "DRAFT":
+        return "Nháp";
+      default:
+        return status;
     }
   };
 
@@ -291,11 +314,15 @@ const InstructorDashboardPage = () => {
 
             <Stack spacing={2}>
               {coursesLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                   <CircularProgress />
                 </Box>
               ) : courses.length === 0 ? (
-                <Typography textAlign="center" color="text.secondary" sx={{ py: 4 }}>
+                <Typography
+                  textAlign="center"
+                  color="text.secondary"
+                  sx={{ py: 4 }}
+                >
                   Không tìm thấy khóa học nào.
                 </Typography>
               ) : (
@@ -334,11 +361,22 @@ const InstructorDashboardPage = () => {
                       </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {course.shortDescription || course.description || "Chưa có mô tả"}
+                      {course.shortDescription ||
+                        course.description ||
+                        "Chưa có mô tả"}
                     </Typography>
                     <Divider />
 
-                    <Box sx={{ display: "flex", gap: 2, mt: 1, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        mt: 1,
+                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <Box sx={{ display: "flex", gap: 2 }}>
                         <Button
                           variant="outlined"
@@ -356,19 +394,23 @@ const InstructorDashboardPage = () => {
                           Chỉnh sửa
                         </Button>
                       </Box>
-                      {(course.status === "DRAFT" || course.status === "REJECTED") && (
+                      {(course.status === "DRAFT" ||
+                        course.status === "REJECTED") && (
                         <Button
                           variant="contained"
                           color="primary"
                           size="small"
-                          onClick={() => handleSubmitForApproval(course.courseId)}
+                          onClick={() =>
+                            handleSubmitForApproval(course.courseId)
+                          }
                         >
                           Gửi duyệt
                         </Button>
                       )}
                     </Box>
                   </Card>
-                )))}
+                ))
+              )}
             </Stack>
           </>
         )}
@@ -539,8 +581,8 @@ const InstructorDashboardPage = () => {
                   Ảnh hồ sơ
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Ảnh hồ sơ giúp học viên nhận ra bạn trên Udemy. Sử dụng ảnh
-                  rõ nét, chuyên nghiệp.
+                  Ảnh hồ sơ giúp học viên nhận ra bạn trên Udemy. Sử dụng ảnh rõ
+                  nét, chuyên nghiệp.
                 </Typography>
                 <Box display="flex" alignItems="center" gap={3}>
                   <Avatar
@@ -582,7 +624,7 @@ const InstructorDashboardPage = () => {
                   Cài đặt bảo mật
                 </Typography>
                 <FormControlLabel
-                  control={(
+                  control={
                     <Checkbox
                       checked={securitySettings.showProfileToLoggedInUsers}
                       onChange={(e) =>
@@ -592,11 +634,11 @@ const InstructorDashboardPage = () => {
                         }))
                       }
                     />
-                  )}
+                  }
                   label="Hiển thị hồ sơ của bạn cho người dùng đã đăng nhập"
                 />
                 <FormControlLabel
-                  control={(
+                  control={
                     <Checkbox
                       checked={securitySettings.showEnrolledCoursesOnProfile}
                       onChange={(e) =>
@@ -606,14 +648,14 @@ const InstructorDashboardPage = () => {
                         }))
                       }
                     />
-                  )}
+                  }
                   label="Hiển thị các khóa học bạn đang tham gia trên trang hồ sơ của bạn"
                 />
                 <Box>
                   <Button
                     variant="contained"
                     sx={{ textTransform: "none" }}
-                  // Hiện tại chỉ lưu local state, chưa gọi API riêng.
+                    // Hiện tại chỉ lưu local state, chưa gọi API riêng.
                   >
                     Lưu
                   </Button>

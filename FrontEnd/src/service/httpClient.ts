@@ -129,6 +129,12 @@ async function tryRefreshToken(): Promise<string | null> {
     const currentState = getAuthStoreState();
     if (currentState.tokens) {
       currentState.updateAccessToken(newToken);
+
+      // Trigger WebSocket reconnection with new token
+      // We dispatch a custom event that NotificationBell can listen to
+      window.dispatchEvent(new CustomEvent('token-refreshed', {
+        detail: { accessToken: newToken }
+      }));
     }
 
     return newToken;

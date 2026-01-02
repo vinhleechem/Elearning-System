@@ -19,6 +19,16 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     List<NotificationEntity> findByUserAndIsReadFalse(UserEntity user);
 
     Long countByUserAndIsReadFalse(UserEntity user);
+
+    Page<NotificationEntity> findByIsDeletedFalse(Pageable pageable);
+
+    Page<NotificationEntity> findByUserAndIsDeletedFalse(UserEntity user, Pageable pageable);
+
+    Page<NotificationEntity> findByIsReadAndIsDeletedFalse(Boolean isRead, Pageable pageable);
+
+    Page<NotificationEntity> findByUserAndIsReadAndIsDeletedFalse(UserEntity user, Boolean isRead, Pageable pageable);
+
+    Page<NotificationEntity> findByUserFullNameContainingAndIsDeletedFalse(String fullName, Pageable pageable);
+
+    Page<NotificationEntity> findByUserFullNameContainingAndIsReadAndIsDeletedFalse(String fullName, Boolean isRead, Pageable pageable);
 }
-
-

@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Button,
-  Grid,
   Chip,
   Dialog,
   DialogTitle,
@@ -125,19 +124,94 @@ const OrderManagement: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{ fontWeight: "bold", color: "primary.main", mb: 4 }}
-      >
-        Order Management
-      </Typography>
+    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Quản lý Đơn Hàng
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Theo dõi và quản lý tất cả đơn hàng trong hệ thống
+        </Typography>
+      </Box>
 
-      {/* Search and Filter - Placeholder for now */}
-      <Box sx={{ mb: 4, display: "flex", gap: 2 }}>
+      {/* Stats Cards */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: 3,
+          mb: 3,
+        }}
+      >
+        <Paper
+          sx={{
+            p: 3,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+            Tổng Đơn Hàng
+          </Typography>
+          <Typography variant="h3" fontWeight={700}>
+            {orders.length}
+          </Typography>
+        </Paper>
+        <Paper
+          sx={{
+            p: 3,
+            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+            Đang Chờ
+          </Typography>
+          <Typography variant="h3" fontWeight={700}>
+            {orders.filter((o) => o.status === "PENDING").length}
+          </Typography>
+        </Paper>
+        <Paper
+          sx={{
+            p: 3,
+            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+            Hoàn Thành
+          </Typography>
+          <Typography variant="h3" fontWeight={700}>
+            {orders.filter((o) => o.status === "COMPLETED").length}
+          </Typography>
+        </Paper>
+        <Paper
+          sx={{
+            p: 3,
+            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+            Đã Hủy
+          </Typography>
+          <Typography variant="h3" fontWeight={700}>
+            {orders.filter((o) => o.status === "CANCELLED").length}
+          </Typography>
+        </Paper>
+      </Box>
+
+      {/* Search Bar */}
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <TextField
-          placeholder="Search orders..."
+          fullWidth
+          label="Tìm kiếm"
+          placeholder="Tìm kiếm đơn hàng..."
           variant="outlined"
           size="small"
           InputProps={{
@@ -147,27 +221,38 @@ const OrderManagement: React.FC = () => {
               </InputAdornment>
             ),
           }}
-          sx={{ width: 300 }}
         />
-      </Box>
+      </Paper>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={3}>
+        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
           <Table sx={{ minWidth: 650 }} aria-label="order table">
-            <TableHead sx={{ bgcolor: "grey.100" }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>Order ID</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }} align="right">
-                  Total Amount
+            <TableHead>
+              <TableRow sx={{ bgcolor: "primary.light" }}>
+                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                  Mã Đơn
                 </TableCell>
-                <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Actions
+                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                  Ngày Tạo
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                  Trạng Thái
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 700, color: "primary.main" }}
+                  align="right"
+                >
+                  Tổng Tiền
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 700, color: "primary.main" }}
+                  align="center"
+                >
+                  Hành Động
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -179,10 +264,14 @@ const OrderManagement: React.FC = () => {
                   hover
                 >
                   <TableCell component="th" scope="row">
-                    #{order.orderId}
+                    <Typography variant="body2" fontWeight={600}>
+                      #{order.orderId}
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    {new Date(order.createdAt).toLocaleDateString()}
+                    <Typography variant="body2">
+                      {new Date(order.createdAt).toLocaleString("vi-VN")}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -199,7 +288,7 @@ const OrderManagement: React.FC = () => {
                     {formatCurrency(order.finalAmount)}
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="View Details">
+                    <Tooltip title="Xem Chi Tiết">
                       <IconButton
                         color="primary"
                         onClick={() => handleViewDetails(order)}
@@ -211,7 +300,7 @@ const OrderManagement: React.FC = () => {
                     </Tooltip>
                     {order.status !== "CANCELLED" &&
                       order.status !== "COMPLETED" && (
-                        <Tooltip title="Cancel Order">
+                        <Tooltip title="Hủy Đơn">
                           <IconButton
                             color="error"
                             onClick={() => handleOpenCancelDialog(order)}
@@ -226,9 +315,9 @@ const OrderManagement: React.FC = () => {
               ))}
               {orders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No orders found.
+                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <Typography variant="h6" color="text.secondary">
+                      Không có đơn hàng nào
                     </Typography>
                   </TableCell>
                 </TableRow>

@@ -1,11 +1,13 @@
 package org.example.elearning.service.impl;
 
 import org.example.elearning.dto.request.CourseRequest;
+import org.example.elearning.dto.request.NotificationRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CategoryEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.InstructorEntity;
+import org.example.elearning.entity.UserEntity;
 import org.example.elearning.enums.CourseStatus;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.CourseMapper;
@@ -16,6 +18,7 @@ import org.example.elearning.repository.UserRepository;
 import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.repository.PromotionRepository;
 import org.example.elearning.service.CourseService;
+import org.example.elearning.service.NotificationService;
 import org.example.elearning.specification.CourseSpecification;
 import org.example.elearning.entity.PromotionEntity;
 import org.example.elearning.entity.PromotionRuleEntity;
@@ -47,6 +50,7 @@ public class CourseServiceImpl implements CourseService {
     UserRepository userRepository;
     EnrollmentRepository enrollmentRepository;
     PromotionRepository promotionRepository;
+    NotificationService notificationService;
 
     @Override
     @Transactional
@@ -318,8 +322,27 @@ public class CourseServiceImpl implements CourseService {
             throw new IllegalStateException("Only Draft or Rejected courses can be submitted for approval");
         }
 
-        course.setStatus(CourseStatus.WAITING_FOR_APPROVAL);
+        course.setStatus(CourseStatus.PENDING);
         courseRepository.save(course);
+
+        // Gửi thông báo cho tất cả admin (lưu DB + gửi realtime)
+        List<UserEntity> admins = userRepository.findAllAdmins();
+        System.out.println("Found " + admins.size() + " admins to notify."); // DEBUG LOG
+
+        for (UserEntity admin : admins) {
+            System.out.println("Creating notification for admin: " + admin.getEmail()); // DEBUG LOG
+            NotificationRequest notification = NotificationRequest.builder()
+                    .title("Yêu cầu duyệt khóa học mới")
+                    .message(String.format("Giảng viên %s đã gửi yêu cầu duyệt khóa học '%s'", 
+                            course.getInstructor().getUser().getFullName(), 
+                            course.getTitle()))
+                    .type("SYSTEM")
+                    .userId(admin.getUserId())
+                    .link("/admin/courses/" + course.getCourseId())
+                    .build();
+            
+            notificationService.createAndSendNotification(notification);
+        }
     }
 
     @Override
@@ -328,7 +351,7 @@ public class CourseServiceImpl implements CourseService {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
-        if (course.getStatus() != CourseStatus.WAITING_FOR_APPROVAL) {
+        if (course.getStatus() != CourseStatus.PENDING) {
             throw new IllegalStateException("Course is not waiting for approval");
         }
 
@@ -343,7 +366,7 @@ public class CourseServiceImpl implements CourseService {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
-        if (course.getStatus() != CourseStatus.WAITING_FOR_APPROVAL) {
+        if (course.getStatus() != CourseStatus.PENDING) {
             throw new IllegalStateException("Course is not waiting for approval");
         }
 

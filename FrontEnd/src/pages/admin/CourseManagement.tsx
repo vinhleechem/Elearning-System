@@ -68,8 +68,14 @@ const CourseManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(null);
+  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(
+    null,
+  );
   const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [courseToUpdateStatus, setCourseToUpdateStatus] =
+    useState<CourseResponse | null>(null);
+  const [newStatus, setNewStatus] = useState<string>("");
   const [formData, setFormData] = useState({
     title: "",
     categoryId: "",
@@ -79,6 +85,7 @@ const CourseManagement = () => {
     discountPrice: "",
     level: "",
     language: "",
+    status: "",
   });
   const itemsPerPage = 10;
 
@@ -86,7 +93,7 @@ const CourseManagement = () => {
   const flattenCategories = (
     cats: CategoryTreeResponse[],
     result: { id: number; name: string; level: number; path: string }[] = [],
-    parentPath = ""
+    parentPath = "",
   ): { id: number; name: string; level: number; path: string }[] => {
     cats.forEach((cat) => {
       const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
@@ -190,7 +197,7 @@ const CourseManagement = () => {
       // Load full course data
       const fullCourse = await adminCourseService.getCourseById(
         tokens.accessToken,
-        course.courseId
+        course.courseId,
       );
       setEditingCourse(fullCourse);
       setFormData({
@@ -202,6 +209,7 @@ const CourseManagement = () => {
         discountPrice: fullCourse.discountPrice?.toString() || "",
         level: fullCourse.level || "",
         language: fullCourse.language || "",
+        status: fullCourse.status || "DRAFT",
       });
       setCreateDialogOpen(true);
     } catch (error) {
@@ -223,6 +231,7 @@ const CourseManagement = () => {
       discountPrice: "",
       level: "",
       language: "",
+      status: "DRAFT",
     });
     setCreateDialogOpen(true);
   };
@@ -256,12 +265,22 @@ const CourseManagement = () => {
       };
 
       if (editingCourse) {
-        // Update
+        // Update course
         await adminCourseService.updateCourse(
           tokens.accessToken,
           editingCourse.courseId,
-          courseData
+          courseData,
         );
+
+        // Update status if changed
+        if (formData.status && formData.status !== editingCourse.status) {
+          await adminCourseService.updateCourseStatus(
+            tokens.accessToken,
+            editingCourse.courseId,
+            formData.status as any,
+          );
+        }
+
         enqueueSnackbar("Cập nhật khóa học thành công", {
           variant: "success",
         });
@@ -295,17 +314,15 @@ const CourseManagement = () => {
             statusFilter !== "ALL"
               ? (statusFilter as "DRAFT" | "PUBLISHED" | "ACHIEVED")
               : undefined,
-        }
+        },
       );
       setCourses(pageResult.data || []);
     } catch (error) {
       enqueueSnackbar(
-        editingCourse
-          ? "Cập nhật khóa học thất bại"
-          : "Tạo khóa học thất bại",
+        editingCourse ? "Cập nhật khóa học thất bại" : "Tạo khóa học thất bại",
         {
           variant: "error",
-        }
+        },
       );
       console.error("Save course failed", error);
     }
@@ -343,6 +360,45 @@ const CourseManagement = () => {
       style: "currency",
       currency: "VND",
     }).format(price);
+  };
+
+  const handleStatusClick = (course: CourseResponse) => {
+    setCourseToUpdateStatus(course);
+    setNewStatus(course.status);
+    setStatusDialogOpen(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!courseToUpdateStatus || !tokens?.accessToken) return;
+
+    try {
+      await adminCourseService.updateCourseStatus(
+        tokens.accessToken,
+        courseToUpdateStatus.courseId,
+        newStatus as any,
+      );
+
+      enqueueSnackbar("Cập nhật trạng thái thành công", { variant: "success" });
+      setStatusDialogOpen(false);
+
+      // Reload courses
+      const pageResult = await adminCourseService.getCourses(
+        tokens.accessToken,
+        {
+          page: page - 1,
+          size: itemsPerPage,
+          search: searchTerm || undefined,
+          status:
+            statusFilter !== "ALL"
+              ? (statusFilter as "DRAFT" | "PUBLISHED" | "ACHIEVED")
+              : undefined,
+        },
+      );
+      setCourses(pageResult.data || []);
+    } catch (error) {
+      enqueueSnackbar("Cập nhật trạng thái thất bại", { variant: "error" });
+      console.error("Update status failed", error);
+    }
   };
 
   const formatDuration = (minutes?: number) => {
@@ -579,9 +635,7 @@ const CourseManagement = () => {
                                 color: "primary.main",
                               },
                             }}
-                            onClick={() =>
-                              navigate(`/course/${course.slug}`)
-                            }
+                            onClick={() => navigate(`/course/${course.slug}`)}
                           >
                             {course.title}
                           </Typography>
@@ -605,7 +659,13 @@ const CourseManagement = () => {
                         {(() => {
                           const catInfo = getCategoryInfo(course.categoryId);
                           return catInfo ? (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
                               <FolderOpen
                                 sx={{
                                   fontSize: 16,
@@ -647,7 +707,8 @@ const CourseManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={500}>
-                          {course.instructorName || `ID: ${course.instructorId}`}
+                          {course.instructorName ||
+                            `ID: ${course.instructorId}`}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -655,7 +716,8 @@ const CourseManagement = () => {
                           label={getStatusLabel(course.status)}
                           color={getStatusColor(course.status) as any}
                           size="small"
-                          sx={{ fontWeight: 600 }}
+                          sx={{ fontWeight: 600, cursor: "pointer" }}
+                          onClick={() => handleStatusClick(course)}
                         />
                       </TableCell>
                       <TableCell>
@@ -686,7 +748,10 @@ const CourseManagement = () => {
                           </Typography>
                           {course.totalReviews !== undefined &&
                             course.totalReviews > 0 && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
                                 ({course.totalReviews})
                               </Typography>
                             )}
@@ -706,7 +771,9 @@ const CourseManagement = () => {
                             size="small"
                             color="secondary"
                             onClick={() =>
-                              navigate(`/admin/courses/${course.courseId}/content`)
+                              navigate(
+                                `/admin/courses/${course.courseId}/content`,
+                              )
                             }
                             title="Quản lý nội dung"
                           >
@@ -739,7 +806,13 @@ const CourseManagement = () => {
 
           {/* Pagination */}
           {totalPages > 0 && totalElements > 0 && (
-            <Box display="flex" justifyContent="center" alignItems="center" gap={2} mt={3}>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              gap={2}
+              mt={3}
+            >
               <Typography variant="body2" color="text.secondary">
                 Hiển thị {courses.length} / {totalElements} khóa học
               </Typography>
@@ -767,16 +840,61 @@ const CourseManagement = () => {
         <DialogTitle>Xác nhận xóa khóa học</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể
-            hoàn tác.
+            Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể hoàn
+            tác.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="inherit">
             Hủy
           </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Status Update Dialog */}
+      <Dialog
+        open={statusDialogOpen}
+        onClose={() => setStatusDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Cập nhật trạng thái khóa học</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Khóa học: <strong>{courseToUpdateStatus?.title}</strong>
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={newStatus}
+              label="Trạng thái"
+              onChange={(e) => setNewStatus(e.target.value)}
+            >
+              <MenuItem value="DRAFT">Bản nháp</MenuItem>
+              <MenuItem value="PENDING">Chờ duyệt</MenuItem>
+              <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+              <MenuItem value="REJECTED">Bị từ chối</MenuItem>
+              <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStatusDialogOpen(false)} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleUpdateStatus}
+            variant="contained"
+            color="primary"
+          >
+            Cập nhật
           </Button>
         </DialogActions>
       </Dialog>
@@ -831,7 +949,9 @@ const CourseManagement = () => {
                   setFormData({ ...formData, categoryId: e.target.value })
                 }
                 renderValue={(value) => {
-                  const cat = flatCategories.find((c) => c.id === Number(value));
+                  const cat = flatCategories.find(
+                    (c) => c.id === Number(value),
+                  );
                   if (!cat) return "";
                   return (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -988,6 +1108,25 @@ const CourseManagement = () => {
                 }
               />
             </Stack>
+
+            {editingCourse && (
+              <FormControl fullWidth>
+                <InputLabel>Trạng thái</InputLabel>
+                <Select
+                  label="Trạng thái"
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
+                >
+                  <MenuItem value="DRAFT">Bản nháp</MenuItem>
+                  <MenuItem value="PENDING">Chờ duyệt</MenuItem>
+                  <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+                  <MenuItem value="REJECTED">Bị từ chối</MenuItem>
+                  <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
@@ -1004,6 +1143,7 @@ const CourseManagement = () => {
                 discountPrice: "",
                 level: "",
                 language: "",
+                status: "",
               });
             }}
           >
@@ -1019,4 +1159,3 @@ const CourseManagement = () => {
 };
 
 export default CourseManagement;
-

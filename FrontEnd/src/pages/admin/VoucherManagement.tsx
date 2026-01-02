@@ -220,126 +220,214 @@ const VoucherManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       {/* Header */}
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <CardGiftcard
-            sx={{ fontSize: 40, color: theme.palette.primary.main }}
-          />
-          <div>
-            <Typography variant="h4" fontWeight="bold">
-              Voucher Management
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage vouchers and distribution
-            </Typography>
-          </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Quản lý Voucher
+        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Tạo và quản lý mã giảm giá cho khóa học
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)",
+              },
+            }}
+          >
+            Tạo Voucher
+          </Button>
         </Stack>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-        >
-          Create Voucher
-        </Button>
-      </Stack>
+      </Box>
 
       {/* Stats Cards */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
           gap: 3,
           mb: 3,
         }}
       >
-        <Card>
+        <Card
+          sx={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+          }}
+        >
           <CardContent>
-            <Typography color="text.secondary" gutterBottom>
-              Total Vouchers
-            </Typography>
-            <Typography variant="h4">{vouchers.length}</Typography>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Tổng Voucher
+                </Typography>
+                <Typography variant="h3" fontWeight={700}>
+                  {vouchers.length}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CardGiftcard fontSize="large" />
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          sx={{
+            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+            color: "white",
+          }}
+        >
           <CardContent>
-            <Typography color="text.secondary" gutterBottom>
-              Active Vouchers
-            </Typography>
-            <Typography variant="h4">
-              {vouchers.filter((v) => v.isActive).length}
-            </Typography>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Đang Hoạt Động
+                </Typography>
+                <Typography variant="h3" fontWeight={700}>
+                  {vouchers.filter((v) => v.isActive).length}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CheckCircle fontSize="large" />
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          sx={{
+            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+            color: "white",
+          }}
+        >
           <CardContent>
-            <Typography color="text.secondary" gutterBottom>
-              Public Vouchers
-            </Typography>
-            <Typography variant="h4">
-              {vouchers.filter((v) => v.voucherType === "PUBLIC").length}
-            </Typography>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Voucher Công Khai
+                </Typography>
+                <Typography variant="h3" fontWeight={700}>
+                  {vouchers.filter((v) => v.voucherType === "PUBLIC").length}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CardGiftcard fontSize="large" />
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          sx={{
+            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            color: "white",
+          }}
+        >
           <CardContent>
-            <Typography color="text.secondary" gutterBottom>
-              Total Usage
-            </Typography>
-            <Typography variant="h4">
-              {vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)}
-            </Typography>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Lượt Sử Dụng
+                </Typography>
+                <Typography variant="h3" fontWeight={700}>
+                  {vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CheckCircle fontSize="large" />
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
       </Box>
 
       {/* Search */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <TextField
           fullWidth
-          placeholder="Search vouchers by code or name..."
+          label="Tìm kiếm"
+          placeholder="Tìm kiếm theo mã hoặc tên voucher..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
           }}
+          size="small"
         />
       </Paper>
 
       {/* Table */}
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
-              <TableCell>
-                <strong>Code</strong>
+            <TableRow sx={{ bgcolor: "primary.light" }}>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Mã Voucher
               </TableCell>
-              <TableCell>
-                <strong>Name</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Tên
               </TableCell>
-              <TableCell>
-                <strong>Type</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Loại
               </TableCell>
-              <TableCell>
-                <strong>Discount</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Giảm Giá
               </TableCell>
-              <TableCell>
-                <strong>Period</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Thời Gian
               </TableCell>
-              <TableCell>
-                <strong>Usage</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Sử Dụng
               </TableCell>
-              <TableCell>
-                <strong>Status</strong>
+              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
+                Trạng Thái
               </TableCell>
-              <TableCell align="center">
-                <strong>Actions</strong>
+              <TableCell align="center" sx={{ fontWeight: 700, color: "primary.main" }}>
+                Hành Động
               </TableCell>
             </TableRow>
           </TableHead>

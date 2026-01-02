@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Badge from "../ui/badge/Badge";
 import {
   Table,
@@ -6,69 +7,80 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-
-// Define the TypeScript interface for the table rows
-interface Product {
-  id: number; // Unique identifier for each product
-  name: string; // Product name
-  variants: string; // Number of variants (e.g., "1 Variant", "2 Variants")
-  category: string; // Category of the product
-  price: string; // Price of the product (as a string with currency symbol)
-  // status: string; // Status of the product
-  image: string; // URL or path to the product image
-  status: "Delivered" | "Pending" | "Canceled"; // Status of the product
-}
-
-// Define the table data using the interface
-const tableData: Product[] = [
-  {
-    id: 1,
-    name: "MacBook Pro 13”",
-    variants: "2 Variants",
-    category: "Laptop",
-    price: "$2399.00",
-    status: "Delivered",
-    image: "/images/product/product-01.jpg", // Replace with actual image URL
-  },
-  {
-    id: 2,
-    name: "Apple Watch Ultra",
-    variants: "1 Variant",
-    category: "Watch",
-    price: "$879.00",
-    status: "Pending",
-    image: "/images/product/product-02.jpg", // Replace with actual image URL
-  },
-  {
-    id: 3,
-    name: "iPhone 15 Pro Max",
-    variants: "2 Variants",
-    category: "SmartPhone",
-    price: "$1869.00",
-    status: "Delivered",
-    image: "/images/product/product-03.jpg", // Replace with actual image URL
-  },
-  {
-    id: 4,
-    name: "iPad Pro 3rd Gen",
-    variants: "2 Variants",
-    category: "Electronics",
-    price: "$1699.00",
-    status: "Canceled",
-    image: "/images/product/product-04.jpg", // Replace with actual image URL
-  },
-  {
-    id: 5,
-    name: "AirPods Pro 2nd Gen",
-    variants: "1 Variant",
-    category: "Accessories",
-    price: "$240.00",
-    status: "Delivered",
-    image: "/images/product/product-05.jpg", // Replace with actual image URL
-  },
-];
+import { dashboardService } from "../../service/dashboardService";
+import type { OrderResponse } from "../../service/orderService";
 
 export default function RecentOrders() {
+  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentOrders = async () => {
+      try {
+        const data = await dashboardService.getRecentOrders(5);
+        setOrders(data);
+      } catch (error) {
+        console.error("Failed to fetch recent orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentOrders();
+  }, []);
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "COMPLETED":
+      case "DELIVERED":
+        return "success";
+      case "PENDING":
+      case "PROCESSING":
+        return "warning";
+      case "CANCELED":
+      case "CANCELLED":
+      case "FAILED":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "COMPLETED":
+        return "Delivered";
+      case "PENDING":
+        return "Pending";
+      case "PROCESSING":
+        return "Processing";
+      case "CANCELED":
+      case "CANCELLED":
+        return "Canceled";
+      case "FAILED":
+        return "Failed";
+      default:
+        return status;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 sm:px-6">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Recent Orders
+            </h3>
+          </div>
+        </div>
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 sm:px-6">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -135,7 +147,7 @@ export default function RecentOrders() {
                 isHeader
                 className="text-theme-xs py-3 text-start font-medium text-gray-500"
               >
-                Category
+                Customer
               </TableCell>
               <TableCell
                 isHeader
@@ -155,49 +167,47 @@ export default function RecentOrders() {
           {/* Table Body */}
 
           <TableBody className="divide-y divide-gray-100">
-            {tableData.map((product) => (
-              <TableRow key={product.id} className="">
-                <TableCell className="py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-[50px] w-[50px] overflow-hidden rounded-md">
-                      <img
-                        src={product.image}
-                        className="h-[50px] w-[50px]"
-                        alt={product.name}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-theme-sm font-medium text-gray-800">
-                        {product.name}
-                      </p>
-                      <span className="text-theme-xs text-gray-500">
-                        {product.variants}
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-theme-sm py-3 text-gray-500">
-                  {product.price}
-                </TableCell>
-                <TableCell className="text-theme-sm py-3 text-gray-500">
-                  {product.category}
-                </TableCell>
-                <TableCell className="text-theme-sm py-3 text-gray-500">
-                  <Badge
-                    size="sm"
-                    color={
-                      product.status === "Delivered"
-                        ? "success"
-                        : product.status === "Pending"
-                          ? "warning"
-                          : "error"
-                    }
-                  >
-                    {product.status}
-                  </Badge>
+            {orders.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="py-8 text-center text-gray-500"
+                >
+                  No recent orders
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              orders.map((order) => (
+                <TableRow key={order.orderId} className="">
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="text-theme-sm font-medium text-gray-800">
+                          {order.items.length === 1
+                            ? order.items[0].courseTitle
+                            : `${order.items.length} courses`}
+                        </p>
+                        <span className="text-theme-xs text-gray-500">
+                          {order.items.length} item
+                          {order.items.length > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-theme-sm py-3 text-gray-500">
+                    {order.userName}
+                  </TableCell>
+                  <TableCell className="text-theme-sm py-3 text-gray-500">
+                    ${order.finalAmount.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-theme-sm py-3 text-gray-500">
+                    <Badge size="sm" color={getStatusBadgeColor(order.status)}>
+                      {getStatusText(order.status)}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

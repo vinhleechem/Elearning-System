@@ -25,7 +25,7 @@ export interface PublicCourseResponse {
   previewVideoUrl?: string;
   language?: string;
   level?: string;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "WAITING_FOR_APPROVAL" | "REJECTED";
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PENDING" | "REJECTED";
   price?: number;
   discountPrice?: number;
   thumbnailUrl?: string;
@@ -41,12 +41,12 @@ export interface PublicCourseResponse {
   // Promotion info
   promotionName?: string;
   promotionType?:
-  | "SEASONAL"
-  | "FLASH_SALE"
-  | "CLEARANCE"
-  | "NEW_YEAR"
-  | "BLACK_FRIDAY"
-  | "SPECIAL_EVENT";
+    | "SEASONAL"
+    | "FLASH_SALE"
+    | "CLEARANCE"
+    | "NEW_YEAR"
+    | "BLACK_FRIDAY"
+    | "SPECIAL_EVENT";
   discountPercentage?: number;
   promotionEndDate?: string;
 }
@@ -97,7 +97,7 @@ export const courseService = {
       `/courses/${id}/info`,
       {
         method: "GET",
-      }
+      },
     );
     if (!response.data) {
       throw new Error(response.message || "Không tìm thấy khóa học");
@@ -107,7 +107,7 @@ export const courseService = {
 
   createCourse: async (
     token: string,
-    request: CreateCourseRequest
+    request: CreateCourseRequest,
   ): Promise<PublicCourseResponse> => {
     const response = await httpClient<PublicCourseResponse>("/courses", {
       method: "POST",
@@ -141,7 +141,7 @@ export const courseService = {
         headers: {
           Authorization: `Bearer ${params.token}`,
         },
-      }
+      },
     );
 
     if (!response.data) {
@@ -152,10 +152,13 @@ export const courseService = {
   },
 
   submitForApproval: async (token: string, courseId: number): Promise<void> => {
-    const response = await httpClient<string>(`/courses/${courseId}/submit-approval`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await httpClient<string>(
+      `/courses/${courseId}/submit-approval`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!response.success) throw new Error(response.message);
   },
 
