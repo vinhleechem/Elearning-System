@@ -46,6 +46,9 @@ dependencies {
     
     // WebSocket for real-time notifications
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    
+    // Kafka for event-driven architecture
+    implementation("org.springframework.kafka:spring-kafka")
 
     // Devtools (chỉ dùng ở môi trường dev, hot reload)
     developmentOnly("org.springframework.boot:spring-boot-devtools")

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.example.elearning.enums.CourseStatus;
 import org.hibernate.annotations.Nationalized;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -61,21 +62,25 @@ public class CourseEntity extends BaseEntity {
 
     @Lob
     @Nationalized
+    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
     @Column(name = "description")
     String description;
 
     @Lob
     @Nationalized
+    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
     @Column(name = "what_you_learn")
     String whatYouLearn;
 
     @Lob
     @Nationalized
+    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
     @Column(name = "requirements")
     String requirements;
 
     @Lob
     @Nationalized
+    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
     @Column(name = "target_audience")
     String targetAudience;
 
@@ -96,29 +101,14 @@ public class CourseEntity extends BaseEntity {
     @Column(name = "price", precision = 10, scale = 2)
     BigDecimal price;
 
-    @Column(name = "discount_price", precision = 10, scale = 2)
-    BigDecimal discountPrice;
-
     @Column(name = "language", length = 50)
     String language;
 
     @Column(name = "has_certificate")
     Boolean hasCertificate;
 
-    @Column(name = "total_duration_minutes")
-    Integer totalDurationMinutes;
-
-    @Column(name = "total_lectures")
-    Integer totalLectures;
-
     @Column(name = "average_rating", precision = 3, scale = 2)
     BigDecimal averageRating;
-
-    @Column(name = "total_students")
-    Integer totalStudents;
-
-    @Column(name = "total_reviews")
-    Integer totalReviews;
 
     @Column(name = "published_at")
     LocalDateTime publishedAt;

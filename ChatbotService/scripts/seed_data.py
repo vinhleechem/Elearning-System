@@ -1,13 +1,17 @@
 """
 Script để seed knowledge base với dữ liệu mẫu
-Chạy: python seed_knowledge.py
+Chạy: python scripts/seed_data.py
 """
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import asyncio
 from sqlalchemy.orm import Session
-from database import SessionLocal, init_db
-from models import KnowledgeBase
-from vector_store import vector_store
+from app.core.database import SessionLocal, init_db
+from app.models.sql_models import KnowledgeBase
+from app.rag.vector_store import vector_store
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -115,7 +119,9 @@ SAMPLE_KNOWLEDGE = [
         - Cập nhật nội dung khóa học thường xuyên
         """,
         "metadata": {"category": "instructor"}
-    }
+    },
+    # NOTE: Course data is now synced via app/services/course_sync.py
+    # This file only contains static knowledge like FAQs, Policies, etc.
 ]
 
 

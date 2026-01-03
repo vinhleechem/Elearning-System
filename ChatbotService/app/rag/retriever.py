@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 from sentence_transformers import CrossEncoder
 import numpy as np
 
-from vector_store import vector_store
+from app.rag.vector_store import vector_store
 
 logger = logging.getLogger(__name__)
 

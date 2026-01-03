@@ -14,30 +14,31 @@ import {
   Chip,
   Button,
   Divider,
-  CircularProgress,
   Tooltip,
   Fade,
   Slide,
   Badge,
   Menu,
   MenuItem,
-  Rating,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
-  Chat as ChatIcon,
   Close as CloseIcon,
   Send as SendIcon,
-  SmartToy as BotIcon,
   Person as PersonIcon,
   ThumbUp,
   ThumbDown,
-  Refresh as RefreshIcon,
+  DeleteSweep as DeleteSweepIcon,
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
   History as HistoryIcon,
-  AttachFile as AttachFileIcon,
-  Image as ImageIcon,
 } from "@mui/icons-material";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAuthStore } from "../../store/authStore";
 import chatbotService, {
   type ChatMessage,
@@ -93,15 +94,14 @@ const MessageBubble: React.FC<{
       <Box sx={{ maxWidth: "75%", display: "flex", gap: 1 }}>
         {!isUser && (
           <Avatar
+            src="/images/chatbot-avatar.png"
+            alt="AI Chatbot"
             sx={{
               width: 32,
               height: 32,
-              bgcolor: "primary.main",
-              fontSize: "1rem",
+              bgcolor: "white",
             }}
-          >
-            <BotIcon fontSize="small" />
-          </Avatar>
+          />
         )}
 
         <Box>
@@ -115,9 +115,54 @@ const MessageBubble: React.FC<{
               position: "relative",
             }}
           >
-            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-              {message.content}
-            </Typography>
+            {isUser ? (
+              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                {message.content}
+              </Typography>
+            ) : (
+              <Box
+                sx={{
+                  "& p": {
+                    margin: "0.5em 0",
+                    lineHeight: 1.6,
+                  },
+                  "& p:first-of-type": {
+                    marginTop: 0,
+                  },
+                  "& p:last-of-type": {
+                    marginBottom: 0,
+                  },
+                  "& ul, & ol": {
+                    margin: "0.5em 0",
+                    paddingLeft: "1.5em",
+                  },
+                  "& li": {
+                    margin: "0.25em 0",
+                  },
+                  "& strong": {
+                    fontWeight: 600,
+                    color: isUser ? "white" : "primary.main",
+                  },
+                  "& code": {
+                    backgroundColor: isUser ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.05)",
+                    padding: "0.1em 0.3em",
+                    borderRadius: "3px",
+                    fontSize: "0.9em",
+                  },
+                  "& pre": {
+                    backgroundColor: isUser ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+                    padding: "0.5em",
+                    borderRadius: "4px",
+                    overflow: "auto",
+                  },
+                  fontSize: "0.875rem",
+                }}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </Box>
+            )}
 
             {message.cached && (
               <Tooltip title="Cached response">
@@ -207,9 +252,11 @@ const MessageBubble: React.FC<{
 const TypingIndicator: React.FC = () => {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-      <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
-        <BotIcon fontSize="small" />
-      </Avatar>
+      <Avatar
+        src="/images/chatbot-avatar.png"
+        alt="AI Chatbot"
+        sx={{ width: 32, height: 32, bgcolor: "white" }}
+      />
       <Paper
         elevation={1}
         sx={{
@@ -268,7 +315,11 @@ const SuggestedQuestions: React.FC<{
 }> = ({ questions, onSelect }) => {
   return (
     <Box sx={{ mb: 2 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mb: 1, display: "block" }}
+      >
         💡 Câu hỏi gợi ý:
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -323,7 +374,6 @@ const QuickReplies: React.FC<{
 const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   context,
   position = "bottom-right",
-  theme = "light",
 }) => {
   const { user } = useAuthStore();
   const { enqueueSnackbar } = useSnackbar();
@@ -334,22 +384,25 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentConversationId, setCurrentConversationId] = useState<number | undefined>();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    number | undefined
+  >();
+  const [_conversations, setConversations] = useState<Conversation[]>([]);
+  const [_showHistory, setShowHistory] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Computed values
   const suggestedQuestions = useMemo(
     () => chatbotService.getSuggestedQuestions(context),
-    [context]
+    [context],
   );
   const quickReplies = useMemo(() => chatbotService.getQuickReplies(), []);
 
@@ -370,6 +423,77 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Auto-clear conversation after 5 minutes of inactivity
+  useEffect(() => {
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Only set timer if we have messages and conversation
+    if (messages.length > 1 && currentConversationId) {
+      // 5 minutes = 300000ms
+      inactivityTimerRef.current = setTimeout(() => {
+        console.log("⏱️ 5 minutes of inactivity - clearing conversation");
+
+        // Clear localStorage cache
+        const savedConvId = localStorage.getItem("chatbot_conversation_id");
+        if (savedConvId) {
+          const cacheKey = `chatbot_messages_${savedConvId}`;
+          localStorage.removeItem(cacheKey);
+        }
+        localStorage.removeItem("chatbot_conversation_id");
+
+        // Reset state
+        setCurrentConversationId(undefined);
+        setMessages([
+          {
+            role: "assistant",
+            content: "Xin chào! 👋 Tôi là trợ lý AI của E-Learning. Tôi có thể giúp gì cho bạn hôm nay?",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+
+        // Show notification if chatbot is open
+        if (isOpen) {
+          enqueueSnackbar("Cuộc trò chuyện đã được làm mới do không hoạt động", {
+            variant: "info",
+          });
+        }
+      }, 300000); // 5 minutes
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [lastActivityTime, messages.length, currentConversationId, isOpen, enqueueSnackbar]);
+
+  // Update activity time when user interacts
+  useEffect(() => {
+    setLastActivityTime(Date.now());
+  }, [messages.length, inputValue]); // Reset timer when messages change or user types
+
+  // Persist conversation ID
+  useEffect(() => {
+    if (currentConversationId) {
+      localStorage.setItem(
+        "chatbot_conversation_id",
+        currentConversationId.toString(),
+      );
+    }
+  }, [currentConversationId]);
+
+  // Persist messages to localStorage for instant restore
+  useEffect(() => {
+    if (messages.length > 0 && currentConversationId) {
+      const cacheKey = `chatbot_messages_${currentConversationId}`;
+      localStorage.setItem(cacheKey, JSON.stringify(messages));
+    }
+  }, [messages, currentConversationId]);
+
   // Load conversations when opened
   useEffect(() => {
     if (isOpen && user?.userId) {
@@ -377,17 +501,101 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
     }
   }, [isOpen, user?.userId]);
 
-  // Initialize with welcome message
+  // Initialize chat and restore history
   useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: ChatMessage = {
-        role: "assistant",
-        content: `Xin chào! 👋 Tôi là trợ lý AI của E-Learning. Tôi có thể giúp gì cho bạn hôm nay?`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([welcomeMessage]);
+    const initChat = async () => {
+      if (!user?.userId) return;
+
+      // Check for persisted conversation
+      const savedConvId = localStorage.getItem("chatbot_conversation_id");
+
+      // Only restore if we don't have messages yet
+      if (savedConvId && messages.length === 0) {
+        const convId = parseInt(savedConvId);
+        const cacheKey = `chatbot_messages_${convId}`;
+
+        // STEP 1: Try to restore from localStorage first (instant)
+        const cachedMessages = localStorage.getItem(cacheKey);
+        if (cachedMessages) {
+          try {
+            const parsedMessages: ChatMessage[] = JSON.parse(cachedMessages);
+            if (parsedMessages.length > 0) {
+              setCurrentConversationId(convId);
+              setMessages(parsedMessages);
+
+              // STEP 2: Sync with backend in background to ensure accuracy
+              try {
+                const history = await chatbotService.getConversationMessages(
+                  convId,
+                  user.userId,
+                );
+                if (history && history.length > 0) {
+                  const formattedMessages: ChatMessage[] = history.map((msg) => ({
+                    role: msg.role,
+                    content: msg.message,
+                    timestamp: msg.timestamp,
+                    sources: msg.sources,
+                  }));
+
+                  // Update if backend has more messages
+                  if (formattedMessages.length > parsedMessages.length) {
+                    setMessages(formattedMessages);
+                    localStorage.setItem(cacheKey, JSON.stringify(formattedMessages));
+                  }
+                }
+              } catch (e) {
+                console.warn("Could not sync with backend, using cached messages");
+              }
+
+              return;
+            }
+          } catch (e) {
+            console.warn("Could not parse cached messages");
+            localStorage.removeItem(cacheKey);
+          }
+        }
+
+        // STEP 3: If no cache, load from backend
+        try {
+          const history = await chatbotService.getConversationMessages(
+            convId,
+            user.userId,
+          );
+          if (history && history.length > 0) {
+            setCurrentConversationId(convId);
+            const formattedMessages: ChatMessage[] = history.map((msg) => ({
+              role: msg.role,
+              content: msg.message,
+              timestamp: msg.timestamp,
+              sources: msg.sources,
+            }));
+            setMessages(formattedMessages);
+            // Cache for next time
+            localStorage.setItem(cacheKey, JSON.stringify(formattedMessages));
+            return;
+          }
+        } catch (e) {
+          console.warn("Could not restore conversation, starting new one");
+          localStorage.removeItem("chatbot_conversation_id");
+          localStorage.removeItem(cacheKey);
+        }
+      }
+
+      // Default welcome message if no history restored
+      if (messages.length === 0) {
+        const welcomeMessage: ChatMessage = {
+          role: "assistant",
+          content: `Xin chào! 👋 Tôi là trợ lý AI của E-Learning. Tôi có thể giúp gì cho bạn hôm nay?`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([welcomeMessage]);
+      }
+    };
+
+    if (isOpen) {
+      initChat();
     }
-  }, []);
+  }, [isOpen, user?.userId]);
 
   // Load conversations
   const loadConversations = async () => {
@@ -404,7 +612,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   // Send message
   const handleSendMessage = async (messageText?: string) => {
     const text = messageText || inputValue.trim();
-    
+
     if (!text || !user?.userId) return;
 
     // Add user message
@@ -423,14 +631,9 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
     try {
       // Send via REST API with streaming
       let responseText = "";
-      const assistantMessage: ChatMessage = {
-        role: "assistant",
-        content: "",
-        timestamp: new Date().toISOString(),
-      };
 
-      // Add placeholder for streaming
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Don't add placeholder message, just show typing indicator
+      // The typing indicator component will handle the visual feedback
 
       await chatbotService.sendMessageStream(
         {
@@ -442,13 +645,31 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         // onChunk
         (chunk) => {
           responseText += chunk;
+
+          // Only update if we already have a message in the list, otherwise add it
           setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              ...assistantMessage,
-              content: responseText,
-            };
-            return newMessages;
+            const lastMessage = prev[prev.length - 1];
+
+            // If last message is from assistant and has content, update it
+            if (lastMessage?.role === "assistant") {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = {
+                role: "assistant",
+                content: responseText,
+                timestamp: new Date().toISOString(),
+              };
+              return newMessages;
+            } else {
+              // First chunk - add new assistant message
+              return [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: responseText,
+                  timestamp: new Date().toISOString(),
+                },
+              ];
+            }
           });
         },
         // onComplete
@@ -462,19 +683,27 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           console.error("Streaming error:", error);
           setIsTyping(false);
           setIsLoading(false);
-          enqueueSnackbar("Có lỗi xảy ra. Vui lòng thử lại.", { variant: "error" });
-        }
+          enqueueSnackbar("Có lỗi xảy ra. Vui lòng thử lại.", {
+            variant: "error",
+          });
+        },
+        // onConversationId
+        (id) => {
+          setCurrentConversationId(id);
+        },
       );
     } catch (error) {
       console.error("Error sending message:", error);
       setIsTyping(false);
       setIsLoading(false);
-      enqueueSnackbar("Không thể gửi tin nhắn. Vui lòng thử lại.", { variant: "error" });
+      enqueueSnackbar("Không thể gửi tin nhắn. Vui lòng thử lại.", {
+        variant: "error",
+      });
     }
   };
 
   // Handle feedback
-  const handleFeedback = async (messageIndex: number, helpful: boolean) => {
+  const handleFeedback = async (_messageIndex: number, helpful: boolean) => {
     if (!user?.userId || !currentConversationId) return;
 
     try {
@@ -493,124 +722,26 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
   // Clear conversation
   const handleClearConversation = () => {
+    // Clear conversation ID and cached messages
+    const savedConvId = localStorage.getItem("chatbot_conversation_id");
+    if (savedConvId) {
+      const cacheKey = `chatbot_messages_${savedConvId}`;
+      localStorage.removeItem(cacheKey);
+    }
+    localStorage.removeItem("chatbot_conversation_id");
+
+    setCurrentConversationId(undefined);
     setMessages([
       {
         role: "assistant",
-        content: "Xin chào! 👋 Tôi là trợ lý AI của E-Learning. Tôi có thể giúp gì cho bạn hôm nay?",
+        content:
+          "Xin chào! 👋 Tôi là trợ lý AI của E-Learning. Tôi có thể giúp gì cho bạn hôm nay?",
         timestamp: new Date().toISOString(),
       },
     ]);
-    setCurrentConversationId(undefined);
     setAnchorEl(null);
-  };
-
-  // Handle image upload
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user?.userId) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      enqueueSnackbar("Vui lòng chọn file hình ảnh", { variant: "error" });
-      return;
-    }
-
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      enqueueSnackbar("Kích thước file quá lớn. Tối đa 5MB", { variant: "error" });
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("user_id", user.userId.toString());
-      if (currentConversationId) {
-        formData.append("conversation_id", currentConversationId.toString());
-      }
-
-      const CHATBOT_BASE_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8001";
-      const response = await fetch(`${CHATBOT_BASE_URL}/upload/image`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-
-      // Add image message to chat
-      const imageMessage: ChatMessage = {
-        role: "user",
-        content: `[Hình ảnh: ${data.filename}]\n${data.file_url}`,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, imageMessage]);
-      enqueueSnackbar("Đã tải lên hình ảnh", { variant: "success" });
-
-      // Optionally send a follow-up message
-      setTimeout(() => {
-        handleSendMessage("Tôi vừa gửi một hình ảnh, bạn có thể xem và tư vấn cho tôi không?");
-      }, 500);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      enqueueSnackbar("Không thể tải lên hình ảnh", { variant: "error" });
-    }
-
-    // Reset input
-    event.target.value = "";
-  };
-
-  // Handle file upload
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user?.userId) return;
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      enqueueSnackbar("Kích thước file quá lớn. Tối đa 10MB", { variant: "error" });
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("user_id", user.userId.toString());
-      if (currentConversationId) {
-        formData.append("conversation_id", currentConversationId.toString());
-      }
-
-      const CHATBOT_BASE_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8001";
-      const response = await fetch(`${CHATBOT_BASE_URL}/upload/file`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-
-      // Add file message to chat
-      const fileMessage: ChatMessage = {
-        role: "user",
-        content: `[File: ${data.filename}]\n${data.file_url}`,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, fileMessage]);
-      enqueueSnackbar("Đã tải lên file", { variant: "success" });
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      enqueueSnackbar("Không thể tải lên file", { variant: "error" });
-    }
-
-    // Reset input
-    event.target.value = "";
+    setShowClearDialog(false);
+    enqueueSnackbar("Đã xóa hội thoại", { variant: "success" });
   };
 
   // Toggle chatbot
@@ -638,25 +769,37 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           }}
         >
           <Tooltip title="Trò chuyện với AI" placement="left">
-            <IconButton
+            <Box
               onClick={handleToggle}
               sx={{
-                width: 60,
-                height: 60,
-                bgcolor: "primary.main",
-                color: "white",
+                width: 70,
+                height: 70,
+                borderRadius: "50%",
+                backgroundImage: "url(/images/chatbot-avatar.png)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
                 boxShadow: 3,
-                "&:hover": {
-                  bgcolor: "primary.dark",
-                  transform: "scale(1.1)",
-                },
+                cursor: "pointer",
+                position: "relative",
                 transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "scale(1.1)",
+                  boxShadow: 6,
+                },
               }}
             >
-              <Badge badgeContent={unreadCount} color="error">
-                <ChatIcon fontSize="large" />
-              </Badge>
-            </IconButton>
+              {unreadCount > 0 && (
+                <Badge
+                  badgeContent={unreadCount}
+                  color="error"
+                  sx={{
+                    position: "absolute",
+                    top: -5,
+                    right: -5,
+                  }}
+                />
+              )}
+            </Box>
           </Tooltip>
         </Box>
       </Fade>
@@ -689,9 +832,11 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ width: 40, height: 40, bgcolor: "white" }}>
-                <BotIcon sx={{ color: "primary.main" }} />
-              </Avatar>
+              <Avatar
+                src="/images/chatbot-avatar.png"
+                alt="AI Chatbot"
+                sx={{ width: 40, height: 40, bgcolor: "white" }}
+              />
               <Box>
                 <Typography variant="h6" fontWeight={600}>
                   AI Assistant
@@ -725,19 +870,44 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={() => setAnchorEl(null)}
+            sx={{
+              zIndex: 10001, // Higher than chatbot (9999)
+            }}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 1,
+                  minWidth: 180,
+                },
+              },
+            }}
           >
             <MenuItem
               onClick={() => {
-                setShowHistory(!showHistory);
+                setShowHistory(!_showHistory);
                 setAnchorEl(null);
               }}
             >
               <HistoryIcon sx={{ mr: 1 }} fontSize="small" />
               Lịch sử chat
             </MenuItem>
-            <MenuItem onClick={handleClearConversation}>
-              <RefreshIcon sx={{ mr: 1 }} fontSize="small" />
-              Bắt đầu lại
+            <MenuItem
+              onClick={() => {
+                setShowClearDialog(true);
+                setAnchorEl(null);
+              }}
+              sx={{ color: "error.main" }}
+            >
+              <DeleteSweepIcon sx={{ mr: 1 }} fontSize="small" />
+              Xóa hội thoại
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -797,47 +967,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
           {/* Input Area */}
           <Box sx={{ p: 2, bgcolor: "white" }}>
-            {/* Hidden file inputs */}
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleImageUpload}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
-              style={{ display: "none" }}
-              onChange={handleFileUpload}
-            />
-
             <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
-              {/* Attachment buttons */}
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                <Tooltip title="Gửi hình ảnh">
-                  <IconButton
-                    size="small"
-                    onClick={() => imageInputRef.current?.click()}
-                    disabled={isLoading}
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    <ImageIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Gửi file">
-                  <IconButton
-                    size="small"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading}
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    <AttachFileIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-
               <TextField
                 fullWidth
                 size="small"
@@ -871,11 +1001,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                   "&:disabled": { bgcolor: "grey.300" },
                 }}
               >
-                {isLoading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  <SendIcon />
-                )}
+                <SendIcon />
               </IconButton>
             </Box>
 
@@ -889,9 +1015,37 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           </Box>
         </Paper>
       </Slide>
+
+      {/* Clear Conversation Confirmation Dialog */}
+      <Dialog
+        open={showClearDialog}
+        onClose={() => setShowClearDialog(false)}
+        aria-labelledby="clear-dialog-title"
+      >
+        <DialogTitle id="clear-dialog-title">
+          Xóa hội thoại?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn xóa toàn bộ lịch sử hội thoại này không? Hành động này không thể hoàn tác.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowClearDialog(false)} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleClearConversation}
+            color="error"
+            variant="contained"
+            startIcon={<DeleteSweepIcon />}
+          >
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
 
 export default ChatbotWidget;
-

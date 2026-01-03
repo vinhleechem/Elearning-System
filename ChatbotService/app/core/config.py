@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import os
+from dotenv import load_dotenv
 
+# Load .env explicitly
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -11,11 +15,11 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # AI Provider - CHỈ GEMINI
-    GEMINI_API_KEY: str = ""  # REQUIRED - Lấy tại https://makersuite.google.com/app/apikey
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")  # REQUIRED
     DEFAULT_AI_PROVIDER: str = "gemini"  # Luôn là gemini
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/elearning"
+    DATABASE_URL: str = "postgresql://postgres:12345@localhost:5432/eLearning"
     
     # Spring Boot Backend
     SPRING_BOOT_BASE_URL: str = "http://localhost:8080"
@@ -27,8 +31,14 @@ class Settings(BaseSettings):
     
     # Chatbot Configuration
     MAX_CONVERSATION_HISTORY: int = 10
-    MAX_TOKENS: int = 1000
+    MAX_TOKENS: int = 4000
     TEMPERATURE: float = 0.7
+    
+    # MCP (Model Context Protocol)
+    ENABLE_MCP: bool = True  # Bật/tắt MCP - cho phép AI gọi tools
+    
+    # Advanced AI Concepts
+    ENABLE_ADVANCED_AI: bool = True  # Bật/tắt CoT, ReAct, Self-Reflection
     
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
@@ -48,3 +58,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Verify API key is loaded
+import logging
+logger = logging.getLogger(__name__)
+if settings.GEMINI_API_KEY:
+    logger.info(f"✅ Gemini API Key loaded: {settings.GEMINI_API_KEY[:10]}...{settings.GEMINI_API_KEY[-4:]}")
+else:
+    logger.error("❌ GEMINI_API_KEY is EMPTY! Check your .env file!")

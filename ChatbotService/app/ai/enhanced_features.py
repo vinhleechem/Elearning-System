@@ -247,15 +247,15 @@ class PersonalizationEngine:
             user_context: User context (preferences, history)
             sentiment: Sentiment analysis result
         """
-        # Add empathy based on sentiment
+        # Add empathy based on sentiment - Keep it brief and positive
         if sentiment["sentiment"] == "frustrated":
-            empathy = "\n\n😔 Tôi hiểu bạn đang gặp khó khăn. "
-            response = empathy + response
+            # Don't add negative empathy, just be helpful
+            pass
         elif sentiment["sentiment"] == "negative":
-            empathy = "\n\n🙏 Xin lỗi vì sự bất tiện này. "
-            response = empathy + response
+            # Don't add apologetic prefix, let the response speak for itself
+            pass
         elif sentiment["sentiment"] == "positive":
-            appreciation = "\n\n😊 Rất vui khi được hỗ trợ bạn! "
+            appreciation = "\n\n✨ Rất vui được hỗ trợ bạn!"
             response = response + appreciation
         
         # Add user name if available
@@ -353,7 +353,7 @@ class SmartResponseEnhancer:
             ]
         
         return {
-            "response": response,
+            "message": response,  # Changed from "response" to "message"
             "suggestions": suggestions,
             "actions": actions,
             "quick_replies": quick_replies

@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Callable
 import json
 from datetime import datetime
 
-from config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +22,12 @@ class GeminiAgent:
     - Có thể reason và plan
     """
     
-    def __init__(self, api_key: str = None, model_name: str = "gemini-1.5-pro"):
+    def __init__(self, api_key: str = None, model_name: str = "gemini-2.5-flash"):
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model_name = model_name
+        
+        if not self.api_key:
+            logger.error("❌ GEMINI_API_KEY is missing in GeminiAgent!")
         
         # Configure Gemini
         genai.configure(api_key=self.api_key)
@@ -36,7 +39,7 @@ class GeminiAgent:
                 "temperature": 0.7,
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 2048,
+                "max_output_tokens": 8192,
             }
         )
         
@@ -73,17 +76,41 @@ class GeminiAgent:
         
         logger.info(f"🔧 Registered tool: {name}")
     
+    def _clean_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove fields không được Gemini API hỗ trợ"""
+        import copy
+        cleaned = copy.deepcopy(params)
+        
+        def remove_defaults(obj):
+            """Recursively remove 'default' fields"""
+            if isinstance(obj, dict):
+                # Remove 'default' key
+                obj.pop('default', None)
+                # Recursively clean nested objects
+                for key, value in obj.items():
+                    if isinstance(value, (dict, list)):
+                        remove_defaults(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    remove_defaults(item)
+        
+        remove_defaults(cleaned)
+        return cleaned
+    
     def _convert_tools_to_gemini_format(self) -> List[Any]:
         """Convert tools sang format của Gemini"""
         from google.generativeai.types import FunctionDeclaration, Tool
         
         functions = []
         for tool in self.tool_descriptions:
+            # Clean parameters - remove 'default' fields
+            cleaned_params = self._clean_parameters(tool["parameters"])
+            
             functions.append(
                 FunctionDeclaration(
                     name=tool["name"],
                     description=tool["description"],
-                    parameters=tool["parameters"]
+                    parameters=cleaned_params
                 )
             )
         

@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
 } from "../types/auth";
 import { ApiError } from "../service/httpClient";
+import { chatDB } from "../service/chatDB";
 
 type AuthState = {
   tokens: UserLoginResponse | null;
@@ -124,6 +125,21 @@ export const useAuthStore = create<AuthState>()(
           // Log error nhưng vẫn clear local state
           console.warn("Logout API failed:", error);
         } finally {
+          // Clear chat history (IndexedDB + localStorage)
+          try {
+            await chatDB.clearAll();
+            localStorage.removeItem("chatbot_conversation_id");
+            // Clear any cached messages
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith("chatbot_messages_")) {
+                localStorage.removeItem(key);
+              }
+            });
+            console.log("✅ Chat history cleared on logout");
+          } catch (error) {
+            console.warn("Failed to clear chat history:", error);
+          }
+
           // Luôn clear state và tokens bất kể API có thành công hay không
           set({ tokens: null, user: null, error: null });
           // Redirect về trang home

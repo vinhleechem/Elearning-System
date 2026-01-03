@@ -18,6 +18,9 @@ langchain-google-genai>=2.0.0,<3.0.0
 chromadb>=0.5.0
 sentence-transformers>=3.3.0,<4.0.0
 
+# Kafka (Event-Driven Auto-Sync)
+kafka-python>=2.0.0,<3.0.0
+
 # Database
 sqlalchemy>=2.0.36,<3.0.0
 psycopg2-binary>=2.9.10,<3.0.0

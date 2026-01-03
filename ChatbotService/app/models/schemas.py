@@ -71,5 +71,5 @@ class ChatbotConfig(BaseModel):
     """Cấu hình chatbot"""
     ai_provider: AIProvider = AIProvider.GEMINI
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
-    max_tokens: int = Field(default=1000, ge=100, le=4000)
+    max_tokens: int = Field(default=4000, ge=100, le=8192)
     use_rag: bool = True

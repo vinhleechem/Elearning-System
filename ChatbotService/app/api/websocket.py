@@ -10,9 +10,9 @@ import json
 import logging
 from datetime import datetime
 
-from database import get_db
-from chatbot_service import ChatbotService
-from advanced_features import (
+from app.core.database import get_db
+from app.services.chatbot_service import ChatbotService
+from app.core.advanced_features import (
     rate_limiter,
     response_cache,
     analytics,

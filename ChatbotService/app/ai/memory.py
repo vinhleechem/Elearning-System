@@ -13,13 +13,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 import json
 
-from models import (
+from app.models.sql_models import (
     Conversation,
     Message,
     ChatbotContext,
     KnowledgeBase
 )
-from vector_store import vector_store
+from app.rag.vector_store import vector_store
 
 logger = logging.getLogger(__name__)
 

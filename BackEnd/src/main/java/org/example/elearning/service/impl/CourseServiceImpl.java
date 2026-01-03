@@ -1,5 +1,9 @@
 package org.example.elearning.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.example.elearning.constant.KafkaTopics;
+import org.example.elearning.dto.event.CourseEvent;
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.request.NotificationRequest;
 import org.example.elearning.dto.response.CourseResponse;
@@ -26,6 +30,7 @@ import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.PromotionRuleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +43,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -51,6 +57,33 @@ public class CourseServiceImpl implements CourseService {
     EnrollmentRepository enrollmentRepository;
     PromotionRepository promotionRepository;
     NotificationService notificationService;
+    KafkaTemplate<String, String> kafkaTemplate;
+    ObjectMapper objectMapper;
+    
+    /**
+     * Helper method to publish Kafka events
+     */
+    private void publishKafkaEvent(String eventType, Long courseId) {
+        try {
+            CourseEvent event = CourseEvent.builder()
+                    .eventType(eventType)
+                    .courseId(courseId)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            
+            String jsonEvent = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(KafkaTopics.COURSE_EVENTS, courseId.toString(), jsonEvent)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            log.error("❌ Failed to send Kafka event: {} for course ID: {}", eventType, courseId, ex);
+                        } else {
+                            log.info("✅ Kafka event sent: {} - Course ID: {}", eventType, courseId);
+                        }
+                    });
+        } catch (Exception e) {
+            log.error("❌ Error publishing Kafka event: {} for course ID: {}", eventType, courseId, e);
+        }
+    }
 
     @Override
     @Transactional
@@ -222,7 +255,12 @@ public class CourseServiceImpl implements CourseService {
         entity.setCategory(category);
         entity.setStatus(CourseStatus.DRAFT);
 
-        return courseMapper.toResponse(courseRepository.save(entity));
+        CourseEntity savedCourse = courseRepository.save(entity);
+        
+        // Publish Kafka event
+        publishKafkaEvent("COURSE_CREATED", savedCourse.getCourseId());
+        
+        return courseMapper.toResponse(savedCourse);
     }
 
     @Override
@@ -245,7 +283,12 @@ public class CourseServiceImpl implements CourseService {
             entity.setInstructor(instructor);
         }
 
-        return courseMapper.toResponse(courseRepository.save(entity));
+        CourseEntity savedCourse = courseRepository.save(entity);
+        
+        // Publish Kafka event
+        publishKafkaEvent("COURSE_UPDATED", savedCourse.getCourseId());
+        
+        return courseMapper.toResponse(savedCourse);
     }
 
     @Override
@@ -255,6 +298,9 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
         entity.setDeleted(true);
         courseRepository.save(entity);
+        
+        // Publish Kafka event
+        publishKafkaEvent("COURSE_DELETED", id);
     }
 
     @Override
@@ -358,6 +404,9 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.PUBLISHED);
         course.setPublishedAt(LocalDateTime.now());
         courseRepository.save(course);
+        
+        // Publish Kafka event
+        publishKafkaEvent("COURSE_PUBLISHED", id);
     }
 
     @Override
@@ -372,5 +421,8 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(CourseStatus.REJECTED);
         courseRepository.save(course);
+        
+        // Publish Kafka event (unpublish)
+        publishKafkaEvent("COURSE_UNPUBLISHED", id);
     }
 }

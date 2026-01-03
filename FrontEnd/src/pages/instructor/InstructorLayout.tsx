@@ -10,6 +10,7 @@ import {
   PersonOutline,
   Menu as MenuIcon,
 } from "@mui/icons-material";
+import ChatbotWidget from "../../components/chatbot/ChatbotWidget";
 
 const sidebarItems = [
   {
@@ -174,6 +175,12 @@ const InstructorLayout = () => {
       >
         <Outlet />
       </Box>
+
+      {/* AI Chatbot Widget for Instructors */}
+      <ChatbotWidget
+        context={{ page: "instructor", section: activeSidebarItem }}
+        position="bottom-right"
+      />
     </Box>
   );
 };

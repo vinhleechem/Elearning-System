@@ -3,9 +3,8 @@
  * Hỗ trợ: HTTP REST API và WebSocket real-time
  */
 
-import httpClient from "./httpClient";
-
-const CHATBOT_BASE_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8001";
+const CHATBOT_BASE_URL =
+  import.meta.env.VITE_CHATBOT_URL || "http://localhost:8001";
 
 // ============= TYPES =============
 
@@ -123,7 +122,8 @@ class ChatbotService {
     request: ChatRequest,
     onChunk: (chunk: string) => void,
     onComplete: () => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    onConversationId?: (id: number) => void,
   ): Promise<void> {
     try {
       const response = await fetch(`${CHATBOT_BASE_URL}/chat/stream`, {
@@ -147,7 +147,7 @@ class ChatbotService {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           onComplete();
           break;
@@ -163,6 +163,20 @@ class ChatbotService {
               onComplete();
               return;
             }
+
+            // Check if it's JSON (conversation_id)
+            if (data.trim().startsWith("{")) {
+              try {
+                const json = JSON.parse(data);
+                if (json.conversation_id && onConversationId) {
+                  onConversationId(json.conversation_id);
+                  continue;
+                }
+              } catch (e) {
+                // Not JSON, treat as text chunk
+              }
+            }
+
             onChunk(data);
           }
         }
@@ -176,12 +190,15 @@ class ChatbotService {
   /**
    * Lấy danh sách conversations của user
    */
-  async getConversations(userId: number, limit: number = 20): Promise<Conversation[]> {
+  async getConversations(
+    userId: number,
+    limit: number = 20,
+  ): Promise<Conversation[]> {
     try {
       const response = await fetch(
-        `${CHATBOT_BASE_URL}/conversations/${userId}?limit=${limit}`
+        `${CHATBOT_BASE_URL}/conversations/${userId}?limit=${limit}`,
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -194,15 +211,41 @@ class ChatbotService {
   }
 
   /**
+   * Lấy lịch sử tin nhắn của conversation
+   */
+  async getConversationMessages(
+    conversationId: number,
+    userId: number,
+  ): Promise<ChatResponse[]> {
+    try {
+      const response = await fetch(
+        `${CHATBOT_BASE_URL}/conversations/${conversationId}/messages?user_id=${userId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("❌ Error fetching messages:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Xóa conversation
    */
-  async deleteConversation(conversationId: number, userId: number): Promise<void> {
+  async deleteConversation(
+    conversationId: number,
+    userId: number,
+  ): Promise<void> {
     try {
       const response = await fetch(
         `${CHATBOT_BASE_URL}/conversations/${conversationId}?user_id=${userId}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -242,7 +285,7 @@ class ChatbotService {
   async getAnalytics(): Promise<AnalyticsData> {
     try {
       const response = await fetch(`${CHATBOT_BASE_URL}/analytics`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -276,7 +319,7 @@ class ChatbotService {
   connectWebSocket(
     userId: number,
     onMessage: (message: any) => void,
-    onError?: (error: Event) => void
+    onError?: (error: Event) => void,
   ): void {
     if (this.wsConnection?.readyState === WebSocket.OPEN) {
       console.log("✅ WebSocket already connected");
@@ -304,10 +347,10 @@ class ChatbotService {
       try {
         const message = JSON.parse(event.data);
         console.log("📨 WebSocket message:", message);
-        
+
         // Notify all handlers
         this.messageHandlers.forEach((handler) => handler(message));
-        
+
         // Call provided callback
         if (onMessage) {
           onMessage(message);
@@ -365,7 +408,7 @@ class ChatbotService {
    */
   onWebSocketMessage(handler: (message: any) => void): () => void {
     this.messageHandlers.push(handler);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.messageHandlers.indexOf(handler);
@@ -397,19 +440,19 @@ class ChatbotService {
       suggestions.push(
         { id: "1", text: "Khóa học này có chứng chỉ không?" },
         { id: "2", text: "Thời gian học bao lâu?" },
-        { id: "3", text: "Có hỗ trợ trả góp không?" }
+        { id: "3", text: "Có hỗ trợ trả góp không?" },
       );
     } else if (context?.page === "checkout") {
       suggestions.push(
         { id: "4", text: "Các phương thức thanh toán nào được hỗ trợ?" },
         { id: "5", text: "Làm sao để áp dụng mã giảm giá?" },
-        { id: "6", text: "Chính sách hoàn tiền như thế nào?" }
+        { id: "6", text: "Chính sách hoàn tiền như thế nào?" },
       );
     } else {
       suggestions.push(
         { id: "7", text: "Làm sao để đăng ký khóa học?" },
         { id: "8", text: "Khóa học nào phù hợp với người mới bắt đầu?" },
-        { id: "9", text: "Có ưu đãi gì không?" }
+        { id: "9", text: "Có ưu đãi gì không?" },
       );
     }
 
@@ -424,7 +467,11 @@ class ChatbotService {
       { id: "help", label: "❓ Trợ giúp", value: "Tôi cần trợ giúp" },
       { id: "courses", label: "📚 Khóa học", value: "Xem các khóa học" },
       { id: "payment", label: "💳 Thanh toán", value: "Hướng dẫn thanh toán" },
-      { id: "certificate", label: "📜 Chứng chỉ", value: "Thông tin về chứng chỉ" },
+      {
+        id: "certificate",
+        label: "📜 Chứng chỉ",
+        value: "Thông tin về chứng chỉ",
+      },
     ];
   }
 }
@@ -432,4 +479,3 @@ class ChatbotService {
 // Export singleton instance
 export const chatbotService = new ChatbotService();
 export default chatbotService;
-
