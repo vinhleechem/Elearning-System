@@ -3,8 +3,11 @@ package org.example.elearning.service;
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
+import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.enums.CourseStatus;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface CourseService {
 
@@ -15,6 +18,10 @@ public interface CourseService {
     CourseResponse getCourseBySlug(String slug);
 
     CourseResponse getCourseById(Long id);
+
+    CourseEntity getCourseEntityById(Long id);
+    
+    List<CourseEntity> getCourseEntitiesByIds(List<Long> ids);
 
     CourseResponse createCourse(CourseRequest request);
 
@@ -28,7 +35,7 @@ public interface CourseService {
 
     void approveCourse(Long id);
 
-    void rejectCourse(Long id);
+    void rejectCourse(Long id, String reason);
 }
 
 

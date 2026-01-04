@@ -2,6 +2,7 @@ package org.example.elearning.service;
 
 import org.example.elearning.dto.request.CategoryRequest;
 import org.example.elearning.dto.response.CategoryResponse;
+import org.example.elearning.entity.CategoryEntity;
 
 import java.util.List;
 
@@ -14,6 +15,9 @@ public interface CategoryService {
 
     // Lấy category theo ID
     CategoryResponse getById(Long id);
+
+    // For internal service usage - returns entity instead of DTO
+    CategoryEntity getCategoryEntityById(Long id);
 
     // Lấy toàn bộ category tree (recursive)
     List<CategoryResponse> getCategoryTree();

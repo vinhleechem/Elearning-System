@@ -11,11 +11,12 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.CourseRepository;
-import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.repository.ReviewRepository;
-import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.ReviewService;
+import org.example.elearning.service.UserService;
+import org.example.elearning.service.CourseService;
+import org.example.elearning.service.EnrollmentService;
+import org.example.elearning.mapper.ReviewMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,9 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
     ReviewRepository reviewRepository;
-    CourseRepository courseRepository;
-    UserRepository userRepository;
-    EnrollmentRepository enrollmentRepository;
+    
+    UserService userService;
+    CourseService courseService;
+    EnrollmentService enrollmentService;
+    ReviewMapper reviewMapper;
 
 //    @Override
 //    @Transactional
@@ -69,7 +72,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public ReviewResponse updateReview(Long reviewId, UpdateReviewRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         ReviewEntity review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND.getMessage()));
@@ -97,7 +100,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public void deleteReview(Long reviewId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         ReviewEntity review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND.getMessage()));
@@ -115,8 +118,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Page<ReviewResponse> getReviewsByCourse(Long courseId, Pageable pageable) {
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         Page<ReviewEntity> reviews = reviewRepository.findByCourse(course, pageable);
 
@@ -126,10 +128,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public ReviewResponse getMyReviewForCourse(Long courseId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         ReviewEntity review = reviewRepository.findByUserAndCourse(user, course)
                 .orElseThrow(() -> new ResourceNotFoundException("Bạn chưa đánh giá khóa học này"));
@@ -139,30 +140,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     private void updateCourseRating(CourseEntity course) {
         Double avgRating = reviewRepository.getAverageRatingByCourse(course);
-//        course.setRating(avgRating != null ? avgRating.floatValue() : 0f);
-        courseRepository.save(course);
-    }
-
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        // TODO: Update course rating if needed
+        // courseService can handle this
     }
 
     private ReviewResponse mapToReviewResponse(ReviewEntity review) {
-        UserEntity user = review.getUser();
-        CourseEntity course = review.getCourse();
-
-        return ReviewResponse.builder()
-                .reviewId(review.getReviewId())
-                .courseId(course.getCourseId())
-                .courseTitle(course.getTitle())
-                .userId(user.getUserId())
-                .userName(user.getFullName())
-                .userAvatar(user.getAvatarUrl())
-                .rating(review.getRating())
-                .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .build();
+        return reviewMapper.toResponse(review);
     }
 }
 

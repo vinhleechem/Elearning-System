@@ -50,6 +50,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    public CategoryEntity getCategoryEntityById(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getCategoryTree() {
         // Lấy toàn bộ root categories + children (recursive)
         List<CategoryEntity> roots = categoryRepository.findByParentIsNull();

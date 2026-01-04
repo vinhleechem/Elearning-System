@@ -14,4 +14,7 @@ public interface PermissionService {
     void softDelete(Long id);
     PermissionEntity findEntityById(Long id);
     void restore(Long id);
+    
+    // For internal service usage
+    List<PermissionEntity> findAllById(Iterable<Long> ids);
 }

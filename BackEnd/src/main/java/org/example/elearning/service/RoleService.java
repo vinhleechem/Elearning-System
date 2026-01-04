@@ -6,6 +6,7 @@ import org.example.elearning.dto.response.RoleResponse;
 import org.example.elearning.entity.RoleEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RoleService {
     List<RoleResponse> getAllRoles();
@@ -17,4 +18,7 @@ public interface RoleService {
     RoleResponse findByIdToResponse(Long id);
     RoleEntity findByIdToEntity(Long id);
     RoleEntity findByRoleName(String roleName);
+    
+    // For internal service usage
+    Optional<RoleEntity> findByRoleNameOptional(String roleName);
 }

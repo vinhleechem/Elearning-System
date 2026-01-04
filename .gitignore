@@ -1,0 +1,20 @@
+# IDE
+.idea/
+.vscode/
+.history/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

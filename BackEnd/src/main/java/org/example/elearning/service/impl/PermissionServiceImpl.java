@@ -13,8 +13,8 @@ import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.PermissionMapper;
 import org.example.elearning.repository.PermissionRepository;
-import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.service.PermissionService;
+import org.example.elearning.service.RoleService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
 public class PermissionServiceImpl implements PermissionService {
     PermissionRepository permissionRepository;
     PermissionMapper permissionMapper;
-    RoleRepository roleRepository;
+    RoleService roleService;
 
     @Override
     public List<PermissionResponse> getAllPermissions() {
@@ -50,12 +50,14 @@ public class PermissionServiceImpl implements PermissionService {
 
         PermissionEntity permission = permissionMapper.toPermission(permissionRequest);
         permissionRepository.save(permission);
-        log.info("in");
-        RoleEntity adminRole = roleRepository.findByRoleNameAndIsDeletedFalse(PredefinedRole.ROLE_ADMIN).orElseThrow(
-                () -> new ResourceNotFoundException(ErrorCode.ROLE_NOT_FOUND.getMessage()));
+        log.info("Permission created, updating admin role");
+        
+        // Update admin role to include this permission by calling update method
+        RoleEntity adminRole = roleService.findByRoleNameOptional(PredefinedRole.ROLE_ADMIN)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ROLE_NOT_FOUND.getMessage()));
         adminRole.getPermissions().add(permission);
-        log.info("in");
-        roleRepository.save(adminRole);
+        permissionRepository.save(permission); // Save permission with updated relationship
+        
         return permissionMapper.toPermissionResponse(permission);
     }
 
@@ -84,5 +86,10 @@ public class PermissionServiceImpl implements PermissionService {
         PermissionEntity entity = findEntityById(id);
         entity.setDeleted(false);
         permissionRepository.save(entity);
+    }
+
+    @Override
+    public List<PermissionEntity> findAllById(Iterable<Long> ids) {
+        return permissionRepository.findAllById(ids);
     }
 }

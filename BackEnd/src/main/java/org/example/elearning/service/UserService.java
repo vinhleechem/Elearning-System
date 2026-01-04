@@ -42,6 +42,9 @@ public interface UserService {
     UserResponse assignRoles(Long id, List<String> roleNames);
 
     String resetPassword(Long id);
+    
+    // For internal service usage
+    List<UserEntity> findAllAdmins();
 
     // User self-service APIs
     UserResponse getMyInfo();

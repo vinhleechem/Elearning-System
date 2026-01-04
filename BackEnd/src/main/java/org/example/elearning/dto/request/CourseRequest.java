@@ -33,7 +33,6 @@ public class CourseRequest {
     String targetAudience;
 
     BigDecimal price;
-    BigDecimal discountPrice;
     String language;
     String level;
     Boolean hasCertificate;

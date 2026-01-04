@@ -9,9 +9,9 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.SectionEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.SectionRepository;
 import org.example.elearning.service.SectionService;
+import org.example.elearning.service.CourseService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +23,11 @@ import java.util.List;
 public class SectionServiceImpl implements SectionService {
 
     SectionRepository sectionRepository;
-    CourseRepository courseRepository;
+    CourseService courseService;
 
     @Override
     public List<SectionResponse> getSectionsByCourse(Long courseId) {
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
         return sectionRepository.findByCourseOrderByPositionAsc(course)
                 .stream()
                 .map(this::toResponse)
@@ -38,8 +37,7 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional
     public SectionResponse createSection(Long courseId, SectionRequest request) {
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         Integer position = request.getPosition();
         if (position == null) {
@@ -78,6 +76,13 @@ public class SectionServiceImpl implements SectionService {
         SectionEntity entity = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
         sectionRepository.delete(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SectionEntity getSectionEntityById(Long sectionId) {
+        return sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
     }
 
     private SectionResponse toResponse(SectionEntity entity) {

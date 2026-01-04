@@ -41,13 +41,6 @@ public class CourseEntity extends BaseEntity {
     @Column(name = "course_id")
     Long courseId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instructor_id", nullable = false)
-    InstructorEntity instructor;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    CategoryEntity category;
 
     @Column(name = "title", nullable = false)
     @Nationalized
@@ -112,4 +105,12 @@ public class CourseEntity extends BaseEntity {
 
     @Column(name = "published_at")
     LocalDateTime publishedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id", nullable = false)
+    InstructorEntity instructor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    CategoryEntity category;
 }

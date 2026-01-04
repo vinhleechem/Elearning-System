@@ -14,11 +14,10 @@ import org.example.elearning.enums.PaymentStatus;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.entity.OrderItemEntity;
-import org.example.elearning.repository.OrderItemRepository;
-import org.example.elearning.repository.OrderRepository;
 import org.example.elearning.repository.PaymentRepository;
 import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.PaymentService;
+import org.example.elearning.service.OrderService;
 import org.example.elearning.util.VNPayUtil;
 import org.springframework.stereotype.Service;
 
@@ -31,16 +30,14 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentServiceImpl implements PaymentService {
     VNPayConfig vnPayConfig;
-    OrderRepository orderRepository;
+    OrderService orderService;
     PaymentRepository paymentRepository;
 
     EnrollmentService enrollmentService; // Use Service instead of Repository
-    OrderItemRepository orderItemRepository;
 
     @Override
     public PaymentResponse createVnPayPayment(PaymentRequest paymentRequest, HttpServletRequest httpServletRequest) {
-        OrderEntity order = orderRepository.findById(paymentRequest.getOrderId()).orElseThrow(
-                () -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
+        OrderEntity order = orderService.getOrderEntityById(paymentRequest.getOrderId());
 
         long amount = order.getFinalAmount().multiply(BigDecimal.valueOf(100)).longValue();
         String bankCode = paymentRequest.getBankCode();
@@ -95,11 +92,10 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.SUCCESS);
 
             OrderEntity order = payment.getOrder();
-            order.setStatus(OrderStatus.PAID);
-            orderRepository.save(order);
+            orderService.updateOrderStatus(order, OrderStatus.PAID);
 
             // --- AUTO ENROLL LOGIC (via Service) ---
-            List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
+            List<OrderItemEntity> orderItems = orderService.getOrderItemsByOrder(order);
 
             for (OrderItemEntity item : orderItems) {
                 // Delegate all enrollment logic to the service

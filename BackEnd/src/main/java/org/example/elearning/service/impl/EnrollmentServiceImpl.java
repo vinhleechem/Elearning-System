@@ -10,15 +10,17 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.UserService;
+import org.example.elearning.service.CourseService;
+import org.example.elearning.mapper.EnrollmentMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +29,8 @@ import java.util.stream.Collectors;
 public class EnrollmentServiceImpl implements EnrollmentService {
     EnrollmentRepository enrollmentRepository;
     UserService userService;
-    CourseRepository courseRepository;
+    CourseService courseService;
+    EnrollmentMapper enrollmentMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -80,8 +83,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public boolean isEnrolled(Long courseId) {
         UserEntity user = userService.getCurrentUser();
 
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         return enrollmentRepository.existsByUserAndCourse(user, course);
     }
@@ -100,21 +102,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<EnrollmentEntity> findEnrollmentByUserAndCourse(UserEntity user, CourseEntity course) {
+        return enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, course);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByUserAndCourse(UserEntity user, CourseEntity course) {
+        return enrollmentRepository.existsByUserAndCourse(user, course);
+    }
+
     private EnrollmentResponse mapToEnrollmentResponse(EnrollmentEntity enrollment) {
-        CourseEntity course = enrollment.getCourse();
-        return EnrollmentResponse.builder()
-                .enrollmentId(enrollment.getEnrollmentId())
-                .courseId(course.getCourseId())
-                .courseTitle(course.getTitle())
-                .courseImage(course.getThumbnailUrl())
-                .instructorName(course.getInstructor() != null && course.getInstructor().getUser() != null
-                        ? course.getInstructor().getUser().getFullName()
-                        : null)
-                .progress(enrollment.getProgress())
-                .enrolledAt(enrollment.getEnrolledAt())
-                .totalLessons(0) // TODO: Calculate from course sections
-                .completedLessons(0) // TODO: Calculate from user progress
-                .slug(course.getSlug())
-                .build();
+        return enrollmentMapper.toResponse(enrollment);
     }
 }

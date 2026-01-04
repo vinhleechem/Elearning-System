@@ -10,8 +10,8 @@ import org.example.elearning.entity.SectionEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.LessonRepository;
-import org.example.elearning.repository.SectionRepository;
 import org.example.elearning.service.LessonService;
+import org.example.elearning.service.SectionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +23,11 @@ import java.util.List;
 public class LessonServiceImpl implements LessonService {
 
     LessonRepository lessonRepository;
-    SectionRepository sectionRepository;
+    SectionService sectionService;
 
     @Override
     public List<LessonResponse> getLessonsBySection(Long sectionId) {
-        SectionEntity section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+        SectionEntity section = sectionService.getSectionEntityById(sectionId);
         return lessonRepository.findBySectionOrderBySortOrderAsc(section)
                 .stream()
                 .map(this::toResponse)
@@ -45,8 +44,7 @@ public class LessonServiceImpl implements LessonService {
     @Override
     @Transactional
     public LessonResponse createLesson(Long sectionId, LessonRequest request) {
-        SectionEntity section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+        SectionEntity section = sectionService.getSectionEntityById(sectionId);
 
         Integer sortOrder = request.getSortOrder();
         if (sortOrder == null) {

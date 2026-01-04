@@ -18,6 +18,7 @@ import org.example.elearning.repository.InstructorPayoutRepository;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.OrderRepository;
 import org.example.elearning.service.CommissionService;
+import org.example.elearning.mapper.CommissionMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class CommissionServiceImpl implements CommissionService {
     InstructorPayoutRepository payoutRepository;
     InstructorRepository instructorRepository;
     OrderRepository orderRepository;
+    CommissionMapper commissionMapper;
     
     private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("70.00"); // 70% for instructor
 
@@ -248,33 +250,10 @@ public class CommissionServiceImpl implements CommissionService {
     }
 
     private CommissionRateResponse mapToCommissionRateResponse(CommissionRateEntity entity) {
-        return CommissionRateResponse.builder()
-                .rateId(entity.getRateId())
-                .instructorId(entity.getInstructor().getInstructorId())
-                .instructorName(entity.getInstructor().getUser().getFullName())
-                .ratePercentage(entity.getRatePercentage())
-                .minPayoutAmount(entity.getMinPayoutAmount())
-                .isActive(entity.getIsActive())
-                .notes(entity.getNotes())
-                .build();
+        return commissionMapper.toCommissionRateResponse(entity);
     }
 
     private InstructorPayoutResponse mapToPayoutResponse(InstructorPayoutEntity entity) {
-        return InstructorPayoutResponse.builder()
-                .payoutId(entity.getPayoutId())
-                .instructorId(entity.getInstructor().getInstructorId())
-                .instructorName(entity.getInstructor().getUser().getFullName())
-                .amount(entity.getAmount())
-                .commissionAmount(entity.getCommissionAmount())
-                .netAmount(entity.getNetAmount())
-                .periodStart(entity.getPeriodStart())
-                .periodEnd(entity.getPeriodEnd())
-                .status(entity.getStatus())
-                .paymentMethod(entity.getPaymentMethod())
-                .transactionId(entity.getTransactionId())
-                .paidAt(entity.getPaidAt())
-                .createdAt(entity.getCreatedAt())
-                .notes(entity.getNotes())
-                .build();
+        return commissionMapper.toPayoutResponse(entity);
     }
 }

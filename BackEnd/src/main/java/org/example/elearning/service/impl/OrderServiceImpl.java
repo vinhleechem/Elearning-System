@@ -11,9 +11,14 @@ import org.example.elearning.enums.OrderStatus;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.*;
+import org.example.elearning.repository.OrderRepository;
+import org.example.elearning.repository.OrderItemRepository;
 import org.example.elearning.service.OrderService;
+import org.example.elearning.service.UserService;
+import org.example.elearning.service.CourseService;
+import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.NotificationService;
+import org.example.elearning.mapper.OrderMapper;
 import org.example.elearning.dto.request.NotificationRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,21 +40,25 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
+    // ✅ Only own repositories
     OrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
-    CourseRepository courseRepository;
-    UserRepository userRepository;
-    EnrollmentRepository enrollmentRepository;
+    
+    // ✅ Use services for other entities
+    UserService userService;
+    CourseService courseService;
+    EnrollmentService enrollmentService;
     NotificationService notificationService;
+    OrderMapper orderMapper;
 
     @Override
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         // Lấy danh sách khóa học
-        List<CourseEntity> courses = courseRepository.findAllById(request.getCourseIds());
+        List<CourseEntity> courses = courseService.getCourseEntitiesByIds(request.getCourseIds());
 
         if (courses.isEmpty()) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND_LIST.getMessage());
@@ -57,18 +66,16 @@ public class OrderServiceImpl implements OrderService {
 
         // Kiểm tra đã enroll chưa
         for (CourseEntity course : courses) {
-            if (enrollmentRepository.existsByUserAndCourse(user, course)) {
+            if (enrollmentService.existsByUserAndCourse(user, course)) {
                 throw new BusinessException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
             }
         }
 
-        // Tính tổng tiền
+        // Tính tổng tiền (giá gốc, discount sẽ tính sau từ promotions)
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CourseEntity course : courses) {
             BigDecimal price = course.getPrice();
-            BigDecimal discountPrice = course.getDiscountPrice();
-            BigDecimal finalPrice = discountPrice != null ? discountPrice : price;
-            totalAmount = totalAmount.add(finalPrice);
+            totalAmount = totalAmount.add(price);
         }
 
         // --- CHECK REUSE: Check for reusable PENDING order ---
@@ -117,15 +124,13 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemEntity> orderItems = new ArrayList<>();
         for (CourseEntity course : courses) {
             BigDecimal price = course.getPrice();
-            BigDecimal discountPrice = course.getDiscountPrice();
-            BigDecimal finalPrice = discountPrice != null ? discountPrice : price;
 
             OrderItemEntity orderItem = OrderItemEntity.builder()
                     .order(order)
                     .course(course)
                     .price(price)
-                    .discountPrice(discountPrice)
-                    .finalPrice(finalPrice)
+                    .discountPrice(price)  // Sẽ update sau khi apply promotions
+                    .finalPrice(price)     // Sẽ update sau khi apply promotions
                     .build();
 
             orderItems.add(orderItemRepository.save(orderItem));
@@ -141,7 +146,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
@@ -159,7 +164,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public Page<OrderResponse> getMyOrders(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         Page<OrderEntity> orders = orderRepository.findByUser(user, pageable);
 
@@ -211,7 +216,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void cancelOrder(Long orderId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
@@ -228,14 +233,29 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+    @Override
+    @Transactional(readOnly = true)
+    public OrderEntity getOrderEntityById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderItemEntity> getOrderItemsByOrder(OrderEntity order) {
+        return orderItemRepository.findByOrder(order);
+    }
+
+    @Override
+    @Transactional
+    public void updateOrderStatus(OrderEntity order, OrderStatus status) {
+        order.setStatus(status);
+        orderRepository.save(order);
     }
 
     private void sendNewOrderNotification(OrderEntity order, UserEntity user) {
         // Get all admins
-        List<UserEntity> admins = userRepository.findAllAdmins();
+        List<UserEntity> admins = userService.findAllAdmins();
         
         for (UserEntity admin : admins) {
             NotificationRequest notification = NotificationRequest.builder()
@@ -253,33 +273,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse mapToOrderResponse(OrderEntity order, List<OrderItemEntity> orderItems) {
-        List<OrderItemResponse> itemResponses = orderItems.stream()
-                .map(this::mapToOrderItemResponse)
-                .collect(Collectors.toList());
-
-        return OrderResponse.builder()
-                .orderId(order.getOrderId())
-                .userId(order.getUser().getUserId())
-                .userName(order.getUser().getFullName())
-                .items(itemResponses)
-                .totalAmount(order.getTotalAmount())
-                .discountAmount(order.getDiscountAmount())
-                .finalAmount(order.getFinalAmount())
-                .status(order.getStatus())
-                .createdAt(order.getCreatedAt())
-                .build();
+        return orderMapper.toOrderResponse(order, orderItems);
     }
 
     private OrderItemResponse mapToOrderItemResponse(OrderItemEntity orderItem) {
-        CourseEntity course = orderItem.getCourse();
-        return OrderItemResponse.builder()
-                .orderItemId(orderItem.getOrderItemId())
-                .courseId(course.getCourseId())
-                .courseTitle(course.getTitle())
-                .courseImage(course.getThumbnailUrl())
-                .price(orderItem.getPrice())
-                .discountPrice(orderItem.getDiscountPrice())
-                .finalPrice(orderItem.getFinalPrice())
-                .build();
+        return orderMapper.toOrderItemResponse(orderItem);
     }
 }

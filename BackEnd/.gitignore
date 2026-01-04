@@ -35,5 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
-/.env
+
+### Environment Variables ###
+.env
+*.env
+!.env.example
 .history/

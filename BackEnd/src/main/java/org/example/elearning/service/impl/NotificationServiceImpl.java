@@ -12,8 +12,8 @@ import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.NotificationMapper;
 import org.example.elearning.repository.NotificationRepository;
-import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.NotificationService;
+import org.example.elearning.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -29,14 +29,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     NotificationRepository notificationRepository;
-    UserRepository userRepository;
+    UserService userService;
     SimpMessagingTemplate messagingTemplate;
     NotificationMapper notificationMapper;
 
     @Override
     public Page<NotificationResponse> getMyNotifications(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         Page<NotificationEntity> notifications = notificationRepository.findByUser(user, pageable);
 
@@ -47,7 +47,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public NotificationResponse markAsRead(Long notificationId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         NotificationEntity notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo"));
@@ -66,7 +66,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void markAllAsRead() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         List<NotificationEntity> notifications = notificationRepository.findByUserAndIsReadFalse(user);
 
@@ -78,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void deleteNotification(Long notificationId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         NotificationEntity notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo"));
@@ -93,22 +93,16 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public Long getUnreadCount() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         return notificationRepository.countByUserAndIsReadFalse(user);
-    }
-
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
     }
 
     // ============= WebSocket Methods =============
 
     @Override
     public void sendNotificationToUser(NotificationRequest request) {
-        UserEntity user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        UserEntity user = userService.getUserByIdEntity(request.getUserId());
         
         NotificationResponse notification = notificationMapper.toResponse(request);
         System.out.println("Sending WS notification to user: " + user.getEmail());
@@ -134,8 +128,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void createAndSendNotification(NotificationRequest request) {
         // 1. Lưu vào database
-        UserEntity user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        UserEntity user = userService.getUserByIdEntity(request.getUserId());
         
         NotificationEntity notification = NotificationEntity.builder()
                 .user(user)
@@ -175,12 +168,10 @@ public class NotificationServiceImpl implements NotificationService {
         Page<NotificationEntity> notifications;
 
         if (userId != null && isRead != null) {
-            UserEntity user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+            UserEntity user = userService.getUserByIdEntity(userId);
             notifications = notificationRepository.findByUserAndIsReadAndIsDeletedFalse(user, isRead, pageable);
         } else if (userId != null) {
-            UserEntity user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+            UserEntity user = userService.getUserByIdEntity(userId);
             notifications = notificationRepository.findByUserAndIsDeletedFalse(user, pageable);
         } else if (userName != null && isRead != null) {
             notifications = notificationRepository.findByUserFullNameContainingAndIsReadAndIsDeletedFalse(userName, isRead, pageable);

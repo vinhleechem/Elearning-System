@@ -10,10 +10,13 @@ import org.example.elearning.entity.WishlistEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.repository.CourseRepository;
-import org.example.elearning.repository.UserRepository;
 import org.example.elearning.repository.WishlistRepository;
 import org.example.elearning.service.WishlistService;
+import org.example.elearning.service.UserService;
+import org.example.elearning.service.CourseService;
+import org.example.elearning.mapper.WishlistMapper;
+import org.example.elearning.service.UserService;
+import org.example.elearning.service.CourseService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,15 +28,19 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class WishlistServiceImpl implements WishlistService {
+    // ✅ Only own repository
     WishlistRepository wishlistRepository;
-    CourseRepository courseRepository;
-    UserRepository userRepository;
+    
+    // ✅ Use services for other entities
+    UserService userService;
+    CourseService courseService;
+    WishlistMapper wishlistMapper;
 
     @Override
     @Transactional(readOnly = true)
     public List<WishlistResponse> getMyWishlist() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         List<WishlistEntity> wishlists = wishlistRepository.findByUser(user);
 
@@ -46,10 +53,9 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional
     public WishlistResponse addToWishlist(Long courseId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         // Kiểm tra đã có trong wishlist chưa
         if (wishlistRepository.existsByUserAndCourse(user, course)) {
@@ -70,7 +76,7 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional
     public void removeFromWishlist(Long wishlistId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         WishlistEntity wishlist = wishlistRepository.findById(wishlistId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.WISHLIST_ITEM_NOT_FOUND.getMessage()));
@@ -85,33 +91,15 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public boolean isInWishlist(Long courseId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+        CourseEntity course = courseService.getCourseEntityById(courseId);
 
         return wishlistRepository.existsByUserAndCourse(user, course);
     }
 
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
-    }
 
     private WishlistResponse mapToWishlistResponse(WishlistEntity wishlist) {
-        CourseEntity course = wishlist.getCourse();
-        return WishlistResponse.builder()
-                .wishlistId(wishlist.getWishlistId())
-                .courseId(course.getCourseId())
-                .courseTitle(course.getTitle())
-                .courseImage(course.getThumbnailUrl())
-                .price(course.getPrice())
-                .discountPrice(course.getDiscountPrice())
-                .instructorName(course.getInstructor() != null && course.getInstructor().getUser() != null
-                        ? course.getInstructor().getUser().getFullName()
-                        : null)
-                .rating(course.getAverageRating() != null ? course.getAverageRating().floatValue() : null)
-                .addedAt(wishlist.getCreatedAt())
-                .build();
+        return wishlistMapper.toResponse(wishlist);
     }
 }

@@ -3,6 +3,7 @@ package org.example.elearning.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.constant.KafkaTopics;
+import org.example.elearning.constant.NotificationTemplate;
 import org.example.elearning.dto.event.CourseEvent;
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.request.NotificationRequest;
@@ -13,21 +14,18 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.InstructorEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.enums.CourseStatus;
+import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.CourseMapper;
-import org.example.elearning.repository.CategoryRepository;
 import org.example.elearning.repository.CourseRepository;
-import org.example.elearning.repository.InstructorRepository;
-import org.example.elearning.repository.UserRepository;
-import org.example.elearning.repository.EnrollmentRepository;
-import org.example.elearning.repository.PromotionRepository;
 import org.example.elearning.service.CourseService;
+import org.example.elearning.service.CategoryService;
+import org.example.elearning.service.InstructorService;
+import org.example.elearning.service.UserService;
+import org.example.elearning.service.EnrollmentService;
+import org.example.elearning.service.PromotionService;
 import org.example.elearning.service.NotificationService;
 import org.example.elearning.specification.CourseSpecification;
-import org.example.elearning.entity.PromotionEntity;
-import org.example.elearning.entity.PromotionRuleEntity;
-import org.example.elearning.enums.DiscountType;
-import org.example.elearning.enums.PromotionRuleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -35,7 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -50,12 +47,12 @@ import lombok.experimental.FieldDefaults;
 public class CourseServiceImpl implements CourseService {
 
     CourseRepository courseRepository;
-    CategoryRepository categoryRepository;
-    InstructorRepository instructorRepository;
+    CategoryService categoryService;
+    InstructorService instructorService;
     CourseMapper courseMapper;
-    UserRepository userRepository;
-    EnrollmentRepository enrollmentRepository;
-    PromotionRepository promotionRepository;
+    UserService userService;
+    EnrollmentService enrollmentService;
+    PromotionService promotionService;
     NotificationService notificationService;
     KafkaTemplate<String, String> kafkaTemplate;
     ObjectMapper objectMapper;
@@ -97,13 +94,10 @@ public class CourseServiceImpl implements CourseService {
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
-        // Fetch active promotions
-        List<PromotionEntity> activePromotions = promotionRepository.findActivePromotions(LocalDateTime.now());
-
         var courseResponses = page.getContent().stream()
                 .map(course -> {
                     CourseResponse response = courseMapper.toResponse(course);
-                    applyBestPromotion(response, course, activePromotions);
+                    promotionService.applyBestPromotionToCourse(response, course);
                     return response;
                 })
                 .toList();
@@ -115,67 +109,20 @@ public class CourseServiceImpl implements CourseService {
                 page.getTotalPages()));
     }
 
-    private void applyBestPromotion(CourseResponse response, CourseEntity course,
-            List<PromotionEntity> activePromotions) {
-        if (course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-            return;
-        }
-
-        BigDecimal bestDiscountAmount = BigDecimal.ZERO;
-        PromotionEntity bestPromotion = null;
-
-        for (PromotionEntity promotion : activePromotions) {
-            for (PromotionRuleEntity rule : promotion.getRules()) {
-                if (isRuleApplicable(rule, course)) {
-                    BigDecimal discountAmount = calculateDiscountAmount(rule, course.getPrice());
-                    if (discountAmount.compareTo(bestDiscountAmount) > 0) {
-                        bestDiscountAmount = discountAmount;
-                        bestPromotion = promotion;
-                    }
-                }
-            }
-        }
-
-        if (bestPromotion != null) {
-            response.setPromotionName(bestPromotion.getName());
-            response.setPromotionType(bestPromotion.getPromotionType().name());
-            response.setPromotionEndDate(bestPromotion.getEndDate());
-
-            BigDecimal finalPrice = course.getPrice().subtract(bestDiscountAmount);
-            if (finalPrice.compareTo(BigDecimal.ZERO) < 0)
-                finalPrice = BigDecimal.ZERO;
-
-            response.setDiscountPrice(finalPrice);
-
-            // Calculate percentage
-            int percentage = bestDiscountAmount.divide(course.getPrice(), 2, RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal(100)).intValue();
-            response.setDiscountPercentage(percentage);
-        }
-    }
-
-    private boolean isRuleApplicable(PromotionRuleEntity rule, CourseEntity course) {
-        if (rule.getRuleType() == PromotionRuleType.ALL) {
-            return true;
-        }
-        if (rule.getRuleType() == PromotionRuleType.COURSE) {
-            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCourseId());
-        }
-        if (rule.getRuleType() == PromotionRuleType.CATEGORY) {
-            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCategory().getId());
-        }
-        return false;
-    }
-
-    private BigDecimal calculateDiscountAmount(PromotionRuleEntity rule, BigDecimal price) {
-        if (rule.getDiscountType() == DiscountType.FIXED) {
-            return rule.getDiscountValue();
-        } else {
-            BigDecimal discount = price.multiply(rule.getDiscountValue().divide(new BigDecimal(100)));
-            if (rule.getMaxDiscountAmount() != null && discount.compareTo(rule.getMaxDiscountAmount()) > 0) {
-                return rule.getMaxDiscountAmount();
-            }
-            return discount;
+    /**
+     * Enrich course response with user-specific context (purchase status)
+     */
+    private void enrichCourseWithUserContext(CourseResponse response, CourseEntity course) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && !authentication.getName().equals("anonymousUser")) {
+            String email = authentication.getName();
+            UserEntity user = userService.getUserByEmail(email);
+            enrollmentService.findEnrollmentByUserAndCourse(user, course).ifPresent(enrollment -> {
+                response.setIsPurchased(true);
+                response.setPurchasedAt(enrollment.getCreatedAt());
+            });
         }
     }
 
@@ -213,23 +160,11 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
         CourseResponse response = courseMapper.toResponse(entity);
 
-        // Apply active promotions
-        List<PromotionEntity> activePromotions = promotionRepository.findActivePromotions(LocalDateTime.now());
-        applyBestPromotion(response, entity, activePromotions);
+        // Apply best promotion
+        promotionService.applyBestPromotionToCourse(response, entity);
 
-        // Check if user is logged in
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
-                && !authentication.getName().equals("anonymousUser")) {
-            String email = authentication.getName();
-            userRepository.findByEmail(email).ifPresent(user -> {
-                enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, entity).ifPresent(enrollment -> {
-                    response.setIsPurchased(true);
-                    response.setPurchasedAt(enrollment.getCreatedAt());
-                });
-            });
-        }
+        // Enrich with user context (purchase status)
+        enrichCourseWithUserContext(response, entity);
 
         return response;
     }
@@ -243,12 +178,24 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CourseEntity getCourseEntityById(Long id) {
+        return courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COURSE_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseEntity> getCourseEntitiesByIds(List<Long> ids) {
+        return courseRepository.findAllById(ids);
+    }
+
+    @Override
     @Transactional
     public CourseResponse createCourse(CourseRequest request) {
-        InstructorEntity instructor = instructorRepository.findById(request.getInstructorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Instructor not found"));
-        CategoryEntity category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        InstructorEntity instructor = instructorService.getInstructorEntityById(request.getInstructorId());
+        CategoryEntity category = categoryService.getCategoryEntityById(request.getCategoryId());
 
         CourseEntity entity = courseMapper.toEntity(request);
         entity.setInstructor(instructor);
@@ -272,14 +219,12 @@ public class CourseServiceImpl implements CourseService {
         courseMapper.updateEntity(entity, request);
 
         if (request.getCategoryId() != null) {
-            CategoryEntity category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            CategoryEntity category = categoryService.getCategoryEntityById(request.getCategoryId());
             entity.setCategory(category);
         }
 
         if (request.getInstructorId() != null) {
-            InstructorEntity instructor = instructorRepository.findById(request.getInstructorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Instructor not found"));
+            InstructorEntity instructor = instructorService.getInstructorEntityById(request.getInstructorId());
             entity.setInstructor(instructor);
         }
 
@@ -313,10 +258,9 @@ public class CourseServiceImpl implements CourseService {
         }
 
         String email = authentication.getName();
-        var user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var user = userService.getUserByEmail(email);
         
-        var instructorOptional = instructorRepository.findByUser(user);
+        var instructorOptional = instructorService.findInstructorByUser(user);
         
         if (instructorOptional.isEmpty()) {
              return new PaginatedResponse<>(java.util.Collections.emptyList(), new PaginatedResponse.Pagination(
@@ -356,8 +300,7 @@ public class CourseServiceImpl implements CourseService {
         var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
                 .getAuthentication();
         String email = authentication.getName();
-        var user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var user = userService.getUserByEmail(email);
         
         // Check if course belongs to the instructor
         if (!course.getInstructor().getUser().getUserId().equals(user.getUserId())) {
@@ -371,24 +314,8 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.PENDING);
         courseRepository.save(course);
 
-        // Gửi thông báo cho tất cả admin (lưu DB + gửi realtime)
-        List<UserEntity> admins = userRepository.findAllAdmins();
-        System.out.println("Found " + admins.size() + " admins to notify."); // DEBUG LOG
-
-        for (UserEntity admin : admins) {
-            System.out.println("Creating notification for admin: " + admin.getEmail()); // DEBUG LOG
-            NotificationRequest notification = NotificationRequest.builder()
-                    .title("Yêu cầu duyệt khóa học mới")
-                    .message(String.format("Giảng viên %s đã gửi yêu cầu duyệt khóa học '%s'", 
-                            course.getInstructor().getUser().getFullName(), 
-                            course.getTitle()))
-                    .type("SYSTEM")
-                    .userId(admin.getUserId())
-                    .link("/admin/courses/" + course.getCourseId())
-                    .build();
-            
-            notificationService.createAndSendNotification(notification);
-        }
+        // Notify all admins about course approval request
+        notifyAdminsForCourseApproval(course);
     }
 
     @Override
@@ -405,13 +332,16 @@ public class CourseServiceImpl implements CourseService {
         course.setPublishedAt(LocalDateTime.now());
         courseRepository.save(course);
         
+        // Notify instructor about approval
+        notifyInstructorCourseApproved(course);
+        
         // Publish Kafka event
         publishKafkaEvent("COURSE_PUBLISHED", id);
     }
 
     @Override
     @Transactional
-    public void rejectCourse(Long id) {
+    public void rejectCourse(Long id, String reason) {
         CourseEntity course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
@@ -422,7 +352,75 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.REJECTED);
         courseRepository.save(course);
         
+        // Notify instructor about rejection
+        notifyInstructorCourseRejected(course, reason != null ? reason : "Không có lý do cụ thể");
+        
         // Publish Kafka event (unpublish)
         publishKafkaEvent("COURSE_UNPUBLISHED", id);
+    }
+
+    /**
+     * Helper method to notify all admins about course approval request
+     */
+    private void notifyAdminsForCourseApproval(CourseEntity course) {
+        List<UserEntity> admins = userService.findAllAdmins();
+        log.info("Notifying {} admins about course approval request for course ID: {}", 
+                admins.size(), course.getCourseId());
+
+        String instructorName = course.getInstructor().getUser().getFullName();
+        String courseTitle = course.getTitle();
+
+        for (UserEntity admin : admins) {
+            log.debug("Creating notification for admin: {}", admin.getEmail());
+            NotificationRequest notification = NotificationRequest.builder()
+                    .title(NotificationTemplate.COURSE_APPROVAL_REQUEST_TITLE)
+                    .message(NotificationTemplate.buildCourseApprovalRequestMessage(instructorName, courseTitle))
+                    .type(NotificationTemplate.TYPE_SYSTEM)
+                    .userId(admin.getUserId())
+                    .link(NotificationTemplate.buildAdminCourseLink(course.getCourseId()))
+                    .build();
+            
+            notificationService.createAndSendNotification(notification);
+        }
+        
+        log.info("Successfully notified {} admins", admins.size());
+    }
+
+    /**
+     * Helper method to notify instructor about course approval
+     */
+    private void notifyInstructorCourseApproved(CourseEntity course) {
+        UserEntity instructor = course.getInstructor().getUser();
+        log.info("Notifying instructor {} about course approval: {}", 
+                instructor.getEmail(), course.getCourseId());
+
+        NotificationRequest notification = NotificationRequest.builder()
+                .title(NotificationTemplate.COURSE_APPROVED_TITLE)
+                .message(NotificationTemplate.buildCourseApprovedMessage(course.getTitle()))
+                .type(NotificationTemplate.TYPE_COURSE)
+                .userId(instructor.getUserId())
+                .link(NotificationTemplate.buildInstructorCourseLink(course.getCourseId()))
+                .build();
+        
+        notificationService.createAndSendNotification(notification);
+    }
+
+    /**
+     * Helper method to notify instructor about course rejection
+     */
+    private void notifyInstructorCourseRejected(CourseEntity course, String reason) {
+        UserEntity instructor = course.getInstructor().getUser();
+        log.info("Notifying instructor {} about course rejection: {}", 
+                instructor.getEmail(), course.getCourseId());
+
+        NotificationRequest notification = NotificationRequest.builder()
+                .title(NotificationTemplate.COURSE_REJECTED_TITLE)
+                .message(NotificationTemplate.buildCourseRejectedMessage(course.getTitle(), reason))
+                .type(NotificationTemplate.TYPE_COURSE)
+                .userId(instructor.getUserId())
+                .link(NotificationTemplate.buildInstructorCourseLink(course.getCourseId()))
+                .build();
+        
+        notificationService.createAndSendNotification(notification);
     }
 }

@@ -36,6 +36,11 @@ public interface PromotionService {
     List<PromotionResponse> getActivePromotions();
 
     /**
+     * Get active promotion entities (for internal service usage)
+     */
+    List<org.example.elearning.entity.PromotionEntity> getActivePromotionEntities();
+
+    /**
      * Delete promotion (soft delete)
      */
     void deletePromotion(Long promotionId);
@@ -49,4 +54,18 @@ public interface PromotionService {
      * Deactivate promotion
      */
     void deactivatePromotion(Long promotionId);
+
+    /**
+     * Apply best promotion to course response
+     * Finds the best applicable promotion and updates the response with discount information
+     */
+    void applyBestPromotionToCourse(org.example.elearning.dto.response.CourseResponse response, 
+                                     org.example.elearning.entity.CourseEntity course);
+
+    /**
+     * Apply best promotion to cart item response
+     * Finds the best applicable promotion and updates the cart item with discount information
+     */
+    void applyBestPromotionToCartItem(org.example.elearning.dto.response.CartItemResponse response, 
+                                       org.example.elearning.entity.CourseEntity course);
 }

@@ -13,7 +13,6 @@ import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.RoleMapper;
-import org.example.elearning.repository.PermissionRepository;
 import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.service.PermissionService;
 import org.example.elearning.service.RoleService;
@@ -22,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static org.example.elearning.exception.ErrorCode.ROLE_NOT_FOUND;
 
@@ -31,7 +31,6 @@ import static org.example.elearning.exception.ErrorCode.ROLE_NOT_FOUND;
 public class RoleServiceImpl implements RoleService {
     RoleRepository roleRepository;
     RoleMapper roleMapper;
-    PermissionRepository permissionRepository;
     PermissionService permissionService;
 
     @Override
@@ -54,7 +53,7 @@ public class RoleServiceImpl implements RoleService {
                     newRole.setPermissions(new HashSet<>()); // Khởi tạo Set rỗng cho vai trò mới
                     return newRole;
                 });
-        var permissions = permissionRepository.findAllById(roleRequest.getPermissions());
+        var permissions = permissionService.findAllById(roleRequest.getPermissions());
         if (permissions.size() != roleRequest.getPermissions().size()) {
             throw new IllegalArgumentException(ErrorCode.PERMISSION_NOT_FOUND.getMessage());
         }
@@ -69,7 +68,7 @@ public class RoleServiceImpl implements RoleService {
             throw new ResourceConflictException(ErrorCode.ROLE_EXISTED.getMessage());
         }
         if (roleRequest.getPermissions() != null) {
-            var permissions = permissionRepository.findAllById(roleRequest.getPermissions());
+            var permissions = permissionService.findAllById(roleRequest.getPermissions());
             if (permissions.size() != roleRequest.getPermissions().size()) {
                 throw new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage());
             }
@@ -122,6 +121,11 @@ public class RoleServiceImpl implements RoleService {
     public RoleEntity findByRoleName(String roleName) {
         return roleRepository.findByRoleName(PredefinedRole.ROLE_STUDENT)
                 .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public Optional<RoleEntity> findByRoleNameOptional(String roleName) {
+        return roleRepository.findByRoleNameAndIsDeletedFalse(roleName);
     }
 
 

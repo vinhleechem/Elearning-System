@@ -7,7 +7,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
   data:
     redis:
       port: 6379
@@ -46,9 +46,9 @@ outbound:
     client-secret: ${OUTBOUND_IDENTITY_CLIENT_SECRET}
     redirect-uri: ${OUTBOUND_IDENTITY_REDIRECT_URI}
   facebook:
-    client-id: ${OUTBOUND_FACEBOOK_CLIENT_ID:}
-    client-secret: ${OUTBOUND_FACEBOOK_CLIENT_SECRET:}
-    redirect-uri: ${OUTBOUND_FACEBOOK_REDIRECT_URI:}
+    client-id: ${OUTBOUND_FACEBOOK_CLIENT_ID}
+    client-secret: ${OUTBOUND_FACEBOOK_CLIENT_SECRET}
+    redirect-uri: ${OUTBOUND_FACEBOOK_REDIRECT_URI}
 management:
   endpoint:
     web:

@@ -22,10 +22,10 @@ import org.example.elearning.exception.exceptions.ForbiddenException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.exception.exceptions.UnauthorizedException;
 import org.example.elearning.mapper.UserMapper;
-import org.example.elearning.repository.InstructorRepository;
-import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.UserService;
+import org.example.elearning.service.RoleService;
+import org.example.elearning.service.InstructorService;
 import org.example.elearning.specification.UserSpecification;
 import org.example.elearning.util.CloudinaryUtil;
 import org.springframework.data.domain.Page;
@@ -48,8 +48,8 @@ import lombok.experimental.FieldDefaults;
 public class UserServiceImpl implements UserService {
     UserMapper userMapper;
     UserRepository userRepository;
-    RoleRepository roleRepository;
-    InstructorRepository instructorRepository;
+    RoleService roleService;
+    InstructorService instructorService;
     PasswordEncoder passwordEncoder;
     CloudinaryUtil cloudinaryUtil;
 
@@ -303,8 +303,7 @@ public class UserServiceImpl implements UserService {
         user.getRoles().forEach(this::handleAdminUser);
 
         Set<RoleEntity> roles = roleNames.stream()
-                .map(roleName -> roleRepository.findByRoleName(roleName)
-                        .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại: " + roleName)))
+                .map(roleService::findByRoleName)
                 .collect(Collectors.toSet());
 
         user.setRoles(roles);
@@ -322,6 +321,12 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return newPassword;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserEntity> findAllAdmins() {
+        return userRepository.findAllAdmins();
     }
 
     // ==================== Helper methods ====================
@@ -346,7 +351,7 @@ public class UserServiceImpl implements UserService {
             return;
         }
 
-        instructorRepository.findByUser(user).ifPresent(instructor -> {
+        instructorService.findInstructorByUser(user).ifPresent(instructor -> {
             dto.setInstructorId(instructor.getInstructorId());
             dto.setInstructorHeadline(instructor.getHeadline());
             dto.setInstructorBiography(instructor.getBiography());

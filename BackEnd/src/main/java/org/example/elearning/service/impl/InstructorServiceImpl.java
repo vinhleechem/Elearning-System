@@ -12,8 +12,10 @@ import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.InstructorMapper;
 import org.example.elearning.repository.InstructorRepository;
-import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.InstructorService;
+import org.example.elearning.service.UserService;
+
+import java.util.Optional;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class InstructorServiceImpl implements InstructorService {
     InstructorRepository instructorRepository;
-    UserRepository userRepository;
+    UserService userService;
     InstructorMapper instructorMapper;
 
     @Override
@@ -39,7 +41,7 @@ public class InstructorServiceImpl implements InstructorService {
     @Override
     public InstructorResponse getMyInstructorProfile() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
                 .orElseGet(() -> createDefaultInstructorProfile(user));
@@ -51,7 +53,7 @@ public class InstructorServiceImpl implements InstructorService {
     @Transactional
     public InstructorResponse updateMyInstructorProfile(UpdateInstructorProfileRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         InstructorEntity instructor = instructorRepository.findByUser(user)
                 .orElseGet(() -> createDefaultInstructorProfile(user));
@@ -67,7 +69,7 @@ public class InstructorServiceImpl implements InstructorService {
     @Transactional
     public InstructorResponse becomeInstructor() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+        UserEntity user = userService.getUserByEmail(email);
 
         // Kiểm tra đã là instructor chưa
         if (instructorRepository.existsByUser(user)) {
@@ -79,9 +81,17 @@ public class InstructorServiceImpl implements InstructorService {
         return instructorMapper.toResponse(instructor);
     }
 
-    private UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    @Override
+    @Transactional(readOnly = true)
+    public InstructorEntity getInstructorEntityById(Long instructorId) {
+        return instructorRepository.findById(instructorId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<InstructorEntity> findInstructorByUser(UserEntity user) {
+        return instructorRepository.findByUser(user);
     }
 
     private InstructorEntity createDefaultInstructorProfile(UserEntity user) {
