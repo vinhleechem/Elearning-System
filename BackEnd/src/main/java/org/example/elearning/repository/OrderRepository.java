@@ -41,6 +41,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate AND o.createdAt < :endDate")
     BigDecimal getRevenueBetween(LocalDateTime startDate, LocalDateTime endDate);
     
+    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate")
+    Long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    
     // Daily Revenue - using native query for date functions
     @Query(value = "SELECT DATE(o.created_at) as date, COALESCE(SUM(o.final_amount), 0) as revenue, COUNT(o.order_id) as orderCount " +
            "FROM orders o " +

@@ -96,4 +96,16 @@ public class VoucherEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instructor_id")
     InstructorEntity instructor; // Instructor tạo voucher (null = system voucher)
+
+    // Helper methods for mapping
+    public String getInstructorName() {
+        if (instructor != null && instructor.getUser() != null) {
+            return instructor.getUser().getFullName();
+        }
+        return null;
+    }
+
+    public Integer getApplicableCoursesCount() {
+        return applicableCourses != null ? applicableCourses.size() : 0;
+    }
 }

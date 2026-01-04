@@ -22,19 +22,13 @@ public interface UserMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(@MappingTarget UserEntity userEntity, UpdateProfileRequest updateProfileRequest);
 
-    @Mapping(target = "roles", expression = "java(mapRoles(userEntity))")
     UserResponse toEntityDTO(UserEntity userEntity);
 
     List<UserResponse> toEntityDTO(List<UserEntity> userEntities);
 
-
-    default java.util.List<String> mapRoles(UserEntity userEntity) {
-        if (userEntity.getRoles() == null) {
-            return java.util.Collections.emptyList();
-        }
-        return userEntity.getRoles()
-                .stream()
-                .map(RoleEntity::getRoleName)
-                .toList();
+    default String map(RoleEntity role) {
+        return role != null ? role.getRoleName() : null;
     }
 }
+
+

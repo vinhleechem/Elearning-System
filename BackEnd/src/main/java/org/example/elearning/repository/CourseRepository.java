@@ -25,6 +25,9 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
     Page<CourseEntity> findAll(org.springframework.data.jpa.domain.Specification<CourseEntity> spec, Pageable pageable);
 
     boolean existsBySlug(String slug);
+    
+    @Query("SELECT COUNT(c) FROM CourseEntity c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
+    Long countByCreatedAtBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
 
 }
 

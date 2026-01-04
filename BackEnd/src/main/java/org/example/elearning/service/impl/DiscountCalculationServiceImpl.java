@@ -70,8 +70,8 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                             appliedDiscount = appliedDiscount.add(ruleDiscount);
                             
                             // Add to discounts list
-                            addOrUpdateDiscount(discounts, "PROMOTION", promotion.getName(), 
-                                    promotion.getDescription(), ruleDiscount);
+                            addOrUpdateDiscount(discounts, OrderDiscountType.PROMOTION.name(), 
+                                    promotion.getName(), promotion.getDescription(), ruleDiscount);
                         }
                     }
                 }
@@ -106,8 +106,8 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                 // Apply voucher discount proportionally to items
                 applyVoucherToItems(itemPrices, voucherDiscount);
                 
-                addOrUpdateDiscount(discounts, "VOUCHER", voucher.getName(),
-                        voucher.getDescription(), voucherDiscount);
+                addOrUpdateDiscount(discounts, OrderDiscountType.VOUCHER.name(),
+                        voucher.getName(), voucher.getDescription(), voucherDiscount);
             }
         }
         
@@ -184,58 +184,51 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
 
     // Helper methods
     private boolean isRuleApplicable(PromotionRuleEntity rule, CourseEntity course, ApplyDiscountRequest request) {
-        switch (rule.getRuleType()) {
-            case ALL:
-                return true;
-
-            case COURSE:
-                return course.getCourseId().equals(rule.getTargetId());
-
-            case CATEGORY:
-                return course.getCategory().getId().equals(rule.getTargetId());
-
-            case CART_TOTAL:
+        return switch (rule.getRuleType()) {
+            case ALL -> true;
+            case COURSE -> course.getCourseId().equals(rule.getTargetId());
+            case CATEGORY -> course.getCategory().getId().equals(rule.getTargetId());
+            case CART_TOTAL -> {
                 BigDecimal cartTotal = request.getCartItems().stream()
                         .map(ApplyDiscountRequest.CartItemRequest::getPrice)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
-                return rule.getMinPurchaseAmount() == null ||
+                yield rule.getMinPurchaseAmount() == null ||
                         cartTotal.compareTo(rule.getMinPurchaseAmount()) >= 0;
-
-            case BUY_X_GET_Y:
-                return request.getCartItems().size() >= (rule.getBuyQuantity() + rule.getGetQuantity());
-
-            default:
-                return false;
-        }
+            }
+            case BUY_X_GET_Y -> request.getCartItems().size() >= (rule.getBuyQuantity() + rule.getGetQuantity());
+            default -> false;
+        };
     }
 
     private BigDecimal calculateRuleDiscount(PromotionRuleEntity rule, BigDecimal price) {
-        if (rule.getDiscountType() == DiscountType.PERCENTAGE) {
-            BigDecimal discount = price.multiply(rule.getDiscountValue())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-            if (rule.getMaxDiscountAmount() != null && discount.compareTo(rule.getMaxDiscountAmount()) > 0) {
-                return rule.getMaxDiscountAmount();
-            }
-
-            return discount;
-        } else {
-            return rule.getDiscountValue().min(price);
-        }
+        return calculateDiscount(rule.getDiscountType(), rule.getDiscountValue(), 
+                rule.getMaxDiscountAmount(), price);
     }
 
     private BigDecimal calculateVoucherDiscount(VoucherEntity voucher, BigDecimal cartTotal) {
-        if (voucher.getDiscountType() == DiscountType.PERCENTAGE) {
-            BigDecimal discount = cartTotal.multiply(voucher.getDiscountValue())
+        return calculateDiscount(voucher.getDiscountType(), voucher.getDiscountValue(), 
+                voucher.getMaxDiscountAmount(), cartTotal);
+    }
+
+    /**
+     * Generic discount calculation method
+     * Supports both PERCENTAGE and FIXED discount types
+     */
+    private BigDecimal calculateDiscount(DiscountType discountType, BigDecimal discountValue, 
+                                          BigDecimal maxDiscountAmount, BigDecimal baseAmount) {
+        if (discountType == DiscountType.PERCENTAGE) {
+            BigDecimal discount = baseAmount.multiply(discountValue)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-            if (voucher.getMaxDiscountAmount() != null && discount.compareTo(voucher.getMaxDiscountAmount()) > 0) {
-                return voucher.getMaxDiscountAmount();
+            // Apply max discount cap if exists
+            if (maxDiscountAmount != null && discount.compareTo(maxDiscountAmount) > 0) {
+                return maxDiscountAmount;
             }
 
             return discount;
         } else {
-            return voucher.getDiscountValue().min(cartTotal);
+            // FIXED discount - cannot exceed base amount
+            return discountValue.min(baseAmount);
         }
     }
 

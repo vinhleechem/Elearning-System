@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.response.DashboardStatsResponse;
-import org.example.elearning.entity.OrderEntity;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.OrderRepository;
 import org.example.elearning.repository.UserRepository;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,78 +25,43 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardStatsResponse getDashboardStats() {
-        // Get current period stats
-        long totalUsers = userRepository.count();
-        long totalOrders = orderRepository.count();
-        long totalCourses = courseRepository.count();
-        
-        // Calculate total revenue from all orders (using finalAmount)
-        List<OrderEntity> allOrders = orderRepository.findAll();
-        double totalRevenue = allOrders.stream()
-                .map(OrderEntity::getFinalAmount)
-                .filter(amount -> amount != null)
-                .mapToDouble(BigDecimal::doubleValue)
-                .sum();
-
-        // Calculate growth percentages (compare last 30 days vs previous 30 days)
+        // Calculate time periods
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime thirtyDaysAgo = now.minus(30, ChronoUnit.DAYS);
         LocalDateTime sixtyDaysAgo = now.minus(60, ChronoUnit.DAYS);
 
-        // Users growth
-        long usersLast30Days = userRepository.findAll().stream()
-                .filter(user -> user.getCreatedAt() != null && user.getCreatedAt().isAfter(thirtyDaysAgo))
-                .count();
-        long usersPrevious30Days = userRepository.findAll().stream()
-                .filter(user -> user.getCreatedAt() != null 
-                        && user.getCreatedAt().isAfter(sixtyDaysAgo) 
-                        && user.getCreatedAt().isBefore(thirtyDaysAgo))
-                .count();
+        // Get current totals
+        long totalUsers = userRepository.count();
+        long totalOrders = orderRepository.count();
+        long totalCourses = courseRepository.count();
+        BigDecimal totalRevenue = orderRepository.getTotalRevenue();
+
+        // Get counts for last 30 days and previous 30 days using optimized queries
+        long usersLast30Days = userRepository.countByCreatedAtBetween(thirtyDaysAgo, now);
+        long usersPrevious30Days = userRepository.countByCreatedAtBetween(sixtyDaysAgo, thirtyDaysAgo);
+
+        long ordersLast30Days = orderRepository.countByCreatedAtBetween(thirtyDaysAgo, now);
+        long ordersPrevious30Days = orderRepository.countByCreatedAtBetween(sixtyDaysAgo, thirtyDaysAgo);
+
+        BigDecimal revenueLast30Days = orderRepository.getRevenueBetween(thirtyDaysAgo, now);
+        BigDecimal revenuePrevious30Days = orderRepository.getRevenueBetween(sixtyDaysAgo, thirtyDaysAgo);
+
+        long coursesLast30Days = courseRepository.countByCreatedAtBetween(thirtyDaysAgo, now);
+        long coursesPrevious30Days = courseRepository.countByCreatedAtBetween(sixtyDaysAgo, thirtyDaysAgo);
+
+        // Calculate growth percentages
         double userGrowth = calculateGrowthPercentage(usersLast30Days, usersPrevious30Days);
-
-        // Orders growth
-        long ordersLast30Days = allOrders.stream()
-                .filter(order -> order.getCreatedAt() != null && order.getCreatedAt().isAfter(thirtyDaysAgo))
-                .count();
-        long ordersPrevious30Days = allOrders.stream()
-                .filter(order -> order.getCreatedAt() != null 
-                        && order.getCreatedAt().isAfter(sixtyDaysAgo) 
-                        && order.getCreatedAt().isBefore(thirtyDaysAgo))
-                .count();
         double orderGrowth = calculateGrowthPercentage(ordersLast30Days, ordersPrevious30Days);
-
-        // Revenue growth
-        double revenueLast30Days = allOrders.stream()
-                .filter(order -> order.getCreatedAt() != null && order.getCreatedAt().isAfter(thirtyDaysAgo))
-                .map(OrderEntity::getFinalAmount)
-                .filter(amount -> amount != null)
-                .mapToDouble(BigDecimal::doubleValue)
-                .sum();
-        double revenuePrevious30Days = allOrders.stream()
-                .filter(order -> order.getCreatedAt() != null 
-                        && order.getCreatedAt().isAfter(sixtyDaysAgo) 
-                        && order.getCreatedAt().isBefore(thirtyDaysAgo))
-                .map(OrderEntity::getFinalAmount)
-                .filter(amount -> amount != null)
-                .mapToDouble(BigDecimal::doubleValue)
-                .sum();
-        double revenueGrowth = calculateGrowthPercentage(revenueLast30Days, revenuePrevious30Days);
-
-        // Courses growth
-        long coursesLast30Days = courseRepository.findAll().stream()
-                .filter(course -> course.getCreatedAt() != null && course.getCreatedAt().isAfter(thirtyDaysAgo))
-                .count();
-        long coursesPrevious30Days = courseRepository.findAll().stream()
-                .filter(course -> course.getCreatedAt() != null 
-                        && course.getCreatedAt().isAfter(sixtyDaysAgo) 
-                        && course.getCreatedAt().isBefore(thirtyDaysAgo))
-                .count();
+        double revenueGrowth = calculateGrowthPercentage(
+                revenueLast30Days.doubleValue(), 
+                revenuePrevious30Days.doubleValue()
+        );
         double courseGrowth = calculateGrowthPercentage(coursesLast30Days, coursesPrevious30Days);
 
         return DashboardStatsResponse.builder()
                 .totalUsers(totalUsers)
                 .totalOrders(totalOrders)
-                .totalRevenue(totalRevenue)
+                .totalRevenue(totalRevenue.doubleValue())
                 .totalCourses(totalCourses)
                 .userGrowth(userGrowth)
                 .orderGrowth(orderGrowth)

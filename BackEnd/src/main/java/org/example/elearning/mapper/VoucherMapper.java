@@ -15,8 +15,6 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface VoucherMapper {
 
-    @Mapping(target = "instructorName", expression = "java(entity.getInstructor() != null && entity.getInstructor().getUser() != null ? entity.getInstructor().getUser().getFullName() : null)")
-    @Mapping(target = "applicableCoursesCount", expression = "java(entity.getApplicableCourses() != null ? entity.getApplicableCourses().size() : 0)")
     VoucherResponse toResponse(VoucherEntity entity);
 
     List<VoucherResponse> toResponseList(List<VoucherEntity> entities);

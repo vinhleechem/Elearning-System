@@ -9,6 +9,7 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.SectionEntity;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
+import org.example.elearning.mapper.SectionMapper;
 import org.example.elearning.repository.SectionRepository;
 import org.example.elearning.service.SectionService;
 import org.example.elearning.service.CourseService;
@@ -24,14 +25,12 @@ public class SectionServiceImpl implements SectionService {
 
     SectionRepository sectionRepository;
     CourseService courseService;
+    SectionMapper sectionMapper;
 
     @Override
     public List<SectionResponse> getSectionsByCourse(Long courseId) {
         CourseEntity course = courseService.getCourseEntityById(courseId);
-        return sectionRepository.findByCourseOrderByPositionAsc(course)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return sectionMapper.toResponseList(sectionRepository.findByCourseOrderByPositionAsc(course));
     }
 
     @Override
@@ -45,13 +44,11 @@ public class SectionServiceImpl implements SectionService {
             position = currentSize + 1;
         }
 
-        SectionEntity entity = SectionEntity.builder()
-                .course(course)
-                .title(request.getTitle())
-                .position(position)
-                .build();
+        SectionEntity entity = sectionMapper.toEntity(request);
+        entity.setCourse(course);
+        entity.setPosition(position);
 
-        return toResponse(sectionRepository.save(entity));
+        return sectionMapper.toResponse(sectionRepository.save(entity));
     }
 
     @Override
@@ -60,14 +57,9 @@ public class SectionServiceImpl implements SectionService {
         SectionEntity entity = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
 
-        if (request.getTitle() != null) {
-            entity.setTitle(request.getTitle());
-        }
-        if (request.getPosition() != null) {
-            entity.setPosition(request.getPosition());
-        }
+        sectionMapper.updateEntity(entity, request);
 
-        return toResponse(sectionRepository.save(entity));
+        return sectionMapper.toResponse(sectionRepository.save(entity));
     }
 
     @Override
@@ -84,14 +76,4 @@ public class SectionServiceImpl implements SectionService {
         return sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
     }
-
-    private SectionResponse toResponse(SectionEntity entity) {
-        return SectionResponse.builder()
-                .sectionId(entity.getSectionId())
-                .courseId(entity.getCourse().getCourseId())
-                .title(entity.getTitle())
-                .position(entity.getPosition())
-                .build();
-    }
 }
-
