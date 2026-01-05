@@ -40,8 +40,6 @@ import java.util.stream.Collectors;
 public class PromotionServiceImpl implements PromotionService {
 
     private final PromotionRepository promotionRepository;
-    private final CourseService courseService;
-    private final CategoryService categoryService;
     private final PromotionMapper promotionMapper;
 
     @Override

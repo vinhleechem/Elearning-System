@@ -102,11 +102,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<EnrollmentEntity> findEnrollmentByUserAndCourse(UserEntity user, CourseEntity course) {
-        return enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, course);
-    }
 
     @Override
     @Transactional(readOnly = true)

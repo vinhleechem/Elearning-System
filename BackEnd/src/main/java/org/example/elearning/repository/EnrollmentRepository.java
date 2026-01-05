@@ -14,8 +14,6 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentEntity, Lo
 
     Optional<EnrollmentEntity> findByUserAndCourseAndIsDeletedFalse(UserEntity user, CourseEntity course);
 
-    List<EnrollmentEntity> findByUserAndIsDeletedFalse(UserEntity user);
-
     boolean existsByUserAndCourse(UserEntity user, CourseEntity course);
 
     List<EnrollmentEntity> findByUser(UserEntity user);

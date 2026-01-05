@@ -19,8 +19,6 @@ public interface EnrollmentService {
 
     void createEnrollment(UserEntity user, CourseEntity course);
     
-    // For internal service usage - returns entity instead of DTO
-    Optional<EnrollmentEntity> findEnrollmentByUserAndCourse(UserEntity user, CourseEntity course);
-    
+
     boolean existsByUserAndCourse(UserEntity user, CourseEntity course);
 }

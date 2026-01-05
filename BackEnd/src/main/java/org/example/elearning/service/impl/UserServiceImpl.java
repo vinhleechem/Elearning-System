@@ -22,10 +22,10 @@ import org.example.elearning.exception.exceptions.ForbiddenException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.exception.exceptions.UnauthorizedException;
 import org.example.elearning.mapper.UserMapper;
+import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.UserRepository;
 import org.example.elearning.service.UserService;
 import org.example.elearning.service.RoleService;
-import org.example.elearning.service.InstructorService;
 import org.example.elearning.specification.UserSpecification;
 import org.example.elearning.util.CloudinaryUtil;
 import org.springframework.data.domain.Page;
@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
     UserMapper userMapper;
     UserRepository userRepository;
     RoleService roleService;
-    InstructorService instructorService;
+    InstructorRepository instructorRepository;
     PasswordEncoder passwordEncoder;
     CloudinaryUtil cloudinaryUtil;
 
@@ -346,7 +346,7 @@ public class UserServiceImpl implements UserService {
             return;
         }
 
-        instructorService.findInstructorByUser(user).ifPresent(instructor -> {
+        instructorRepository.findByUser(user).ifPresent(instructor -> {
             dto.setInstructorId(instructor.getInstructorId());
             dto.setInstructorHeadline(instructor.getHeadline());
             dto.setInstructorBiography(instructor.getBiography());

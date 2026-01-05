@@ -13,8 +13,8 @@ import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.PermissionMapper;
 import org.example.elearning.repository.PermissionRepository;
+import org.example.elearning.repository.RoleRepository;
 import org.example.elearning.service.PermissionService;
-import org.example.elearning.service.RoleService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
 public class PermissionServiceImpl implements PermissionService {
     PermissionRepository permissionRepository;
     PermissionMapper permissionMapper;
-    RoleService roleService;
+    RoleRepository roleRepository;
 
     @Override
     public List<PermissionResponse> getAllPermissions() {
@@ -52,11 +52,11 @@ public class PermissionServiceImpl implements PermissionService {
         permissionRepository.save(permission);
         log.info("Permission created, updating admin role");
         
-        // Update admin role to include this permission by calling update method
-        RoleEntity adminRole = roleService.findByRoleNameOptional(PredefinedRole.ROLE_ADMIN)
+        // Auto-assign new permission to admin role
+        RoleEntity adminRole = roleRepository.findByRoleNameAndIsDeletedFalse(PredefinedRole.ROLE_ADMIN)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ROLE_NOT_FOUND.getMessage()));
         adminRole.getPermissions().add(permission);
-        permissionRepository.save(permission); // Save permission with updated relationship
+        roleRepository.save(adminRole); // Save role with updated permissions
         
         return permissionMapper.toPermissionResponse(permission);
     }

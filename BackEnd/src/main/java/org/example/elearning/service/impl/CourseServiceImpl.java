@@ -18,11 +18,11 @@ import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.CourseMapper;
 import org.example.elearning.repository.CourseRepository;
+import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.service.CategoryService;
 import org.example.elearning.service.InstructorService;
 import org.example.elearning.service.UserService;
-import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.PromotionService;
 import org.example.elearning.service.NotificationService;
 import org.example.elearning.specification.CourseSpecification;
@@ -51,7 +51,7 @@ public class CourseServiceImpl implements CourseService {
     InstructorService instructorService;
     CourseMapper courseMapper;
     UserService userService;
-    EnrollmentService enrollmentService;
+    EnrollmentRepository enrollmentRepository;
     PromotionService promotionService;
     NotificationService notificationService;
     KafkaTemplate<String, String> kafkaTemplate;
@@ -119,7 +119,7 @@ public class CourseServiceImpl implements CourseService {
                 && !authentication.getName().equals("anonymousUser")) {
             String email = authentication.getName();
             UserEntity user = userService.getUserByEmail(email);
-            enrollmentService.findEnrollmentByUserAndCourse(user, course).ifPresent(enrollment -> {
+            enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, course).ifPresent(enrollment -> {
                 response.setIsPurchased(true);
                 response.setPurchasedAt(enrollment.getCreatedAt());
             });
