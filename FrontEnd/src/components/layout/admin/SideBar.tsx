@@ -15,6 +15,7 @@ import {
   CardGiftcard,
   ShoppingCart,
   TrendingUp,
+  RateReview,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -64,6 +65,11 @@ const navItems: NavItem[] = [
     icon: <TrendingUp />,
     name: "Báo cáo doanh thu",
     path: "/admin/revenue",
+  },
+  {
+    icon: <RateReview />,
+    name: "Quản lý đánh giá",
+    path: "/admin/reviews",
   },
   {
     icon: <Notifications />,
@@ -133,14 +139,14 @@ const AppSidebar: React.FC = () => {
             <button
               onClick={() => handleSubmenuToggle(index)}
               className={`flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 lg:justify-center ${openSubmenu === index
-                  ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 } cursor-pointer`}
             >
               <span
                 className={`flex h-5 w-5 items-center justify-center ${openSubmenu === index
-                    ? "text-white"
-                    : "text-gray-500 group-hover:text-gray-900"
+                  ? "text-white"
+                  : "text-gray-500 group-hover:text-gray-900"
                   }`}
               >
                 {nav.icon}
@@ -151,8 +157,8 @@ const AppSidebar: React.FC = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronRight
                   className={`ml-auto h-5 w-5 transition-transform duration-200 ${openSubmenu === index
-                      ? "rotate-90 text-white"
-                      : "text-gray-400"
+                    ? "rotate-90 text-white"
+                    : "text-gray-400"
                     }`}
                 />
               )}
@@ -162,14 +168,14 @@ const AppSidebar: React.FC = () => {
               <Link
                 to={nav.path}
                 className={`group flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isActive(nav.path)
-                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
               >
                 <span
                   className={`flex h-5 w-5 items-center justify-center ${isActive(nav.path)
-                      ? "text-white"
-                      : "text-gray-500 group-hover:text-gray-900"
+                    ? "text-white"
+                    : "text-gray-500 group-hover:text-gray-900"
                     }`}
                 >
                   {nav.icon}
@@ -197,8 +203,8 @@ const AppSidebar: React.FC = () => {
                     <Link
                       to={subItem.path}
                       className={`flex items-center rounded-lg px-2 py-1.5 text-sm transition-colors duration-200 ${isActive(subItem.path)
-                          ? "bg-primary-50 text-primary-600"
-                          : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-primary-50 text-primary-600"
+                        : "text-gray-600 hover:bg-gray-100"
                         }`}
                     >
                       {subItem.name}
@@ -206,8 +212,8 @@ const AppSidebar: React.FC = () => {
                         {subItem.new && (
                           <span
                             className={`rounded px-1.5 py-0.5 text-xs font-medium ${isActive(subItem.path)
-                                ? "bg-primary-100 text-primary-600"
-                                : "bg-gray-100 text-gray-600"
+                              ? "bg-primary-100 text-primary-600"
+                              : "bg-gray-100 text-gray-600"
                               }`}
                           >
                             new
@@ -216,8 +222,8 @@ const AppSidebar: React.FC = () => {
                         {subItem.pro && (
                           <span
                             className={`rounded px-1.5 py-0.5 text-xs font-medium ${isActive(subItem.path)
-                                ? "bg-primary-100 text-primary-600"
-                                : "bg-gray-100 text-gray-600"
+                              ? "bg-primary-100 text-primary-600"
+                              : "bg-gray-100 text-gray-600"
                               }`}
                           >
                             pro
@@ -237,10 +243,10 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out ${isExpanded || isMobileOpen
+        ? "w-[290px]"
+        : isHovered
           ? "w-[290px]"
-          : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+          : "w-[90px]"
         } ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

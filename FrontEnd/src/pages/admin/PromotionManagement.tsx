@@ -42,6 +42,7 @@ import {
   VisibilityOff,
   CheckCircle,
   Cancel,
+  CloudUpload,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { promotionService } from "../../service/promotionService";
@@ -62,13 +63,14 @@ const PromotionManagement = () => {
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [page] = useState(0);
+  const [, setTotalPages] = useState(0);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [promotionDetail, setPromotionDetail] =
     useState<PromotionDetail | null>(null);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [formData, setFormData] = useState<PromotionRequest>({
     name: "",
@@ -273,6 +275,29 @@ const PromotionManagement = () => {
     promotion.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleImportExcel = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      await promotionService.importPromotions(file);
+      enqueueSnackbar("Import khuyến mãi thành công", {
+        variant: "success",
+      });
+      fetchPromotions();
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Import thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -299,95 +324,126 @@ const PromotionManagement = () => {
             Quản lý các chương trình khuyến mãi và quy tắc giảm giá
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            py: 1.5,
-            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
-            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
-            "&:hover": {
-              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
-              transform: "translateY(-1px)",
-            },
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          Tạo khuyến mãi mới
-        </Button>
-      </Box>
+        <Box display="flex" gap={2}>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            disabled={isImporting}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#2563eb",
+              color: "#2563eb",
+              "&:hover": {
+                borderColor: "#1d4ed8",
+                bgcolor: alpha("#2563eb", 0.04),
+              },
+            }}
+          >
+            {isImporting ? "Đang import..." : "Import Excel"}
+            <input
+              type="file"
+              hidden
+              accept=".xlsx, .xls"
+              onChange={handleImportExcel}
+            />
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              "&:hover": {
+                boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            Tạo khuyến mãi mới
+          </Button>
+        </Box>
+      </Box >
 
       {/* Stats Cards */}
-      <Grid container spacing={3} mb={4}>
-        {[
-          {
-            label: "Tổng khuyến mãi",
-            value: promotions.length,
-            color: "#2563eb",
-            icon: <LocalOffer />,
-          },
-          {
-            label: "Đang hoạt động",
-            value: promotions.filter((p) => p.isActive).length,
-            color: "#10b981",
-            icon: <CheckCircle />,
-          },
-          {
-            label: "Vô hiệu hóa",
-            value: promotions.filter((p) => !p.isActive).length,
-            color: "#ef4444",
-            icon: <Cancel />,
-          },
-        ].map((stat, index) => (
-          <Grid size={{ xs: 12, md: 4 }} key={index}>
-            <Card
-              sx={{
-                borderRadius: "16px",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-                border: "1px solid",
-                borderColor: "grey.100",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-                },
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: "12px",
-                      bgcolor: alpha(stat.color, 0.1),
-                      color: stat.color,
-                      display: "flex",
-                    }}
-                  >
-                    {stat.icon}
+      < Grid container spacing={3} mb={4} >
+        {
+          [
+            {
+              label: "Tổng khuyến mãi",
+              value: promotions.length,
+              color: "#2563eb",
+              icon: <LocalOffer />,
+            },
+            {
+              label: "Đang hoạt động",
+              value: promotions.filter((p) => p.isActive).length,
+              color: "#10b981",
+              icon: <CheckCircle />,
+            },
+            {
+              label: "Vô hiệu hóa",
+              value: promotions.filter((p) => !p.isActive).length,
+              color: "#ef4444",
+              icon: <Cancel />,
+            },
+          ].map((stat, index) => (
+            <Grid size={{ xs: 12, md: 4 }} key={index}>
+              <Card
+                sx={{
+                  borderRadius: "16px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                  border: "1px solid",
+                  borderColor: "grey.100",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "12px",
+                        bgcolor: alpha(stat.color, 0.1),
+                        color: stat.color,
+                        display: "flex",
+                      }}
+                    >
+                      {stat.icon}
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h4" fontWeight="700">
+                        {stat.value}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {stat.label}
-                    </Typography>
-                    <Typography variant="h4" fontWeight="700">
-                      {stat.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))
+        }
+      </Grid >
 
       {/* Main Content Card */}
-      <Card
+      < Card
         sx={{
           borderRadius: "20px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
@@ -397,7 +453,7 @@ const PromotionManagement = () => {
         }}
       >
         {/* Filter Toolbar */}
-        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+        < Box p={3} borderBottom="1px solid" borderColor="grey.100" >
           <TextField
             fullWidth
             placeholder="Tìm kiếm khuyến mãi..."
@@ -422,10 +478,10 @@ const PromotionManagement = () => {
               },
             }}
           />
-        </Box>
+        </Box >
 
         {/* Table */}
-        <TableContainer>
+        < TableContainer >
           <Table>
             <TableHead>
               <TableRow>
@@ -587,11 +643,11 @@ const PromotionManagement = () => {
               )}
             </TableBody>
           </Table>
-        </TableContainer>
-      </Card>
+        </TableContainer >
+      </Card >
 
       {/* Create/Edit Dialog */}
-      <Dialog
+      < Dialog
         open={openDialog}
         onClose={handleCloseDialog}
         maxWidth="md"
@@ -821,10 +877,10 @@ const PromotionManagement = () => {
             {editingId ? "Update" : "Create"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Detail Dialog */}
-      <Dialog
+      < Dialog
         open={openDetailDialog}
         onClose={() => setOpenDetailDialog(false)}
         maxWidth="md"
@@ -893,10 +949,10 @@ const PromotionManagement = () => {
         <DialogActions>
           <Button onClick={() => setOpenDetailDialog(false)}>Close</Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
+      < Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
@@ -912,8 +968,8 @@ const PromotionManagement = () => {
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
-    </Box>
+      </Dialog >
+    </Box >
   );
 };
 

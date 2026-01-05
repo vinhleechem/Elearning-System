@@ -300,4 +300,112 @@ public class VoucherServiceImpl implements VoucherService {
                 .status(status)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void importVouchers(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        List<VoucherEntity> vouchers = new ArrayList<>();
+        
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+             org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
+             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+             
+             // Date format expected: yyyy-MM-dd HH:mm
+             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+             
+             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                String code = getCellValueAsString(row.getCell(0));
+                if (code == null || code.isEmpty()) continue;
+                if (voucherRepository.findByCodeAndIsDeletedFalse(code).isPresent()) continue;
+                
+                VoucherEntity voucher = new VoucherEntity();
+                voucher.setCode(code.toUpperCase());
+                voucher.setName(getCellValueAsString(row.getCell(1)));
+                voucher.setDescription(getCellValueAsString(row.getCell(2)));
+                
+                String discountTypeStr = getCellValueAsString(row.getCell(3));
+                try {
+                    voucher.setDiscountType(org.example.elearning.enums.DiscountType.valueOf(discountTypeStr.toUpperCase()));
+                } catch (Exception e) {
+                    voucher.setDiscountType(org.example.elearning.enums.DiscountType.FIXED);
+                }
+                
+                voucher.setDiscountValue(getCellValueAsBigDecimal(row.getCell(4)));
+                voucher.setMinOrderValue(getCellValueAsBigDecimal(row.getCell(5)));
+                voucher.setMaxDiscountAmount(getCellValueAsBigDecimal(row.getCell(6)));
+                
+                voucher.setTotalUsageLimit(getCellValueAsInteger(row.getCell(7)));
+                voucher.setPerUserLimit(getCellValueAsInteger(row.getCell(8)));
+                
+                try {
+                     String startStr = getCellValueAsString(row.getCell(9));
+                     if (!startStr.isEmpty()) voucher.setStartDate(LocalDateTime.parse(startStr, formatter));
+                     else voucher.setStartDate(LocalDateTime.now());
+                } catch(Exception e) { voucher.setStartDate(LocalDateTime.now()); }
+                
+                try {
+                     String endStr = getCellValueAsString(row.getCell(10));
+                     if (!endStr.isEmpty()) voucher.setEndDate(LocalDateTime.parse(endStr, formatter));
+                     else voucher.setEndDate(LocalDateTime.now().plusMonths(1));
+                } catch(Exception e) { voucher.setEndDate(LocalDateTime.now().plusMonths(1)); }
+
+                voucher.setIsActive(true);
+                voucher.setIsPublic(true); // Default to public
+                voucher.setDeleted(false);
+                voucher.setUsedCount(0);
+                voucher.setApplicableTo(VoucherApplicability.ALL_COURSES);
+                
+                vouchers.add(voucher);
+             }
+        }
+        
+        if (!vouchers.isEmpty()) {
+            voucherRepository.saveAll(vouchers);
+        }
+    }
+    
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return "";
+        try {
+            return switch (cell.getCellType()) {
+                case STRING -> cell.getStringCellValue();
+                case NUMERIC -> {
+                    if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                         yield cell.getLocalDateTimeCellValue().format(formatter);
+                    }
+                    yield String.valueOf((long) cell.getNumericCellValue());
+                }
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
+        } catch (Exception e) { return ""; }
+    }
+
+    private java.math.BigDecimal getCellValueAsBigDecimal(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return java.math.BigDecimal.ZERO;
+        try {
+            if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC) {
+                return java.math.BigDecimal.valueOf(cell.getNumericCellValue());
+            } else if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                return new java.math.BigDecimal(cell.getStringCellValue());
+            }
+        } catch (Exception e) { return java.math.BigDecimal.ZERO; }
+        return java.math.BigDecimal.ZERO;
+    }
+
+    private Integer getCellValueAsInteger(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return null;
+        try {
+            if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC) {
+                return (int) cell.getNumericCellValue();
+            } else if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                return Integer.parseInt(cell.getStringCellValue());
+            }
+        } catch (Exception e) { return null; }
+        return null;
+    }
 }

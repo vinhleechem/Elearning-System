@@ -190,8 +190,8 @@ const CourseDetailPage = () => {
           slug: course.slug,
           title: course.title,
           subtitle: course.shortDescription,
-          badges: course.tags || [],
-          categoryPath: [], // API doesn't return this yet
+          badges: ["Bán chạy nhất", "Mới cập nhật"], // Mock tags nếu không có
+          categoryPath: ["Phát triển", "Lập trình Web", "Frontend"], // Mock breadcrumb path
           rating: course.averageRating || 0,
           students: course.totalStudents || 0,
           lastUpdated: course.publishedAt
@@ -250,24 +250,44 @@ const CourseDetailPage = () => {
 
   return (
     <>
-      {/* Hero Section với background đen */}
-      <Box sx={{ bgcolor: "#1c1d1f", color: "#fff", position: "relative" }}>
-        <Container maxWidth="xl" sx={{ position: "relative" }}>
+      {/* Hero Section với gradient background */}
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          color: "#fff",
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+            pointerEvents: "none",
+          },
+        }}
+      >
+        <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
           {/* Course Info - chiếm 60% chiều rộng */}
           <Box sx={{ maxWidth: { xs: "100%", md: "60%" }, pr: { md: 4 } }}>
             <CourseHero
               data={{
-                title: data.title,
-                description: data.subtitle,
-                rating: data.rating,
+                title: data.title || "",
+                description: data.subtitle || "",
+                rating: data.rating || 0,
                 reviewCount: data.reviewsSummary?.count || 121,
-                studentCount: data.students,
-                lastUpdated: data.lastUpdated,
-                language: data.language,
-                instructor: data.instructor,
-                categories: data.categoryPath,
-                price: data.price,
-                originalPrice: data.oldPrice,
+                studentCount: data.students || 0,
+                lastUpdated: data.lastUpdated || new Date().toISOString(),
+                language: data.language || "English",
+                instructor: {
+                  name: data.instructor?.name || "Unknown Instructor",
+                  avatar: data.instructor?.avatarUrl || "/default-avatar.png",
+                },
+                categories: data.categoryPath || [],
+                badges: data.badges || [],
+                price: data.price || 0,
+                originalPrice: data.oldPrice || 0,
               }}
             />
           </Box>
@@ -297,19 +317,21 @@ const CourseDetailPage = () => {
         </Container>
       </Box>
 
-      {/* Main Content - không có margin âm */}
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box sx={{ maxWidth: { xs: "100%", md: "60%" } }}>
-          <WhatYouWillLearn items={data.whatYouWillLearn} />
-          <Curriculum sections={data.sections} />
-          <CourseRequirements requirements={data.requirements || []} />
-          <Description html={data.descriptionHtml} />
-          <Instructor instructor={data.instructor} />
-          <StudentFeedback summary={data.reviewsSummary} />
-          <Reviews items={data.reviews} />
-          <RelatedCourses courses={data.related} />
-        </Box>
-      </Container>
+      {/* Main Content với gradient background */}
+      <Box sx={{ background: "linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)" }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
+          <Box sx={{ maxWidth: { xs: "100%", md: "60%" } }}>
+            <WhatYouWillLearn items={data.whatYouWillLearn} />
+            <Curriculum sections={data.sections} />
+            <CourseRequirements requirements={data.requirements || []} />
+            <Description html={data.descriptionHtml} />
+            <Instructor instructor={data.instructor} />
+            <StudentFeedback summary={data.reviewsSummary} />
+            <Reviews items={data.reviews} />
+            <RelatedCourses courses={data.related} />
+          </Box>
+        </Container>
+      </Box>
 
       {/* Mobile PurchaseSidebar */}
       <Box sx={{ display: { xs: "block", md: "none" }, p: 2 }}>

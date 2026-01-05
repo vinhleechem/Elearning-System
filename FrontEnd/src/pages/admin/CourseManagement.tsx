@@ -39,7 +39,9 @@ import {
   Add,
   FolderOpen,
   VideoLibrary,
+  CloudUpload,
 } from "@mui/icons-material";
+import { CircularProgress } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useAuthStore } from "../../store/authStore";
 import {
@@ -73,6 +75,7 @@ const CourseManagement = () => {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [courseToUpdateStatus, setCourseToUpdateStatus] = useState<CourseResponse | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
+  const [isImporting, setIsImporting] = useState(false); // Imported
   const itemsPerPage = 10;
 
   // Flatten categories for dropdown
@@ -359,6 +362,40 @@ const CourseManagement = () => {
     return `${mins}m`;
   };
 
+  const handleImportExcel = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !tokens?.accessToken) return;
+
+    event.target.value = "";
+    setIsImporting(true);
+    try {
+      await adminCourseService.importCourses(tokens.accessToken, file);
+      enqueueSnackbar("Import dữ liệu thành công!", { variant: "success" });
+      if (page === 1) {
+        const pageResult = await adminCourseService.getCourses(
+          tokens.accessToken,
+          {
+            page: 0,
+            size: itemsPerPage,
+            search: searchTerm || undefined,
+            status: statusFilter !== "ALL" ? (statusFilter as any) : undefined,
+          }
+        );
+        setCourses(pageResult.data || []);
+        setTotalPages(pageResult.pagination?.totalPages ?? 1);
+        setTotalElements(pageResult.pagination?.totalElements ?? 0);
+      } else {
+        setPage(1);
+      }
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Import thất bại", { variant: "error" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -385,19 +422,52 @@ const CourseManagement = () => {
             Quản lý và theo dõi tất cả khóa học trong hệ thống
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleCreateClick}
-          size="large"
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            px: 3,
-          }}
-        >
-          Tạo khóa học mới
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            id="import-excel-input"
+            style={{ display: "none" }}
+            onChange={handleImportExcel}
+            disabled={isImporting}
+          />
+          <Button
+            variant="outlined"
+            startIcon={
+              isImporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
+            component="label"
+            htmlFor="import-excel-input"
+            disabled={isImporting}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              px: 2,
+              bgcolor: "white",
+              borderColor: "grey.300",
+              color: "text.primary",
+              "&:hover": {
+                bgcolor: "grey.50",
+                borderColor: "grey.400",
+              },
+            }}
+          >
+            {isImporting ? "Đang tải..." : "Import Excel"}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleCreateClick}
+            size="large"
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              px: 3,
+            }}
+          >
+            Tạo khóa học mới
+          </Button>
+        </Box>
       </Box>
 
       {/* Stats Cards */}

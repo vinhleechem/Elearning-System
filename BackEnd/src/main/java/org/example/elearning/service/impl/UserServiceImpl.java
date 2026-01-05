@@ -370,4 +370,71 @@ public class UserServiceImpl implements UserService {
 
         return password.toString();
     }
+
+    @Override
+    @Transactional
+    public void importUsers(MultipartFile file) throws IOException {
+        List<UserEntity> users = new java.util.ArrayList<>();
+        
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+             org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
+             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+             
+             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                String email = getCellValueAsString(row.getCell(0));
+                
+                // Skip if email empty or exists
+                if (email == null || email.trim().isEmpty()) continue;
+                if (userRepository.findByEmail(email).isPresent()) continue;
+
+                UserEntity user = new UserEntity();
+                user.setEmail(email.trim());
+                
+                String rawPassword = getCellValueAsString(row.getCell(1));
+                if (rawPassword.isEmpty()) rawPassword = "password123";
+                user.setPasswordHash(passwordEncoder.encode(rawPassword));
+                
+                user.setFullName(getCellValueAsString(row.getCell(2)));
+                user.setPhone(getCellValueAsString(row.getCell(4)));
+                
+                String roleName = getCellValueAsString(row.getCell(5));
+                if (roleName.isEmpty()) roleName = "STUDENT";
+                else {
+                    roleName = roleName.toUpperCase();
+                    if (!roleName.startsWith("ROLE_")) roleName = "ROLE_" + roleName;
+                }
+                
+                try {
+                    RoleEntity role = roleService.findByRoleName(roleName);
+                    user.setRoles(Set.of(role));
+                } catch (Exception e) {
+                    RoleEntity role = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
+                    user.setRoles(Set.of(role));
+                }
+                
+                user.setStatus(UserStatus.ACTIVE);
+                user.setDeleted(false);
+                
+                users.add(user);
+             }
+        }
+         if (!users.isEmpty()) {
+            userRepository.saveAll(users);
+        }
+    }
+
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return "";
+        try {
+            return switch (cell.getCellType()) {
+                case STRING -> cell.getStringCellValue();
+                case NUMERIC -> String.valueOf((long)cell.getNumericCellValue());
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
+        } catch (Exception e) { return ""; }
+    }
 }

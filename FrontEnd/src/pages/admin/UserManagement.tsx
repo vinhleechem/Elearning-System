@@ -31,6 +31,7 @@ import {
   Chip,
   useTheme,
   alpha,
+  CircularProgress,
 } from "@mui/material";
 import {
   Edit,
@@ -90,6 +91,8 @@ const UserManagement = () => {
   const itemsPerPage = 10;
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -152,7 +155,31 @@ const UserManagement = () => {
     };
 
     void fetchUsers();
-  }, [tokens?.accessToken, page, searchTerm]);
+    void fetchUsers();
+  }, [tokens?.accessToken, page, searchTerm, refreshKey]);
+
+  const handleImportExcel = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !tokens?.accessToken) return;
+
+    try {
+      setIsImporting(true);
+      await adminUserService.importUsers(tokens.accessToken, file);
+      enqueueSnackbar("Import danh sách người dùng thành công", {
+        variant: "success",
+      });
+      setRefreshKey((prev) => prev + 1);
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Import thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -402,27 +429,56 @@ const UserManagement = () => {
             Quản lý và theo dõi tất cả người dùng trong hệ thống
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            py: 1.5,
-            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
-            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
-            "&:hover": {
-              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
-              transform: "translateY(-1px)",
-            },
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          Thêm người dùng
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            disabled={isImporting}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#2563eb",
+              color: "#2563eb",
+              "&:hover": {
+                borderColor: "#1d4ed8",
+                bgcolor: alpha("#2563eb", 0.04),
+              },
+            }}
+          >
+            {isImporting ? "Đang import..." : "Import Excel"}
+            <input
+              type="file"
+              hidden
+              accept=".xlsx, .xls"
+              onChange={handleImportExcel}
+            />
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              "&:hover": {
+                boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            Thêm người dùng
+          </Button>
+        </Box>
       </Box>
 
       {/* Stats Cards */}
@@ -447,7 +503,7 @@ const UserManagement = () => {
             icon: <Block />,
           },
         ].map((stat, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
             <Card
               sx={{
                 borderRadius: "16px",
@@ -558,8 +614,8 @@ const UserManagement = () => {
 
         {/* Filters Toolbar */}
         <Box p={3} borderBottom="1px solid" borderColor="grey.100">
-            <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 placeholder="Tìm kiếm theo tên, email..."
@@ -586,7 +642,7 @@ const UserManagement = () => {
               />
             </Grid>
             {activeTab === "USERS" && (
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <FormControl fullWidth>
                   <Select
                     value={roleFilter}
@@ -1075,7 +1131,7 @@ const UserManagement = () => {
             />
 
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <FormControl fullWidth>
                   <InputLabel>Vai trò</InputLabel>
                   <Select
@@ -1095,7 +1151,7 @@ const UserManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <FormControl fullWidth>
                   <InputLabel>Trạng thái</InputLabel>
                   <Select
@@ -1152,7 +1208,7 @@ const UserManagement = () => {
                   }}
                 />
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
                       label="Website"
                       fullWidth
@@ -1168,7 +1224,7 @@ const UserManagement = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
                       label="LinkedIn"
                       fullWidth
@@ -1184,7 +1240,7 @@ const UserManagement = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
                       label="Twitter"
                       fullWidth
@@ -1200,7 +1256,7 @@ const UserManagement = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
                       label="YouTube"
                       fullWidth

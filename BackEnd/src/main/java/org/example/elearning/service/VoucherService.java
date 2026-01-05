@@ -59,4 +59,6 @@ public interface VoucherService {
      * Grant voucher to specific users (Admin)
      */
     void grantVoucherToUsers(Long voucherId, List<Long> userIds);
+
+    void importVouchers(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 }

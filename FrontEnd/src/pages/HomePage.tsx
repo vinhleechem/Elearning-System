@@ -8,32 +8,32 @@ import Trending from "../components/Trending";
 import ReportBanner from "../components/banner/ReportBanner";
 
 const HomePage: React.FC = () => {
-  return (
-    <div>
-      <Box>
-        <Container maxWidth="xl">
-          <SliderBanner />
-          <PartnerBanner />
-          <CourseList />
-        </Container>
-      </Box>
-      <Box bgcolor={"#F6F7F9"}>
-        <Container maxWidth="xl">
-          <LearningGoal />
-        </Container>
-      </Box>
-      <Box>
-        <Container maxWidth="xl" className="py-5">
-          <ReportBanner />
-        </Container>
-      </Box>
-      <Box bgcolor={"#F6F7F9"}>
-        <Container maxWidth="xl" className="py-5">
-          <Trending />
-        </Container>
-      </Box>
-    </div>
-  );
+    return (
+        <div>
+            <Box>
+                <Container maxWidth="xl">
+                    <SliderBanner />
+                    <PartnerBanner />
+                    <CourseList />
+                </Container>
+            </Box>
+            <Box bgcolor={"#F6F7F9"}>
+                <Container maxWidth="xl">
+                    <LearningGoal />
+                </Container>
+            </Box>
+            <Box>
+                <Container maxWidth="xl" className="py-5">
+                    <ReportBanner />
+                </Container>
+            </Box>
+            <Box bgcolor={"#F6F7F9"}>
+                <Container maxWidth="xl" className="py-5">
+                    <Trending />
+                </Container>
+            </Box>
+        </div>
+    );
 };
 
 export default HomePage;

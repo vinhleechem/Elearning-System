@@ -83,6 +83,16 @@ export const voucherService = {
     });
   },
 
+  // Admin - Import vouchers
+  importVouchers: async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await httpClient<void>(`${VOUCHER_BASE_URL}/import`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+
   // ========== PUBLIC & USER APIs ==========
 
   // Get public vouchers

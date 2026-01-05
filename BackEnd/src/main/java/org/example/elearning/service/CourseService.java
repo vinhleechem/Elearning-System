@@ -9,6 +9,8 @@ import org.example.elearning.enums.CourseStatus;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 public interface CourseService {
 
@@ -39,6 +41,8 @@ public interface CourseService {
     void rejectCourse(Long id, String reason);
 
     CourseResponse updateCourseStatus(Long id, CourseStatus status);
+
+    void importCourses(MultipartFile file) throws IOException;
 }
 
 

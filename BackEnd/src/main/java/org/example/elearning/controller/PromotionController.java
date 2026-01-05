@@ -89,4 +89,16 @@ public class PromotionController {
         promotionService.deactivatePromotion(id);
         return ResponseEntity.ok(StandardResponse.success("Promotion deactivated successfully"));
     }
+
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Import promotions from Excel", description = "Import promotions from Excel file (Admin only)")
+    public ResponseEntity<StandardResponse<String>> importPromotions(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            promotionService.importPromotions(file);
+             return ResponseEntity.ok(StandardResponse.success("Promotions imported successfully"));
+        } catch (java.io.IOException e) {
+             return ResponseEntity.badRequest().body(StandardResponse.error("Error importing file: " + e.getMessage()));
+        }
+    }
 }

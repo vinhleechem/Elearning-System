@@ -211,11 +211,6 @@ public class PromotionServiceImpl implements PromotionService {
             response.setPromotionName(bestPromotion.getName());
             response.setPromotionType(bestPromotion.getPromotionType().name());
             response.setPromotionEndDate(bestPromotion.getEndDate());
-
-
-
-
-
             // Calculate percentage
             int percentage = bestDiscountAmount.divide(course.getPrice(), 2, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100)).intValue();
@@ -277,4 +272,85 @@ public class PromotionServiceImpl implements PromotionService {
         }
     }
 
+    @Override
+    @Transactional
+    public void importPromotions(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        List<PromotionEntity> promotions = new ArrayList<>();
+        
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+             org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
+             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+             
+             // Date format expected: yyyy-MM-dd HH:mm
+             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+             
+             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                String name = getCellValueAsString(row.getCell(0));
+                if (name == null || name.isEmpty()) continue;
+                
+                PromotionEntity promotion = new PromotionEntity();
+                promotion.setName(name);
+                promotion.setDescription(getCellValueAsString(row.getCell(1)));
+                
+                String typeStr = getCellValueAsString(row.getCell(2));
+                try {
+                    promotion.setPromotionType(org.example.elearning.enums.PromotionType.valueOf(typeStr.toUpperCase()));
+                } catch (Exception e) {
+                    promotion.setPromotionType(org.example.elearning.enums.PromotionType.SEASONAL);
+                }
+                
+                try {
+                    String startStr = getCellValueAsString(row.getCell(3));
+                    if (!startStr.isEmpty())
+                        promotion.setStartDate(LocalDateTime.parse(startStr, formatter));
+                    else 
+                        promotion.setStartDate(LocalDateTime.now());
+                } catch (Exception e) {
+                    promotion.setStartDate(LocalDateTime.now());
+                }
+                
+                try {
+                    String endStr = getCellValueAsString(row.getCell(4));
+                     if (!endStr.isEmpty())
+                        promotion.setEndDate(LocalDateTime.parse(endStr, formatter));
+                     else 
+                        promotion.setEndDate(LocalDateTime.now().plusDays(7));
+                } catch (Exception e) {
+                     promotion.setEndDate(LocalDateTime.now().plusDays(7));
+                }
+                
+                promotion.setIsActive(true);
+                promotion.setPriority(0);
+                promotion.setDeleted(false);
+                promotion.setRules(new ArrayList<>());
+                
+                promotions.add(promotion);
+             }
+        }
+        
+        if (!promotions.isEmpty()) {
+            promotionRepository.saveAll(promotions);
+        }
+    }
+    
+     private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return "";
+        try {
+            return switch (cell.getCellType()) {
+                case STRING -> cell.getStringCellValue();
+                case NUMERIC -> {
+                    if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                         yield cell.getLocalDateTimeCellValue().format(formatter);
+                    }
+                    yield String.valueOf((long) cell.getNumericCellValue());
+                }
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
+        } catch (Exception e) { return ""; }
+    }
 }

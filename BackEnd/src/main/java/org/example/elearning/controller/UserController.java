@@ -194,4 +194,17 @@ public class UserController {
         UserResponse user = userService.updateUserAvatar(id, file);
         return ResponseEntity.ok(success("Cập nhật avatar user thành công", user));
     }
+
+    @Operation(summary = "Import user từ Excel", description = "API import danh sách user từ file Excel (Admin)")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecuredEndpoint("CREATE_USER")
+    public ResponseEntity<StandardResponse<String>> importUsers(@RequestParam("file") MultipartFile file) {
+         try {
+            userService.importUsers(file);
+            return ResponseEntity.ok(success("Import users thành công"));
+        } catch (java.io.IOException e) {
+            return ResponseEntity.badRequest().body(StandardResponse.error("Lỗi khi đọc file: " + e.getMessage()));
+        }
+    }
 }

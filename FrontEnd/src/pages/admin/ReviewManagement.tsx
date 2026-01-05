@@ -26,6 +26,10 @@ import {
     alpha,
     CircularProgress,
     Grid,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
 } from "@mui/material";
 import {
     Search as SearchIcon,
@@ -33,23 +37,47 @@ import {
     Visibility as VisibilityIcon,
     Star as StarIcon,
     RateReview as RateReviewIcon,
+    CloudUpload,
 } from "@mui/icons-material";
 import { reviewService, type ReviewResponse } from "../../service/reviewService";
+import { adminCourseService } from "../../service/adminCourseService";
+import { useAuthStore } from "../../store/authStore";
 import { useSnackbar } from "notistack";
 
 const ReviewManagement = () => {
     const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
+    const { tokens } = useAuthStore();
 
     const [reviews, setReviews] = useState<ReviewResponse[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterRating, setFilterRating] = useState<number | null>(null);
+    const [filterCourseId, setFilterCourseId] = useState<number | null>(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [totalElements, setTotalElements] = useState(0);
     const [selectedReview, setSelectedReview] = useState<ReviewResponse | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
+    const [courses, setCourses] = useState<Array<{ courseId: number; title: string }>>([]);
+    const [isImporting, setIsImporting] = useState(false);
+
+    const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        try {
+            await reviewService.importReviews(file);
+            enqueueSnackbar("Import đánh giá thành công", { variant: "success" });
+            fetchReviews();
+        } catch (error: any) {
+            enqueueSnackbar(error.message || "Lỗi khi import đánh giá", { variant: "error" });
+        } finally {
+            setIsImporting(false);
+            event.target.value = "";
+        }
+    };
 
     // Stats
     const [stats, setStats] = useState({
@@ -62,21 +90,80 @@ const ReviewManagement = () => {
     const fetchReviews = async () => {
         setLoading(true);
         try {
-            // TODO: Replace with actual admin endpoint when available
-            // For now, we'll need to fetch reviews by course or implement admin endpoint
-            enqueueSnackbar("Chức năng đang được phát triển", { variant: "info" });
+            const response = await reviewService.getAllReviews(
+                page,
+                10,
+                searchTerm || undefined,
+                filterRating || undefined,
+                filterCourseId || undefined
+            );
+
+            // Add null checks
+            if (response && response.data && response.pagination) {
+                setReviews(response.data);
+                setTotalPages(response.pagination.totalPages);
+
+
+                // Calculate stats
+                const total = response.pagination.totalElements;
+                const avgRating = response.data.length > 0
+                    ? response.data.reduce((sum, r) => sum + r.rating, 0) / response.data.length
+                    : 0;
+                const fiveStars = response.data.filter(r => r.rating === 5).length;
+                const oneStars = response.data.filter(r => r.rating === 1).length;
+
+                setStats({
+                    totalReviews: total,
+                    averageRating: avgRating,
+                    fiveStars,
+                    oneStars,
+                });
+            } else {
+                // Handle empty response
+                setReviews([]);
+                setTotalPages(0);
+
+                setStats({
+                    totalReviews: 0,
+                    averageRating: 0,
+                    fiveStars: 0,
+                    oneStars: 0,
+                });
+            }
+
             setLoading(false);
         } catch (error: any) {
             enqueueSnackbar(error.message || "Lỗi khi tải đánh giá", {
                 variant: "error",
             });
+            setReviews([]);
             setLoading(false);
         }
     };
 
+    const fetchCourses = async () => {
+        try {
+            if (!tokens?.accessToken) return;
+            const response = await adminCourseService.getCourses(tokens.accessToken, {
+                page: 0,
+                size: 1000,
+                status: "PUBLISHED"
+            });
+            if (response && response.data) {
+                setCourses(response.data.map((c: any) => ({ courseId: c.courseId, title: c.title })));
+            }
+        } catch (error) {
+            console.error("Error fetching courses:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
     useEffect(() => {
         fetchReviews();
-    }, [page, searchTerm]);
+    }, [page, searchTerm, filterRating, filterCourseId]);
 
     const handleDeleteClick = (review: ReviewResponse) => {
         setSelectedReview(review);
@@ -129,6 +216,38 @@ const ReviewManagement = () => {
                     <Typography variant="body1" color="text.secondary">
                         Quản lý và theo dõi đánh giá của học viên
                     </Typography>
+                </Box>
+                <Box>
+                    <input
+                        accept=".xlsx, .xls"
+                        style={{ display: "none" }}
+                        id="import-excel-file"
+                        type="file"
+                        onChange={handleImportExcel}
+                    />
+                    <label htmlFor="import-excel-file">
+                        <Button
+                            variant="contained"
+                            component="span"
+                            startIcon={
+                                isImporting ? (
+                                    <CircularProgress size={20} color="inherit" />
+                                ) : (
+                                    <CloudUpload />
+                                )
+                            }
+                            disabled={isImporting}
+                            sx={{
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+                                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+                            }}
+                        >
+                            {isImporting ? "Đang import..." : "Import Excel"}
+                        </Button>
+                    </label>
                 </Box>
             </Box>
 
@@ -211,37 +330,129 @@ const ReviewManagement = () => {
                 ))}
             </Grid>
 
-            {/* Search Bar */}
+            {/* Search and Filters */}
             <Card sx={{ p: 3, mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
-                <TextField
-                    fullWidth
-                    placeholder="Tìm kiếm theo tên học viên, khóa học..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ color: "grey.500" }} />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{
-                        "& .MuiOutlinedInput-root": {
-                            borderRadius: "12px",
-                            bgcolor: "grey.50",
-                            "& fieldset": {
-                                border: "none",
-                            },
-                            "&:hover": {
-                                bgcolor: "grey.100",
-                            },
-                            "&.Mui-focused": {
-                                bgcolor: "white",
-                                boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`,
-                            },
-                        },
-                    }}
-                />
+                <Grid container spacing={2}>
+                    {/* Search */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Tìm kiếm theo tên học viên, khóa học..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ color: "grey.500" }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                "& .MuiOutlinedInput-root": {
+                                    borderRadius: "12px",
+                                    bgcolor: "grey.50",
+                                    "& fieldset": {
+                                        border: "none",
+                                    },
+                                    "&:hover": {
+                                        bgcolor: "grey.100",
+                                    },
+                                    "&.Mui-focused": {
+                                        bgcolor: "white",
+                                        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`,
+                                    },
+                                },
+                            }}
+                        />
+                    </Grid>
+
+                    {/* Rating Filter */}
+                    <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                        <FormControl fullWidth>
+                            <InputLabel>Lọc theo sao</InputLabel>
+                            <Select
+                                value={filterRating || ""}
+                                onChange={(e) => setFilterRating(e.target.value ? Number(e.target.value) : null)}
+                                label="Lọc theo sao"
+                                sx={{
+                                    borderRadius: "12px",
+                                    bgcolor: "grey.50",
+                                    "& fieldset": {
+                                        border: "none",
+                                    },
+                                    "&:hover": {
+                                        bgcolor: "grey.100",
+                                    },
+                                    "&.Mui-focused": {
+                                        bgcolor: "white",
+                                        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`,
+                                    },
+                                }}
+                            >
+                                <MenuItem value="">Tất cả</MenuItem>
+                                <MenuItem value={5}>⭐⭐⭐⭐⭐ (5 sao)</MenuItem>
+                                <MenuItem value={4}>⭐⭐⭐⭐ (4 sao)</MenuItem>
+                                <MenuItem value={3}>⭐⭐⭐ (3 sao)</MenuItem>
+                                <MenuItem value={2}>⭐⭐ (2 sao)</MenuItem>
+                                <MenuItem value={1}>⭐ (1 sao)</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    {/* Course Filter */}
+                    <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                        <FormControl fullWidth>
+                            <InputLabel>Lọc theo khóa học</InputLabel>
+                            <Select
+                                value={filterCourseId || ""}
+                                onChange={(e) => setFilterCourseId(e.target.value ? Number(e.target.value) : null)}
+                                label="Lọc theo khóa học"
+                                sx={{
+                                    borderRadius: "12px",
+                                    bgcolor: "grey.50",
+                                    "& fieldset": {
+                                        border: "none",
+                                    },
+                                    "&:hover": {
+                                        bgcolor: "grey.100",
+                                    },
+                                    "&.Mui-focused": {
+                                        bgcolor: "white",
+                                        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`,
+                                    },
+                                }}
+                            >
+                                <MenuItem value="">Tất cả khóa học</MenuItem>
+                                {courses.map((course) => (
+                                    <MenuItem key={course.courseId} value={course.courseId}>
+                                        {course.title}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    {/* Clear Filters Button */}
+                    <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => {
+                                setSearchTerm("");
+                                setFilterRating(null);
+                                setFilterCourseId(null);
+                            }}
+                            sx={{
+                                height: "56px",
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontWeight: 600,
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </Grid>
+                </Grid>
             </Card>
 
             {/* Reviews Table */}

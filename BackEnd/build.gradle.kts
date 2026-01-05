@@ -48,6 +48,10 @@ dependencies {
     
     implementation("org.springframework.kafka:spring-kafka")
 
+    // Apache POI for Excel import
+    implementation("org.apache.poi:poi:5.2.5")
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
 

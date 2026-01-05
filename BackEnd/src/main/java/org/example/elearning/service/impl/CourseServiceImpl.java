@@ -36,6 +36,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;   
+import java.util.UUID;        
+import java.util.regex.Pattern;
+import java.text.Normalizer;  
+
+import java.io.InputStream;   
+import java.io.IOException;   
+import org.springframework.web.multipart.MultipartFile;
+import org.apache.poi.ss.usermodel.*;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -433,5 +442,125 @@ public class CourseServiceImpl implements CourseService {
                 .build();
         
         notificationService.createAndSendNotification(notification);
+    }
+
+    @Override
+    @Transactional
+    public void importCourses(MultipartFile file) throws IOException {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(username);
+        
+        var instructorOptional = instructorService.findInstructorByUser(user);
+        InstructorEntity instructor;
+        
+        if (instructorOptional.isEmpty()) {
+             // Fallback: If not instructor, fail. Admin should register as instructor to import.
+             throw new RuntimeException("Current user must be an instructor to import courses");
+        } else {
+            instructor = instructorOptional.get();
+        }
+
+        List<CourseEntity> courses = new ArrayList<>();
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                String title = getCellValueAsString(row.getCell(0));
+                if (title == null || title.trim().isEmpty()) continue;
+
+                CourseEntity course = new CourseEntity();
+                course.setTitle(title);
+                
+                String slugBase = toSlug(title);
+                if (slugBase.isEmpty()) slugBase = "course";
+                course.setSlug(slugBase + "-" + UUID.randomUUID().toString().substring(0, 8));
+
+                course.setPrice(getCellValueAsBigDecimal(row.getCell(1)));
+
+                Long categoryId = getCellValueAsLong(row.getCell(2));
+                CategoryEntity category = null;
+                if (categoryId != null) {
+                    try {
+                        category = categoryService.getCategoryEntityById(categoryId);
+                    } catch (Exception e) {}
+                }
+                if (category == null) {
+                     // Check if category 1 exists
+                     try { category = categoryService.getCategoryEntityById(1L); } catch(Exception e) {}
+                }
+                if (category == null) continue; // Skip if no category found
+                
+                course.setCategory(category);
+                
+                course.setDescription(getCellValueAsString(row.getCell(3)));
+                course.setShortDescription(getCellValueAsString(row.getCell(3)));
+                
+                String level = getCellValueAsString(row.getCell(4));
+                course.setLevel(level != null && !level.isEmpty() ? level : "Beginner");
+                
+                String language = getCellValueAsString(row.getCell(5));
+                course.setLanguage(language != null && !language.isEmpty() ? language : "Tiếng Việt");
+
+                course.setInstructor(instructor);
+                course.setStatus(CourseStatus.DRAFT);
+                course.setThumbnailUrl("");
+
+                courses.add(course);
+            }
+        }
+        
+        if (!courses.isEmpty()) {
+            courseRepository.saveAll(courses);
+            courses.forEach(c -> publishKafkaEvent("COURSE_CREATED", c.getCourseId()));
+        }
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        try {
+            return switch (cell.getCellType()) {
+                case STRING -> cell.getStringCellValue();
+                case NUMERIC -> String.valueOf((long)cell.getNumericCellValue());
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
+        } catch (Exception e) { return ""; }
+    }
+
+    private BigDecimal getCellValueAsBigDecimal(Cell cell) {
+        if (cell == null) return BigDecimal.ZERO;
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return BigDecimal.valueOf(cell.getNumericCellValue());
+            } else if (cell.getCellType() == CellType.STRING) {
+                return new BigDecimal(cell.getStringCellValue());
+            }
+        } catch (Exception e) { return BigDecimal.ZERO; }
+        return BigDecimal.ZERO;
+    }
+
+    private Long getCellValueAsLong(Cell cell) {
+        if (cell == null) return null;
+        try {
+             if (cell.getCellType() == CellType.NUMERIC) {
+                return (long) cell.getNumericCellValue();
+            } else if (cell.getCellType() == CellType.STRING) {
+                return Long.parseLong(cell.getStringCellValue());
+            }
+        } catch (Exception e) { return null; }
+        return null;
+    }
+
+    private String toSlug(String input) {
+        if (input == null) return "";
+        String nowhitespace = Pattern.compile("[\\s]").matcher(input).replaceAll("-");
+        String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
+        String slug = Pattern.compile("[^\\w-]").matcher(normalized).replaceAll("");
+        return slug.toLowerCase();
     }
 }

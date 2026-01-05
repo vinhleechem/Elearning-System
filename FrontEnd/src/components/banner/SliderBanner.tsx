@@ -46,9 +46,9 @@ const swiperStyles = `
 
 const SliderBanner = () => {
   const bannerImages: string[] = [
-    "https://s.udemycdn.com/browse_components/billboard/fallback_banner_image_udlite.jpg",
-    "https://img-c.udemycdn.com/notices/home_carousel_slide/image/1df98eed-29ab-4ee2-a1ec-81f6f2281e9a.png",
-    "https://www.acpcomputer.com/wp-content/uploads/2024/03/ACP-Udemy-banner-1.png",
+    "/images/home/360_F_465465254_1pN9MGrA831idD6zIBL7q8rnZZpUCQTy.jpg",
+    "/images/home/430582ec-bd67-465d-b81f-c9b67d8df0fe.png",
+    "/images/home/ae26411d-ece1-443b-93a0-05550bfe8c54.png",
   ];
 
   return (

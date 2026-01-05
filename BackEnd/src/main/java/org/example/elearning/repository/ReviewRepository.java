@@ -28,6 +28,9 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     @Query("SELECT AVG(r.rating) FROM ReviewEntity r WHERE r.course = :course")
     Double getAverageRatingByCourse(@Param("course") CourseEntity course);
+
+    Page<ReviewEntity> findByUserFullNameContainingIgnoreCaseOrCourseTitleContainingIgnoreCase(
+            String userName, String courseTitle, Pageable pageable);
 }
 
 

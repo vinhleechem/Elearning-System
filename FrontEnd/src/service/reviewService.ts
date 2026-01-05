@@ -18,6 +18,12 @@ export interface UpdateReviewRequest {
     comment?: string;
 }
 
+export interface CreateReviewRequest {
+    courseId: number;
+    rating: number;
+    comment?: string;
+}
+
 export interface PaginatedReviewResponse {
     data: ReviewResponse[];
     pagination: {
@@ -57,6 +63,21 @@ export const reviewService = {
         return response.data;
     },
 
+    // Create review
+    createReview: async (data: CreateReviewRequest): Promise<ReviewResponse> => {
+        const response = await httpClient<ReviewResponse>(
+            `/reviews`,
+            {
+                method: "POST",
+                body: JSON.stringify(data),
+            }
+        );
+        if (!response.data) {
+            throw new Error(response.message || "Không tạo được đánh giá");
+        }
+        return response.data;
+    },
+
     // Update review
     updateReview: async (
         reviewId: number,
@@ -83,6 +104,47 @@ export const reviewService = {
         );
         if (!response.success) {
             throw new Error(response.message || "Không xóa được đánh giá");
+        }
+    },
+
+    // Get all reviews (Admin only)
+    getAllReviews: async (
+        page: number = 0,
+        size: number = 10,
+        search?: string,
+        rating?: number,
+        courseId?: number
+    ): Promise<PaginatedReviewResponse> => {
+        const params = new URLSearchParams();
+        params.set("page", page.toString());
+        params.set("size", size.toString());
+        if (search) params.set("search", search);
+        if (rating) params.set("rating", rating.toString());
+        if (courseId) params.set("courseId", courseId.toString());
+
+        const response = await httpClient<PaginatedReviewResponse>(
+            `/reviews/admin/all?${params.toString()}`,
+            { method: "GET" }
+        );
+        if (!response.data) {
+            throw new Error(response.message || "Không lấy được danh sách đánh giá");
+        }
+        return response.data;
+    },
+
+    importReviews: async (file: File): Promise<void> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await httpClient<void>(
+            `/reviews/import`,
+            {
+                method: "POST",
+                body: formData,
+            }
+        );
+        if (!response.success) {
+            throw new Error(response.message || "Lỗi khi import đánh giá");
         }
     },
 };

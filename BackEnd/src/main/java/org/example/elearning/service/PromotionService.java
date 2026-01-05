@@ -68,4 +68,6 @@ public interface PromotionService {
      */
     void applyBestPromotionToCartItem(org.example.elearning.dto.response.CartItemResponse response, 
                                        org.example.elearning.entity.CourseEntity course);
+
+    void importPromotions(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 }

@@ -44,6 +44,7 @@ import {
   UnfoldMore,
   CheckCircle,
   Block,
+  CloudUpload,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { adminCategoryService } from "../../service/adminCategoryService";
@@ -71,6 +72,7 @@ const CategoryManagement = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Search & Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -354,6 +356,26 @@ const CategoryManagement = () => {
     }
   };
 
+  const handleImportExcel = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !tokens?.accessToken) return;
+
+    event.target.value = "";
+    setIsImporting(true);
+    try {
+      await adminCategoryService.importCategories(tokens.accessToken, file);
+      enqueueSnackbar("Import dữ liệu thành công!", { variant: "success" });
+      fetchCategories();
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Import thất bại", { variant: "error" });
+      console.error("Import failed", error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -380,27 +402,62 @@ const CategoryManagement = () => {
             Quản lý cấu trúc danh mục khóa học theo dạng cây phân cấp
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenAdd(null)}
-          sx={{
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            py: 1.5,
-            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
-            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
-            "&:hover": {
-              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
-              transform: "translateY(-1px)",
-            },
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          Thêm danh mục gốc
-        </Button>
+        <Box display="flex" gap={2}>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            id="import-excel-input"
+            style={{ display: "none" }}
+            onChange={handleImportExcel}
+            disabled={isImporting}
+          />
+          <Button
+            variant="outlined"
+            startIcon={
+              isImporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
+            component="label"
+            htmlFor="import-excel-input"
+            disabled={isImporting}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "grey.300",
+              color: "text.primary",
+              "&:hover": {
+                borderColor: "primary.main",
+                color: "primary.main",
+                bgcolor: alpha(theme.palette.primary.main, 0.05),
+              },
+            }}
+          >
+            Import Excel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenAdd(null)}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              "&:hover": {
+                boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            Thêm danh mục gốc
+          </Button>
+        </Box>
       </Box>
 
       {/* Stats Cards */}

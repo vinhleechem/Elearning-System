@@ -14,6 +14,8 @@ import org.example.elearning.service.CategoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -91,5 +93,15 @@ public class CategoryController {
     public ResponseEntity<StandardResponse<String>> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);
         return ResponseEntity.ok(success("Xóa category thành công"));
+    }
+
+    @Operation(summary = "Import categories from Excel")
+    @ApiResponse(responseCode = "200", description = "Import thành công")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecuredEndpoint("CREATE_USER")
+    public ResponseEntity<StandardResponse<Void>> importCategories(@RequestParam("file") MultipartFile file) throws java.io.IOException {
+        categoryService.importCategories(file);
+        return ResponseEntity.ok(success("Import categories thành công"));
     }
 }

@@ -83,6 +83,18 @@ public class VoucherController {
         return ResponseEntity.ok(StandardResponse.success("Voucher granted successfully"));
     }
 
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Import vouchers from Excel", description = "Import vouchers from Excel file (Admin only)")
+    public ResponseEntity<StandardResponse<String>> importVouchers(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            voucherService.importVouchers(file);
+             return ResponseEntity.ok(StandardResponse.success("Vouchers imported successfully"));
+        } catch (java.io.IOException e) {
+             return ResponseEntity.badRequest().body(StandardResponse.error("Error importing file: " + e.getMessage()));
+        }
+    }
+
     // ========== PUBLIC & USER APIs ==========
 
     @GetMapping("/public")

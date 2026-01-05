@@ -113,6 +113,16 @@ export const promotionService = {
       method: "PATCH",
     });
   },
+
+  // Admin - Import promotions
+  importPromotions: async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await httpClient<void>(`${PROMOTION_BASE_URL}/import`, {
+      method: "POST",
+      body: formData,
+    });
+  },
 };
 
 export default promotionService;

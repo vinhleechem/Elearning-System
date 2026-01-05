@@ -70,5 +70,17 @@ export const adminCategoryService = {
       throw new Error(response.message || "Xóa thất bại");
     }
   },
+
+  importCategories: async (accessToken: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await httpClient<void>("/categories/import", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+  },
 };
 

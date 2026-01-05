@@ -182,4 +182,16 @@ public class CourseController {
         CourseResponse result = courseService.updateCourseStatus(id, status);
         return ResponseEntity.ok(success("Cập nhật trạng thái thành công", result));
     }
+
+    @Operation(summary = "Import khóa học từ Excel (Admin/Instructor)")
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    public ResponseEntity<StandardResponse<String>> importCourses(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            courseService.importCourses(file);
+            return ResponseEntity.ok(success("Import khóa học thành công"));
+        } catch (java.io.IOException e) {
+            return ResponseEntity.badRequest().body(StandardResponse.error("Lỗi khi đọc file: " + e.getMessage()));
+        }
+    }
 }

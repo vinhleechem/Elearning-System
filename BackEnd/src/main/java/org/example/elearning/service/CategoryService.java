@@ -29,7 +29,11 @@ public interface CategoryService {
     CategoryResponse update(Long id, CategoryRequest request);
 
     // Xóa category
+    // Xóa category
     void delete(Long id);
+
+    // Import categories from Excel
+    void importCategories(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 }
 
 

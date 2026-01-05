@@ -221,4 +221,21 @@ export const adminCourseService = {
 
     return response.data;
   },
+
+  importCourses: async (accessToken: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await httpClient<void>("/courses/import", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    if (response.success === false) {
+      throw new Error(response.message || "Import thất bại");
+    }
+  },
 };

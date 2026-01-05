@@ -57,5 +57,8 @@ public interface UserService {
     void deleteAvatar();
 
     // Admin update avatar for specific user
+    // Admin update avatar for specific user
     UserResponse updateUserAvatar(Long id, MultipartFile file);
+
+    void importUsers(MultipartFile file) throws java.io.IOException;
 }

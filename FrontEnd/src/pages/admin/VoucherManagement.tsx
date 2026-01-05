@@ -40,6 +40,7 @@ import {
   Search,
   CheckCircle,
   Cancel,
+  CloudUpload,
   Send,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
@@ -62,6 +63,7 @@ const VoucherManagement = () => {
   const [openGrantDialog, setOpenGrantDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [page] = useState(0);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -215,6 +217,29 @@ const VoucherManagement = () => {
       voucher.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleImportExcel = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      await voucherService.importVouchers(file);
+      enqueueSnackbar("Import voucher thành công", {
+        variant: "success",
+      });
+      fetchVouchers();
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Import thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  };
+
   const getUsagePercentage = (voucher: Voucher) => {
     if (!voucher.totalUsageLimit) return 0;
     return ((voucher.usedCount || 0) / voucher.totalUsageLimit) * 100;
@@ -246,27 +271,56 @@ const VoucherManagement = () => {
             Tạo và quản lý mã giảm giá cho khóa học
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            py: 1.5,
-            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
-            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
-            "&:hover": {
-              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
-              transform: "translateY(-1px)",
-            },
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          Tạo Voucher
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            disabled={isImporting}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#2563eb",
+              color: "#2563eb",
+              "&:hover": {
+                borderColor: "#1d4ed8",
+                bgcolor: alpha("#2563eb", 0.04),
+              },
+            }}
+          >
+            {isImporting ? "Đang import..." : "Import Excel"}
+            <input
+              type="file"
+              hidden
+              accept=".xlsx, .xls"
+              onChange={handleImportExcel}
+            />
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              "&:hover": {
+                boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            Tạo Voucher
+          </Button>
+        </Box>
       </Box>
 
       {/* Stats Cards */}
@@ -992,7 +1046,7 @@ const VoucherManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Box >
   );
 };
 
