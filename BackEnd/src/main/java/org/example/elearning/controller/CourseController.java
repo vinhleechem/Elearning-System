@@ -163,8 +163,10 @@ public class CourseController {
     @ApiResponse(responseCode = "200", description = "Từ chối thành công")
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StandardResponse<String>> rejectCourse(@PathVariable Long id) {
-        courseService.rejectCourse(id);
+    public ResponseEntity<StandardResponse<String>> rejectCourse(
+            @PathVariable Long id,
+            @RequestParam String reason) {
+        courseService.rejectCourse(id, reason);
         return ResponseEntity.ok(success("Từ chối khóa học thành công"));
     }
 }

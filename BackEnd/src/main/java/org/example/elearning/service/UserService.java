@@ -14,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
-    UserDetailsService userDetailsService();
 
     UserEntity getUserByIdEntity(Long id);
 

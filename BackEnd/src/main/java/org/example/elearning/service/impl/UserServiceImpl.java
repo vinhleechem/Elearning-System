@@ -53,11 +53,6 @@ public class UserServiceImpl implements UserService {
     PasswordEncoder passwordEncoder;
     CloudinaryUtil cloudinaryUtil;
 
-    @Override
-    public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
-    }
 
     @Override
     public UserEntity getCurrentUser() {

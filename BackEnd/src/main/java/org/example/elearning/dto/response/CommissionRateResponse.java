@@ -20,6 +20,4 @@ public class CommissionRateResponse {
     private BigDecimal minPayoutAmount;
     private Boolean isActive;
     private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -5,10 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
-/**
- * Kafka configuration for E-learning system
- * Spring Boot auto-configures KafkaTemplate from application.yml
- */
 @Configuration
 public class KafkaTopicConfig {
     
