@@ -121,7 +121,6 @@ public class ReviewServiceImpl implements ReviewService {
                 return "";
         }
     }
-}
 
     @Override
     @Transactional
@@ -229,7 +228,6 @@ public class ReviewServiceImpl implements ReviewService {
                 ReviewSpecification.filterReviews(search, rating, courseId),
                 pageable
         );
-        
         return reviews.map(this::mapToReviewResponse);
     }
 
