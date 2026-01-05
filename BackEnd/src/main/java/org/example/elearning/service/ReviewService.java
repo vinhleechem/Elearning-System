@@ -14,5 +14,6 @@ public interface ReviewService {
     ReviewResponse getMyReviewForCourse(Long courseId);
     Page<ReviewResponse> getAllReviews(Pageable pageable, String search, Integer rating, Long courseId);
     void importReviews(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+    byte[] generateImportTemplate() throws java.io.IOException;
 }
 

@@ -29,6 +29,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
@@ -101,6 +102,28 @@ public class ReviewServiceImpl implements ReviewService {
                     // Skip invalid user/course
                 }
             }
+        }
+    }
+
+    @Override
+    public byte[] generateImportTemplate() throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Reviews");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("User Email");
+            header.createCell(1).setCellValue("Course ID");
+            header.createCell(2).setCellValue("Rating (1-5)");
+            header.createCell(3).setCellValue("Comment");
+
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue("student@example.com");
+            row.createCell(1).setCellValue(101);
+            row.createCell(2).setCellValue(5);
+            row.createCell(3).setCellValue("Great course!");
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            workbook.write(bos);
+            return bos.toByteArray();
         }
     }
 

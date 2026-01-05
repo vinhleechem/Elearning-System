@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -167,6 +168,27 @@ public class CategoryServiceImpl implements CategoryService {
 
                 categoryRepository.save(entity);
             }
+        }
+    }
+
+
+    @Override
+    public byte[] generateImportTemplate() throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Categories");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Name");
+            header.createCell(1).setCellValue("Slug (Optional)");
+            header.createCell(2).setCellValue("Parent ID (Optional)");
+
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue("Example Category");
+            row.createCell(1).setCellValue("example-category");
+            row.createCell(2).setCellValue(1);
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            workbook.write(bos);
+            return bos.toByteArray();
         }
     }
 

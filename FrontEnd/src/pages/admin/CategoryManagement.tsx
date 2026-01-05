@@ -45,6 +45,7 @@ import {
   CheckCircle,
   Block,
   CloudUpload,
+  Download,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { adminCategoryService } from "../../service/adminCategoryService";
@@ -153,6 +154,7 @@ const CategoryManagement = () => {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchCategories();
@@ -376,6 +378,16 @@ const CategoryManagement = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    if (!tokens?.accessToken) return;
+    try {
+      await adminCategoryService.downloadTemplate(tokens.accessToken);
+      enqueueSnackbar("Đã tải xuống template", { variant: "success" });
+    } catch (error) {
+      enqueueSnackbar("Không thể tải template", { variant: "error" });
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -411,6 +423,26 @@ const CategoryManagement = () => {
             onChange={handleImportExcel}
             disabled={isImporting}
           />
+          <Button
+            variant="text"
+            startIcon={<Download />}
+            onClick={handleDownloadTemplate}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 2,
+              py: 1.5,
+              color: "text.secondary",
+              mr: 1,
+              "&:hover": {
+                color: "primary.main",
+                bgcolor: alpha(theme.palette.primary.main, 0.05),
+              },
+            }}
+          >
+            Template
+          </Button>
           <Button
             variant="outlined"
             startIcon={

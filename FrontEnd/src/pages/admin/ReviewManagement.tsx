@@ -38,6 +38,7 @@ import {
     Star as StarIcon,
     RateReview as RateReviewIcon,
     CloudUpload,
+    Download,
 } from "@mui/icons-material";
 import { reviewService, type ReviewResponse } from "../../service/reviewService";
 import { adminCourseService } from "../../service/adminCourseService";
@@ -61,6 +62,16 @@ const ReviewManagement = () => {
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [courses, setCourses] = useState<Array<{ courseId: number; title: string }>>([]);
     const [isImporting, setIsImporting] = useState(false);
+
+    const handleDownloadTemplate = async () => {
+        if (!tokens?.accessToken) return;
+        try {
+            await reviewService.downloadTemplate(tokens.accessToken);
+            enqueueSnackbar("Đã tải xuống template", { variant: "success" });
+        } catch (error) {
+            enqueueSnackbar("Không thể tải template", { variant: "error" });
+        }
+    };
 
     const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -218,6 +229,23 @@ const ReviewManagement = () => {
                     </Typography>
                 </Box>
                 <Box>
+                    <Button
+                        variant="text"
+                        startIcon={<Download />}
+                        onClick={handleDownloadTemplate}
+                        sx={{
+                            mr: 2,
+                            textTransform: "none",
+                            fontWeight: 600,
+                            color: "text.secondary",
+                            "&:hover": {
+                                color: "primary.main",
+                                bgcolor: alpha(theme.palette.primary.main, 0.05),
+                            },
+                        }}
+                    >
+                        Template
+                    </Button>
                     <input
                         accept=".xlsx, .xls"
                         style={{ display: "none" }}

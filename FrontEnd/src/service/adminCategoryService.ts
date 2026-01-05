@@ -82,5 +82,23 @@ export const adminCategoryService = {
       body: formData,
     });
   },
+
+  downloadTemplate: async (accessToken: string) => {
+    const response = await fetch(`${import.meta.env.VITE_BASE_URL}/categories/import/template`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      }
+    });
+    if (!response.ok) throw new Error("Failed to download template");
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "category_import_template.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 };
 

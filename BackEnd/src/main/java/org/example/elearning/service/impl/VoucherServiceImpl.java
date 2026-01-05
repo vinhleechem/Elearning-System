@@ -353,10 +353,10 @@ public class VoucherServiceImpl implements VoucherService {
                 } catch(Exception e) { voucher.setEndDate(LocalDateTime.now().plusMonths(1)); }
 
                 voucher.setIsActive(true);
-                voucher.setIsPublic(true); // Default to public
-                voucher.setDeleted(false);
-                voucher.setUsedCount(0);
-                voucher.setApplicableTo(VoucherApplicability.ALL_COURSES);
+                 voucher.setVoucherType(VoucherType.PUBLIC);
+                 voucher.setDeleted(false);
+                 voucher.setUsedCount(0);
+                 voucher.setApplicableTo(VoucherApplicability.ALL);
                 
                 vouchers.add(voucher);
              }

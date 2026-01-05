@@ -34,6 +34,8 @@ public interface CategoryService {
 
     // Import categories from Excel
     void importCategories(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+
+    byte[] generateImportTemplate() throws java.io.IOException;
 }
 
 

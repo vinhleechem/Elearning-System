@@ -16,6 +16,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import java.io.IOException;
 
 import java.util.List;
 
@@ -99,9 +103,20 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Import thành công")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("CREATE_USER")
-    public ResponseEntity<StandardResponse<Void>> importCategories(@RequestParam("file") MultipartFile file) throws java.io.IOException {
+    public ResponseEntity<StandardResponse<Void>> importCategories(@RequestParam("file") MultipartFile file) throws IOException {
         categoryService.importCategories(file);
-        return ResponseEntity.ok(success("Import categories thành công"));
+        return ResponseEntity.ok(success("Import categories thành công", null));
+    }
+
+    @GetMapping("/import/template")
+    public ResponseEntity<Resource> getImportTemplate() throws IOException {
+        byte[] data = categoryService.generateImportTemplate();
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=category_import_template.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(data.length)
+                .body(resource);
     }
 }

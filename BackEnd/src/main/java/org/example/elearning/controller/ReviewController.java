@@ -21,6 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import org.example.elearning.dto.request.CreateReviewRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 
 
 @RestController
@@ -92,5 +95,17 @@ public class ReviewController {
     public ResponseEntity<StandardResponse<Void>> importReviews(@RequestParam("file") MultipartFile file) throws IOException {
         reviewService.importReviews(file);
         return ResponseEntity.ok(success("Import đánh giá thành công", null));
+    }
+
+    @GetMapping("/import/template")
+    public ResponseEntity<Resource> getImportTemplate() throws IOException {
+        byte[] data = reviewService.generateImportTemplate();
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=review_import_template.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(data.length) // Use data.length
+                .body(resource);
     }
 }
