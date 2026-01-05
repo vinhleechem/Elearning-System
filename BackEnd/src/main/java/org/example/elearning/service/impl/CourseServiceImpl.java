@@ -6,6 +6,7 @@ import org.example.elearning.constant.KafkaTopics;
 import org.example.elearning.constant.NotificationTemplate;
 import org.example.elearning.dto.event.CourseEvent;
 import org.example.elearning.dto.request.CourseRequest;
+import org.example.elearning.dto.request.CourseUpdateRequest;
 import org.example.elearning.dto.request.NotificationRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
@@ -212,7 +213,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseResponse updateCourse(Long id, CourseRequest request) {
+    public CourseResponse updateCourse(Long id, CourseUpdateRequest request) {
         CourseEntity entity = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
@@ -221,11 +222,6 @@ public class CourseServiceImpl implements CourseService {
         if (request.getCategoryId() != null) {
             CategoryEntity category = categoryService.getCategoryEntityById(request.getCategoryId());
             entity.setCategory(category);
-        }
-
-        if (request.getInstructorId() != null) {
-            InstructorEntity instructor = instructorService.getInstructorEntityById(request.getInstructorId());
-            entity.setInstructor(instructor);
         }
 
         CourseEntity savedCourse = courseRepository.save(entity);
@@ -357,6 +353,21 @@ public class CourseServiceImpl implements CourseService {
         
         // Publish Kafka event (unpublish)
         publishKafkaEvent("COURSE_UNPUBLISHED", id);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse updateCourseStatus(Long id, CourseStatus status) {
+        CourseEntity course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+        
+        course.setStatus(status);
+        if (status == CourseStatus.PUBLISHED && course.getPublishedAt() == null) {
+             course.setPublishedAt(LocalDateTime.now());
+        }
+        
+        CourseEntity savedCourse = courseRepository.save(course);
+        return courseMapper.toResponse(savedCourse);
     }
 
     /**

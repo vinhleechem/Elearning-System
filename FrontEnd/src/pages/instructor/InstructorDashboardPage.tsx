@@ -8,7 +8,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Grid,
   CircularProgress,
   Tabs,
   Tab,
@@ -24,6 +23,8 @@ import {
   type InstructorResponse,
   type UpdateInstructorProfileRequest,
 } from "../../service/instructorService";
+import { categoryService, type CategoryTreeResponse } from "../../service/categoryService";
+import { CourseFormDialog } from "../../components/shared/CourseFormDialog";
 
 import { userService } from "../../service/userService";
 import {
@@ -32,12 +33,11 @@ import {
   type PublicCourseResponse,
 } from "../../service/courseService";
 import { useSnackbar } from "notistack";
-import { useNavigate, useLocation } from "react-router-dom";
-import CreateCourseDialog from "../../components/instructor/CreateCourseDialog";
+import { useLocation } from "react-router-dom";
+
 
 const InstructorDashboardPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const navigate = useNavigate();
   const location = useLocation();
   const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">(
     "COURSES",
@@ -77,6 +77,35 @@ const InstructorDashboardPage = () => {
   const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingCourse, setEditingCourse] = useState<PublicCourseResponse | null>(null);
+  const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
+
+  // Flatten categories util
+  const flattenCategories = (
+    cats: CategoryTreeResponse[],
+    result: { id: number; name: string; level: number; path: string }[] = [],
+    parentPath = "",
+  ): { id: number; name: string; level: number; path: string }[] => {
+    cats.forEach((cat) => {
+      const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
+      result.push({ id: cat.id, name: cat.name, level: cat.level, path });
+      if (cat.children && cat.children.length > 0) {
+        flattenCategories(cat.children, result, path);
+      }
+    });
+    return result;
+  };
+  const flatCategories = flattenCategories(categories);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await categoryService.getCategoryTree();
+        setCategories(cats);
+      } catch (error) { console.error(error); }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -187,7 +216,7 @@ const InstructorDashboardPage = () => {
     }
   };
 
-  const handleCreateCourse = async (request: CreateCourseRequest) => {
+  const handleSubmitCourse = async (data: any) => {
     if (!tokens?.accessToken || !profile?.instructorId) {
       enqueueSnackbar("Không tìm thấy thông tin giảng viên", {
         variant: "error",
@@ -195,18 +224,55 @@ const InstructorDashboardPage = () => {
       return;
     }
     try {
-      const newCourse = await courseService.createCourse(tokens.accessToken, {
-        ...request,
+      const request: CreateCourseRequest = {
         instructorId: profile.instructorId,
+        categoryId: Number(data.categoryId),
+        title: data.title,
+        slug: data.slug || data.title.toLowerCase().replace(/ /g, "-"),
+        shortDescription: data.shortDescription,
+        description: data.description,
+        whatYouLearn: data.whatYouLearn,
+        requirements: data.requirements,
+        targetAudience: data.targetAudience,
+        language: data.language,
+        level: data.level,
+        price: data.price ? Number(data.price) : 0,
+        hasCertificate: data.hasCertificate,
+      };
+      // Manually add extra fields if CreateCourseRequest interface is strict but backend accepts them
+      (request as any).thumbnailUrl = data.thumbnailUrl;
+      (request as any).previewVideoUrl = data.previewVideoUrl;
+
+
+      if (editingCourse) {
+        await courseService.updateCourse(tokens.accessToken, editingCourse.courseId, request);
+        enqueueSnackbar("Cập nhật khóa học thành công!", { variant: "success" });
+      } else {
+        await courseService.createCourse(tokens.accessToken, request);
+        enqueueSnackbar("Tạo khóa học thành công!", { variant: "success" });
+      }
+
+      // Refresh list
+      const response = await courseService.getMyCourses({
+        token: tokens.accessToken,
+        search: searchTerm,
+        size: 100,
       });
-      enqueueSnackbar("Tạo khóa học thành công!", { variant: "success" });
-      navigate(`/instructor/courses/${newCourse.courseId}/content`);
+      setCourses(response.data);
+      setCreateCourseDialogOpen(false);
+      setEditingCourse(null);
+
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Không thể tạo khóa học", {
+      enqueueSnackbar(error.message || "Thao tác thất bại", {
         variant: "error",
       });
       throw error;
     }
+  };
+
+  const handleEditClick = (course: PublicCourseResponse) => {
+    setEditingCourse(course);
+    setCreateCourseDialogOpen(true);
   };
 
   const handleSubmitForApproval = async (courseId: number) => {
@@ -280,6 +346,7 @@ const InstructorDashboardPage = () => {
               <TextField
                 placeholder="Tìm kiếm khóa học của bạn"
                 fullWidth
+                size="small"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -291,7 +358,7 @@ const InstructorDashboardPage = () => {
               <Button
                 variant="outlined"
                 startIcon={<FilterList />}
-                sx={{ textTransform: "none" }}
+                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
               >
                 Mới nhất
               </Button>
@@ -299,17 +366,22 @@ const InstructorDashboardPage = () => {
                 variant="contained"
                 startIcon={<Add />}
                 onClick={() => setCreateCourseDialogOpen(true)}
-                sx={{ textTransform: "none", bgcolor: "#3b82f6" }}
+                sx={{ textTransform: "none", bgcolor: "#3b82f6", whiteSpace: "nowrap" }}
               >
                 Khóa học mới
               </Button>
             </Stack>
 
-            <CreateCourseDialog
+            <CourseFormDialog
               open={createCourseDialogOpen}
-              onClose={() => setCreateCourseDialogOpen(false)}
-              onSubmit={handleCreateCourse}
-              instructorId={profile?.instructorId || 0}
+              onClose={() => {
+                setCreateCourseDialogOpen(false);
+                setEditingCourse(null);
+              }}
+              onSubmit={handleSubmitCourse}
+              editingCourse={editingCourse}
+              mode="INSTRUCTOR"
+              flatCategories={flatCategories}
             />
 
             <Stack spacing={2}>
@@ -390,23 +462,24 @@ const InstructorDashboardPage = () => {
                           variant="text"
                           size="small"
                           sx={{ textTransform: "none" }}
+                          onClick={() => handleEditClick(course)}
                         >
                           Chỉnh sửa
                         </Button>
                       </Box>
                       {(course.status === "DRAFT" ||
                         course.status === "REJECTED") && (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() =>
-                            handleSubmitForApproval(course.courseId)
-                          }
-                        >
-                          Gửi duyệt
-                        </Button>
-                      )}
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() =>
+                              handleSubmitForApproval(course.courseId)
+                            }
+                          >
+                            Gửi duyệt
+                          </Button>
+                        )}
                     </Box>
                   </Card>
                 ))
@@ -489,8 +562,8 @@ const InstructorDashboardPage = () => {
                         }))
                       }
                     />
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, md: 6 }}>
+                    <Stack spacing={2} sx={{ mt: 2 }}>
+                      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                         <TextField
                           label="Trang web"
                           fullWidth
@@ -502,8 +575,6 @@ const InstructorDashboardPage = () => {
                             }))
                           }
                         />
-                      </Grid>
-                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="LinkedIn"
                           fullWidth
@@ -515,8 +586,8 @@ const InstructorDashboardPage = () => {
                             }))
                           }
                         />
-                      </Grid>
-                      <Grid size={{ xs: 12, md: 6 }}>
+                      </Stack>
+                      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                         <TextField
                           label="Twitter / X"
                           fullWidth
@@ -528,8 +599,6 @@ const InstructorDashboardPage = () => {
                             }))
                           }
                         />
-                      </Grid>
-                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="YouTube"
                           fullWidth
@@ -541,8 +610,8 @@ const InstructorDashboardPage = () => {
                             }))
                           }
                         />
-                      </Grid>
-                    </Grid>
+                      </Stack>
+                    </Stack>
                     <Box display="flex" justifyContent="flex-end" gap={2}>
                       <Button
                         variant="outlined"
@@ -655,7 +724,7 @@ const InstructorDashboardPage = () => {
                   <Button
                     variant="contained"
                     sx={{ textTransform: "none" }}
-                    // Hiện tại chỉ lưu local state, chưa gọi API riêng.
+                  // Hiện tại chỉ lưu local state, chưa gọi API riêng.
                   >
                     Lưu
                   </Button>

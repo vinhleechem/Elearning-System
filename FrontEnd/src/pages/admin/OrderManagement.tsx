@@ -22,11 +22,25 @@ import {
   TextField,
   InputAdornment,
   CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  Stack,
+  useTheme,
+  alpha,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import {
   Visibility as VisibilityIcon,
   Search as SearchIcon,
   Cancel as CancelIcon,
+  ShoppingCart,
+  PendingActions,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { adminOrderService } from "../../service/adminOrderService";
@@ -35,6 +49,7 @@ import { formatCurrency } from "../../libs/utils";
 import OrderDetailModal from "../../components/admin/OrderDetailModal";
 
 const OrderManagement: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -124,235 +139,289 @@ const OrderManagement: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Quản lý Đơn Hàng
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Theo dõi và quản lý tất cả đơn hàng trong hệ thống
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+            }}
+          >
+            Quản lý Đơn Hàng
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Theo dõi và quản lý tất cả đơn hàng trong hệ thống
+          </Typography>
+        </Box>
       </Box>
 
       {/* Stats Cards */}
-      <Box
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng Đơn Hàng",
+            value: orders.length,
+            color: "#2563eb",
+            icon: <ShoppingCart />,
+          },
+          {
+            label: "Đang Chờ",
+            value: orders.filter((o) => o.status === "PENDING").length,
+            color: "#f59e0b",
+            icon: <PendingActions />,
+          },
+          {
+            label: "Hoàn Thành",
+            value: orders.filter((o) => o.status === "COMPLETED").length,
+            color: "#10b981",
+            icon: <CheckCircle />,
+          },
+          {
+            label: "Đã Hủy",
+            value: orders.filter((o) => o.status === "CANCELLED").length,
+            color: "#ef4444",
+            icon: <Cancel />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 3 }} key={index}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Main Content Card */}
+      <Card
         sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: 3,
-          mb: 3,
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          border: "1px solid",
+          borderColor: "grey.100",
+          overflow: "visible",
         }}
       >
-        <Paper
-          sx={{
-            p: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-            Tổng Đơn Hàng
-          </Typography>
-          <Typography variant="h3" fontWeight={700}>
-            {orders.length}
-          </Typography>
-        </Paper>
-        <Paper
-          sx={{
-            p: 3,
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-            Đang Chờ
-          </Typography>
-          <Typography variant="h3" fontWeight={700}>
-            {orders.filter((o) => o.status === "PENDING").length}
-          </Typography>
-        </Paper>
-        <Paper
-          sx={{
-            p: 3,
-            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-            Hoàn Thành
-          </Typography>
-          <Typography variant="h3" fontWeight={700}>
-            {orders.filter((o) => o.status === "COMPLETED").length}
-          </Typography>
-        </Paper>
-        <Paper
-          sx={{
-            p: 3,
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-            Đã Hủy
-          </Typography>
-          <Typography variant="h3" fontWeight={700}>
-            {orders.filter((o) => o.status === "CANCELLED").length}
-          </Typography>
-        </Paper>
-      </Box>
-
-      {/* Search Bar */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <TextField
-          fullWidth
-          label="Tìm kiếm"
-          placeholder="Tìm kiếm đơn hàng..."
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Paper>
-
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
-          <CircularProgress />
+        {/* Filter Toolbar */}
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+          <TextField
+            fullWidth
+            placeholder="Tìm kiếm đơn hàng..."
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: "12px",
+                bgcolor: "grey.50",
+                "& fieldset": { border: "none" },
+                "&:hover": { bgcolor: "grey.100" },
+                "&.Mui-focused": {
+                  bgcolor: "white",
+                  boxShadow:
+                    "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                },
+              },
+            }}
+          />
         </Box>
-      ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table sx={{ minWidth: 650 }} aria-label="order table">
-            <TableHead>
-              <TableRow sx={{ bgcolor: "primary.light" }}>
-                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                  Mã Đơn
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                  Ngày Tạo
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                  Trạng Thái
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 700, color: "primary.main" }}
-                  align="right"
-                >
-                  Tổng Tiền
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 700, color: "primary.main" }}
-                  align="center"
-                >
-                  Hành Động
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow
-                  key={order.orderId}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  hover
-                >
-                  <TableCell component="th" scope="row">
-                    <Typography variant="body2" fontWeight={600}>
-                      #{order.orderId}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {new Date(order.createdAt).toLocaleString("vi-VN")}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={order.status}
-                      color={getStatusColor(order.status) as any}
-                      size="small"
-                      variant="filled"
-                    />
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ fontWeight: "bold", color: "primary.main" }}
-                  >
-                    {formatCurrency(order.finalAmount)}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Xem Chi Tiết">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleViewDetails(order)}
-                        size="small"
-                        sx={{ mr: 1 }}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                    {order.status !== "CANCELLED" &&
-                      order.status !== "COMPLETED" && (
-                        <Tooltip title="Hủy Đơn">
-                          <IconButton
-                            color="error"
-                            onClick={() => handleOpenCancelDialog(order)}
-                            size="small"
-                          >
-                            <CancelIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {orders.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                    <Typography variant="h6" color="text.secondary">
-                      Không có đơn hàng nào
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
 
-      <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={handlePageChange}
-          color="primary"
-          size="large"
-        />
-      </Box>
+        {/* Table */}
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="order table">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Mã Đơn</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Ngày Tạo</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Trạng Thái</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">
+                    Tổng Tiền
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                    Hành Động
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow
+                    key={order.orderId}
+                    sx={{
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        #{order.orderId}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {new Date(order.createdAt).toLocaleString("vi-VN")}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={order.status}
+                        size="small"
+                        color={getStatusColor(order.status) as any}
+                        variant="filled" // Updated logic can go here if needed
+                        sx={{ fontWeight: 500, borderRadius: "6px" }}
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography
+                        variant="body2"
+                        fontWeight="600"
+                        color="primary.main"
+                      >
+                        {formatCurrency(order.finalAmount)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Xem Chi Tiết">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleViewDetails(order)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {order.status !== "CANCELLED" &&
+                        order.status !== "COMPLETED" && (
+                          <Tooltip title="Hủy Đơn">
+                            <IconButton
+                              color="error"
+                              onClick={() => handleOpenCancelDialog(order)}
+                              size="small"
+                            >
+                              <CancelIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {orders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                      <Typography variant="body1" color="text.secondary">
+                        Không có đơn hàng nào
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 0 && (
+          <Box
+            sx={{
+              p: 2,
+              display: "flex",
+              justifyContent: "center",
+              borderTop: "1px solid",
+              borderColor: "grey.100",
+            }}
+          >
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
+      </Card>
 
       {/* Cancel Confirmation Dialog */}
-      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
-        <DialogTitle>Confirm Cancellation</DialogTitle>
+      <Dialog
+        open={openCancelDialog}
+        onClose={handleCloseCancelDialog}
+        PaperProps={{
+          sx: { borderRadius: "20px", boxShadow: "0 4px 30px rgba(0,0,0,0.1)" },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Cancellation</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to cancel Order #{orderToCancel?.orderId}?
             This action cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleCloseCancelDialog}>No, Keep it</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={handleCloseCancelDialog}
+            variant="outlined"
+            sx={{ borderRadius: "10px", textTransform: "none" }}
+          >
+            No, Keep it
+          </Button>
           <Button
             onClick={handleConfirmCancelOrder}
             color="error"
             variant="contained"
             autoFocus
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
+            }}
           >
             Yes, Cancel Order
           </Button>

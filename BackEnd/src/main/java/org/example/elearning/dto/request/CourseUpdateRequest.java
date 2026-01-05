@@ -12,19 +12,13 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseRequest {
-
-    @NotNull(message = "Instructor id không được để trống")
-    Long instructorId;
-
-    @NotNull(message = "Category id không được để trống")
-    Long categoryId;
+public class CourseUpdateRequest {
 
     @NotBlank(message = "Tiêu đề không được để trống")
     String title;
 
-    @NotBlank(message = "Slug không được để trống")
-    String slug;
+    @NotNull(message = "Category id không được để trống")
+    Long categoryId;
 
     String shortDescription;
     String description;
@@ -39,5 +33,3 @@ public class CourseRequest {
     String level;
     Boolean hasCertificate;
 }
-
-

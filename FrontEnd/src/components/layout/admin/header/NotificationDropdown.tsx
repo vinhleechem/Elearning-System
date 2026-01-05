@@ -1,378 +1,276 @@
-import { useState } from "react";
-import { Link } from "react-router";
-import { Dropdown } from "../../../ui/Dropdown";
-import { DropdownItem } from "../../../ui/DropdownItem";
+import { useState, useEffect } from "react";
+import {
+  IconButton,
+  Badge,
+  Menu,
+  MenuItem,
+  Typography,
+  Box,
+  Divider,
+  Chip,
+  Stack,
+  CircularProgress,
+} from "@mui/material";
+import { Notifications as NotificationsIcon } from "@mui/icons-material";
+import type { Notification } from "../../../../service/webSocketService";
+import { notificationService } from "../../../../service/notificationService";
+import { useAuthStore } from "../../../../store/authStore";
+import { useSnackbar } from "notistack";
 
-export default function NotificationDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [notifying, setNotifying] = useState(true);
+const NotificationDropdown = () => {
+  const { user } = useAuthStore();
+  const { enqueueSnackbar } = useSnackbar();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const open = Boolean(anchorEl);
 
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
-  }
+  // Fetch notifications when dropdown opens
+  const fetchNotifications = async () => {
+    if (!user) return;
 
-  function closeDropdown() {
-    setIsOpen(false);
-  }
-
-  const handleClick = () => {
-    toggleDropdown();
-    setNotifying(false);
+    setLoading(true);
+    try {
+      const response = await notificationService.getMyNotifications(0, 10);
+      setNotifications(response.data);
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Lỗi khi tải thông báo", {
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Fetch unread count on mount and periodically
+  const fetchUnreadCount = async () => {
+    if (!user) return;
+
+    try {
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      // Silently fail for unread count
+      console.error("Failed to fetch unread count:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+
+    // Poll for unread count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+    fetchNotifications();
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMarkAsRead = async (notificationId: number, index: number) => {
+    try {
+      await notificationService.markAsRead(notificationId);
+
+      // Update local state
+      setNotifications((prev) =>
+        prev.map((notif, i) =>
+          i === index ? { ...notif, isRead: true } : notif,
+        ),
+      );
+
+      // Update unread count
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Lỗi khi đánh dấu đã đọc", {
+        variant: "error",
+      });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+
+      // Update local state
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, isRead: true })),
+      );
+
+      // Reset unread count
+      setUnreadCount(0);
+
+      enqueueSnackbar("Đã đánh dấu tất cả là đã đọc", {
+        variant: "success",
+      });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Lỗi khi đánh dấu tất cả", {
+        variant: "error",
+      });
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "SUCCESS":
+        return "success";
+      case "WARNING":
+        return "warning";
+      case "ERROR":
+        return "error";
+      default:
+        return "info";
+    }
+  };
+
   return (
-    <div className="relative">
-      <button
-        className="dropdown-toggle relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+    <>
+      <IconButton
         onClick={handleClick}
+        sx={{
+          width: 44,
+          height: 44,
+          border: "1px solid",
+          borderColor: "grey.200",
+          bgcolor: "white",
+          color: "grey.500",
+          transition: "all 0.2s",
+          "&:hover": {
+            bgcolor: "grey.100",
+            color: "grey.700",
+          },
+        }}
       >
-        <span
-          className={`absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full bg-orange-400 ${
-            !notifying ? "hidden" : "flex"
-          }`}
-        >
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
-        </span>
-        <svg
-          className="fill-current"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M10.75 2.29248C10.75 1.87827 10.4143 1.54248 10 1.54248C9.58583 1.54248 9.25004 1.87827 9.25004 2.29248V2.83613C6.08266 3.20733 3.62504 5.9004 3.62504 9.16748V14.4591H3.33337C2.91916 14.4591 2.58337 14.7949 2.58337 15.2091C2.58337 15.6234 2.91916 15.9591 3.33337 15.9591H4.37504H15.625H16.6667C17.0809 15.9591 17.4167 15.6234 17.4167 15.2091C17.4167 14.7949 17.0809 14.4591 16.6667 14.4591H16.375V9.16748C16.375 5.9004 13.9174 3.20733 10.75 2.83613V2.29248ZM14.875 14.4591V9.16748C14.875 6.47509 12.6924 4.29248 10 4.29248C7.30765 4.29248 5.12504 6.47509 5.12504 9.16748V14.4591H14.875ZM8.00004 17.7085C8.00004 18.1228 8.33583 18.4585 8.75004 18.4585H11.25C11.6643 18.4585 12 18.1228 12 17.7085C12 17.2943 11.6643 16.9585 11.25 16.9585H8.75004C8.33583 16.9585 8.00004 17.2943 8.00004 17.7085Z"
-            fill="currentColor"
-          />
-        </svg>
-      </button>
-      <Dropdown
-        isOpen={isOpen}
-        onClose={closeDropdown}
-        className="shadow-theme-lg absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 sm:w-[361px] lg:right-0"
+        <Badge badgeContent={unreadCount} color="error">
+          <NotificationsIcon />
+        </Badge>
+      </IconButton>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            width: 360,
+            maxHeight: 480,
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            mt: 1,
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3">
-          <h5 className="text-lg font-semibold text-gray-800">Notification</h5>
-          <button
-            onClick={toggleDropdown}
-            className="text-gray-500 transition hover:text-gray-700"
-          >
-            <svg
-              className="fill-current"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
-        </div>
-        <ul className="custom-scrollbar flex h-auto flex-col overflow-y-auto">
-          {/* Example notification items */}
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-02.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="h6" fontWeight={600}>
+            Thông báo
+          </Typography>
+        </Box>
+        <Divider />
 
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Terry Franci
-                  </span>
-                  <span> requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
+        {loading ? (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : notifications.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Không có thông báo mới
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ maxHeight: 360, overflowY: "auto" }}>
+            {notifications.map((notif, index) => (
+              <MenuItem
+                key={notif.notificationId}
+                onClick={() => handleMarkAsRead(notif.notificationId, index)}
+                sx={{
+                  bgcolor: notif.isRead ? "transparent" : "action.hover",
+                  display: "block",
+                  whiteSpace: "normal",
+                  py: 1.5,
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
+                  "&:last-child": {
+                    borderBottom: "none",
+                  },
+                }}
+              >
+                <Stack spacing={0.5}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      fontWeight={600}
+                      sx={{
+                        flex: 1,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {notif.title}
+                    </Typography>
+                    <Chip
+                      label={notif.type}
+                      size="small"
+                      color={getTypeColor(notif.type) as any}
+                      sx={{ height: 20, fontSize: 10, flexShrink: 0 }}
+                    />
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {notif.message}
+                  </Typography>
+                  {notif.createdAt && (
+                    <Typography variant="caption" color="text.disabled">
+                      {new Date(notif.createdAt).toLocaleString("vi-VN")}
+                    </Typography>
+                  )}
+                </Stack>
+              </MenuItem>
+            ))}
+          </Box>
+        )}
 
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>5 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-03.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 : absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Alena Franci
-                  </span>
-                  <span>requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>8 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-04.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Jocelyn Kenter
-                  </span>
-                  <span> requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>15 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-              to="/"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-05.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-error-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Brandon Philips
-                  </span>
-                  <span>requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>1 hr ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-              onItemClick={closeDropdown}
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-02.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Terry Franci
-                  </span>
-                  <span> requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>5 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-03.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Alena Franci
-                  </span>
-                  <span> requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>8 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-04.jpg"
-                  alt="User"
-                  className="w-full overflow-hidden rounded-full"
-                />
-                <span className="bg-success-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Jocelyn Kenter
-                  </span>
-                  <span> requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>15 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-
-          <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="px-4.5 flex gap-3 rounded-lg border-b border-gray-100 p-3 py-3 hover:bg-gray-100"
-            >
-              <span className="z-1 relative block h-10 w-full max-w-10 rounded-full">
-                <img
-                  width={40}
-                  height={40}
-                  src="/images/user/user-05.jpg"
-                  alt="User"
-                  className="overflow-hidden rounded-full"
-                />
-                <span className="bg-error-500 absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white"></span>
-              </span>
-
-              <span className="block">
-                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500">
-                  <span className="font-medium text-gray-800">
-                    Brandon Philips
-                  </span>
-                  <span>requests permission to change</span>
-                  <span className="font-medium text-gray-800">
-                    Project - Nganter App
-                  </span>
-                </span>
-
-                <span className="text-theme-xs flex items-center gap-2 text-gray-500">
-                  <span>Project</span>
-                  <span className="h-1 w-1 rounded-full bg-gray-400"></span>
-                  <span>1 hr ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li>
-          {/* Add more items as needed */}
-        </ul>
-        <Link
-          to="/"
-          className="mt-3 block rounded-lg border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-100"
-        >
-          View All Notifications
-        </Link>
-      </Dropdown>
-    </div>
+        {notifications.length > 0 && !loading && (
+          <>
+            <Divider />
+            <Box sx={{ p: 1, textAlign: "center" }}>
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{ cursor: "pointer", fontWeight: 600 }}
+                onClick={handleMarkAllAsRead}
+              >
+                Đánh dấu tất cả đã đọc
+              </Typography>
+            </Box>
+          </>
+        )}
+      </Menu>
+    </>
   );
-}
+};
+
+export default NotificationDropdown;

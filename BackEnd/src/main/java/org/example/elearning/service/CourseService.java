@@ -1,6 +1,7 @@
 package org.example.elearning.service;
 
 import org.example.elearning.dto.request.CourseRequest;
+import org.example.elearning.dto.request.CourseUpdateRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CourseEntity;
@@ -25,7 +26,7 @@ public interface CourseService {
 
     CourseResponse createCourse(CourseRequest request);
 
-    CourseResponse updateCourse(Long id, CourseRequest request);
+    CourseResponse updateCourse(Long id, CourseUpdateRequest request);
 
     void deleteCourse(Long id);
 
@@ -36,6 +37,8 @@ public interface CourseService {
     void approveCourse(Long id);
 
     void rejectCourse(Long id, String reason);
+
+    CourseResponse updateCourseStatus(Long id, CourseStatus status);
 }
 
 

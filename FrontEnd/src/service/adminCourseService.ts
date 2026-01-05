@@ -15,6 +15,7 @@ export interface CourseResponse {
   instructorId: number;
   instructorName?: string;
   categoryId: number;
+  categoryName?: string;
   title: string;
   slug: string;
   shortDescription?: string;
@@ -36,7 +37,13 @@ export interface CourseResponse {
   totalStudents?: number;
   totalReviews?: number;
   publishedAt?: string;
-  tags?: string[];
+  isPurchased?: boolean;
+  purchasedAt?: string;
+  // Promotion info
+  promotionName?: string;
+  promotionType?: string;
+  discountPercentage?: number;
+  promotionEndDate?: string;
 }
 
 export const adminCourseService = {
@@ -105,10 +112,16 @@ export const adminCourseService = {
       categoryId: number;
       shortDescription?: string;
       description?: string;
+      whatYouLearn?: string;
+      requirements?: string;
+      targetAudience?: string;
+      thumbnailUrl?: string;
+      previewVideoUrl?: string;
       price?: number;
       discountPrice?: number;
       level?: string;
       language?: string;
+      hasCertificate?: boolean;
     },
   ): Promise<CourseResponse> => {
     const response = await httpClient<CourseResponse>(`/courses/${courseId}`, {
@@ -135,10 +148,16 @@ export const adminCourseService = {
       instructorId: number;
       shortDescription?: string;
       description?: string;
+      whatYouLearn?: string;
+      requirements?: string;
+      targetAudience?: string;
+      thumbnailUrl?: string;
+      previewVideoUrl?: string;
       price?: number;
       discountPrice?: number;
       level?: string;
       language?: string;
+      hasCertificate?: boolean;
     },
   ): Promise<CourseResponse> => {
     const response = await httpClient<CourseResponse>("/courses", {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Dropdown } from "../../../ui/Dropdown";
 import { DropdownItem } from "../../../ui/DropdownItem";
 import { useAuthStore } from "../../../../store/authStore";
@@ -8,6 +8,7 @@ export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -26,6 +27,14 @@ export default function UserDropdown() {
       console.error("Logout failed:", error);
     }
   };
+
+  // Get user's display name
+  const displayName = user?.fullName || "User";
+  const email = user?.email || "";
+
+  // Get user avatar or use default
+  const avatarUrl = user?.avatarUrl || "/images/user/owner.jpg";
+
   return (
     <div className="relative">
       <button
@@ -33,14 +42,13 @@ export default function UserDropdown() {
         className="dropdown-toggle flex items-center text-gray-700"
       >
         <span className="mr-3 h-11 w-11 overflow-hidden rounded-full">
-          <img src="/images/user/owner.jpg" alt="User" />
+          <img src={avatarUrl} alt={displayName} />
         </span>
 
-        <span className="text-theme-sm mr-1 block font-medium">Musharof</span>
+        <span className="text-theme-sm mr-1 block font-medium">{displayName}</span>
         <svg
-          className={`stroke-gray-500 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`stroke-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+            }`}
           width="18"
           height="20"
           viewBox="0 0 18 20"
@@ -64,10 +72,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="text-theme-sm block font-medium text-gray-700">
-            Musharof Chowdhury
+            {displayName}
           </span>
           <span className="text-theme-xs mt-0.5 block text-gray-500">
-            randomuser@pimjo.com
+            {email}
           </span>
         </div>
 

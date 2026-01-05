@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Paper,
   CircularProgress,
   Stack,
   TextField,
@@ -10,6 +9,11 @@ import {
   Tab,
   Button,
   ButtonGroup,
+  Grid,
+  Card,
+  CardContent,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import {
   LineChart,
@@ -57,6 +61,7 @@ const COLORS = [
 ];
 
 const RevenueDashboard: React.FC = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<RevenueStats | null>(null);
@@ -120,29 +125,49 @@ const RevenueDashboard: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Báo Cáo Doanh Thu
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Phân tích chi tiết doanh thu và xu hướng kinh doanh
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+            }}
+          >
+            Báo Cáo Doanh Thu
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Phân tích chi tiết doanh thu và xu hướng kinh doanh
+          </Typography>
+        </Box>
       </Box>
 
       {/* Navigation Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
+      <Card sx={{ mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
-          sx={{ borderBottom: 1, borderColor: "divider" }}
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.95rem",
+            },
+            "& .Mui-selected": {
+              color: "primary.main",
+            },
+          }}
         >
           <Tab label="Tổng Quan" />
           <Tab label="Phân Tích Nâng Cao" />
           <Tab label="Quản Lý Thanh Toán" />
         </Tabs>
-      </Paper>
+      </Card>
 
       {/* Tab Content */}
       {activeTab === 1 && <AdvancedRevenueAnalytics />}
@@ -150,18 +175,27 @@ const RevenueDashboard: React.FC = () => {
       {activeTab === 0 && (
         <Box>
           {/* Date Range Picker with Quick Filters */}
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-            <Stack
-              direction="row"
-              spacing={2}
-              alignItems="center"
-              flexWrap="wrap"
-            >
+          <Card sx={{ p: 3, mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
+            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
               <ButtonGroup size="small" variant="outlined">
-                <Button onClick={() => setQuickRange(7)}>7 ngày</Button>
-                <Button onClick={() => setQuickRange(30)}>30 ngày</Button>
-                <Button onClick={() => setQuickRange(90)}>90 ngày</Button>
-                <Button onClick={() => setQuickRange(365)}>1 năm</Button>
+                <Button
+                  onClick={() => setQuickRange(7)}
+                  sx={{ borderRadius: "8px 0 0 8px", textTransform: "none", fontWeight: 600 }}
+                >
+                  7 ngày
+                </Button>
+                <Button onClick={() => setQuickRange(30)} sx={{ textTransform: "none", fontWeight: 600 }}>
+                  30 ngày
+                </Button>
+                <Button onClick={() => setQuickRange(90)} sx={{ textTransform: "none", fontWeight: 600 }}>
+                  90 ngày
+                </Button>
+                <Button
+                  onClick={() => setQuickRange(365)}
+                  sx={{ borderRadius: "0 8px 8px 0", textTransform: "none", fontWeight: 600 }}
+                >
+                  1 năm
+                </Button>
               </ButtonGroup>
               <TextField
                 label="Từ ngày"
@@ -170,6 +204,7 @@ const RevenueDashboard: React.FC = () => {
                 onChange={(e) => setStartDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
                 size="small"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
               />
               <TextField
                 label="Đến ngày"
@@ -178,180 +213,198 @@ const RevenueDashboard: React.FC = () => {
                 onChange={(e) => setEndDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
                 size="small"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
               />
             </Stack>
-          </Paper>
+          </Card>
 
           {/* KPI Cards */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 3,
-              mb: 3,
-            }}
-          >
-            <Paper
-              sx={{
-                p: 3,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                Tổng Doanh Thu
-              </Typography>
-              <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
-                {formatCurrency(stats?.totalRevenue || 0)}
-              </Typography>
-              <Typography variant="caption">
-                {stats?.totalOrders || 0} đơn hàng
-              </Typography>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 3,
-                background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-                color: "white",
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                Doanh Thu Tháng Này
-              </Typography>
-              <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
-                {formatCurrency(stats?.monthRevenue || 0)}
-              </Typography>
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {(stats?.growthRate || 0) >= 0 ? (
-                  <TrendingUpIcon fontSize="small" />
-                ) : (
-                  <TrendingDownIcon fontSize="small" />
-                )}
-                <Typography variant="caption">
-                  {stats?.growthRate?.toFixed(1)}% so với tháng trước
-                </Typography>
-              </Stack>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 3,
-                background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                color: "white",
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                Doanh Thu Hôm Nay
-              </Typography>
-              <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
-                {formatCurrency(stats?.todayRevenue || 0)}
-              </Typography>
-              <Typography variant="caption">
-                {stats?.todayOrders || 0} đơn hàng
-              </Typography>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 3,
-                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                color: "white",
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                Giá Trị Đơn Trung Bình
-              </Typography>
-              <Typography variant="h3" fontWeight={700}>
-                {formatCurrency(stats?.averageOrderValue || 0)}
-              </Typography>
-            </Paper>
-          </Box>
+          <Grid container spacing={3} mb={4}>
+            {[
+              {
+                label: "Tổng Doanh Thu",
+                value: formatCurrency(stats?.totalRevenue || 0),
+                subtext: `${stats?.totalOrders || 0} đơn hàng`,
+                color: "#2563eb",
+                icon: "💰",
+              },
+              {
+                label: "Doanh Thu Tháng Này",
+                value: formatCurrency(stats?.monthRevenue || 0),
+                subtext: `${stats?.growthRate?.toFixed(1)}% so với tháng trước`,
+                color: "#10b981",
+                icon: "📈",
+                trend: stats?.growthRate || 0,
+              },
+              {
+                label: "Doanh Thu Hôm Nay",
+                value: formatCurrency(stats?.todayRevenue || 0),
+                subtext: `${stats?.todayOrders || 0} đơn hàng`,
+                color: "#f59e0b",
+                icon: "📅",
+              },
+              {
+                label: "Giá Trị Đơn Trung Bình",
+                value: formatCurrency(stats?.averageOrderValue || 0),
+                subtext: "Trung bình mỗi đơn",
+                color: "#8b5cf6",
+                icon: "💳",
+              },
+            ].map((stat, index) => (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                    border: "1px solid",
+                    borderColor: "grey.100",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: "12px",
+                          bgcolor: alpha(stat.color, 0.1),
+                          fontSize: "1.5rem",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {stat.icon}
+                      </Box>
+                      <Box flex={1}>
+                        <Typography variant="body2" color="text.secondary" mb={0.5}>
+                          {stat.label}
+                        </Typography>
+                        <Typography variant="h5" fontWeight="700" mb={0.5}>
+                          {stat.value}
+                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          {stat.trend !== undefined && (
+                            <>
+                              {stat.trend >= 0 ? (
+                                <TrendingUpIcon fontSize="small" sx={{ color: "success.main" }} />
+                              ) : (
+                                <TrendingDownIcon fontSize="small" sx={{ color: "error.main" }} />
+                              )}
+                            </>
+                          )}
+                          <Typography variant="caption" color="text.secondary">
+                            {stat.subtext}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
 
           {/* Charts Row 1: Line Chart */}
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-            <Typography variant="h6" fontWeight={600} mb={2}>
+          <Card sx={{ p: 3, mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
+            <Typography variant="h6" fontWeight={700} mb={3}>
               Xu Hướng Doanh Thu
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dailyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
+                <XAxis dataKey="date" style={{ fontSize: "0.875rem" }} />
+                <YAxis style={{ fontSize: "0.875rem" }} />
+                <Tooltip
+                  formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid",
+                    borderColor: theme.palette.divider,
+                  }}
+                />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#667eea"
+                  stroke={theme.palette.primary.main}
                   strokeWidth={3}
                   name="Doanh thu"
+                  dot={{ fill: theme.palette.primary.main, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          </Paper>
+          </Card>
 
           {/* Charts Row 2: Pie + Bar */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 3,
-              mb: 3,
-            }}
-          >
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight={600} mb={2}>
-                Doanh Thu Theo Danh Mục
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={categoryRevenue}
-                    dataKey="revenue"
-                    nameKey="categoryName"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={(entry: any) =>
-                      `${entry.categoryName}: ${entry.percentage.toFixed(1)}%`
-                    }
-                  >
-                    {categoryRevenue.map((_entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
+          <Grid container spacing={3} mb={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card sx={{ p: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100", height: "100%" }}>
+                <Typography variant="h6" fontWeight={700} mb={3}>
+                  Doanh Thu Theo Danh Mục
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryRevenue as any}
+                      dataKey="revenue"
+                      nameKey="categoryName"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={(entry: any) =>
+                        `${entry.categoryName}: ${entry.percentage.toFixed(1)}%`
+                      }
+                    >
+                      {categoryRevenue.map((_entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "1px solid",
+                        borderColor: theme.palette.divider,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Card>
+            </Grid>
 
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight={600} mb={2}>
-                Top 10 Khóa Học Bán Chạy
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topCourses} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="courseTitle" type="category" width={150} />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
-                  <Bar dataKey="revenue" fill="#667eea" name="Doanh thu" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Box>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card sx={{ p: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100", height: "100%" }}>
+                <Typography variant="h6" fontWeight={700} mb={3}>
+                  Top 10 Khóa Học Bán Chạy
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={topCourses} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
+                    <XAxis type="number" style={{ fontSize: "0.875rem" }} />
+                    <YAxis dataKey="courseTitle" type="category" width={150} style={{ fontSize: "0.75rem" }} />
+                    <Tooltip
+                      formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "1px solid",
+                        borderColor: theme.palette.divider,
+                      }}
+                    />
+                    <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Doanh thu" radius={[0, 8, 8, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </Grid>
+          </Grid>
         </Box>
       )}
     </Box>

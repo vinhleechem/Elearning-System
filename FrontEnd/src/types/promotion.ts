@@ -27,6 +27,8 @@ export interface PromotionRule {
   categoryIds?: number[];
   buyQuantity?: number;
   getQuantity?: number;
+  targetId?: number;
+  targetName?: string;
 }
 
 export type PromotionType =

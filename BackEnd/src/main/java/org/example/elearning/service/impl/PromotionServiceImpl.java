@@ -212,12 +212,9 @@ public class PromotionServiceImpl implements PromotionService {
             response.setPromotionType(bestPromotion.getPromotionType().name());
             response.setPromotionEndDate(bestPromotion.getEndDate());
 
-            BigDecimal finalPrice = course.getPrice().subtract(bestDiscountAmount);
-            if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
-                finalPrice = BigDecimal.ZERO;
-            }
 
-            response.setDiscountPrice(finalPrice);
+
+
 
             // Calculate percentage
             int percentage = bestDiscountAmount.divide(course.getPrice(), 2, RoundingMode.HALF_UP)

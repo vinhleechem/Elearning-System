@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -30,6 +29,8 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Grid,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add,
@@ -220,366 +221,391 @@ const VoucherManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Quản lý Voucher
-        </Typography>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="body2" color="text.secondary">
-            Tạo và quản lý mã giảm giá cho khóa học
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpenDialog()}
+    <Box sx={{ pb: 5 }}>
+      {/* Header Section */}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
+      >
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
             sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)",
-              },
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
             }}
           >
-            Tạo Voucher
-          </Button>
-        </Stack>
+            Quản lý Voucher
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Tạo và quản lý mã giảm giá cho khóa học
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => handleOpenDialog()}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            px: 3,
+            py: 1.5,
+            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+            "&:hover": {
+              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+              transform: "translateY(-1px)",
+            },
+            transition: "all 0.2s ease-in-out",
+          }}
+        >
+          Tạo Voucher
+        </Button>
       </Box>
 
       {/* Stats Cards */}
-      <Box
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng Voucher",
+            value: vouchers.length,
+            color: "#2563eb",
+            icon: <CardGiftcard />,
+          },
+          {
+            label: "Đang Hoạt Động",
+            value: vouchers.filter((v) => v.isActive).length,
+            color: "#10b981",
+            icon: <CheckCircle />,
+          },
+          {
+            label: "Voucher Công Khai",
+            value: vouchers.filter((v) => v.voucherType === "PUBLIC").length,
+            color: "#e11d48", // Rose Red
+            icon: <CardGiftcard />,
+          },
+          {
+            label: "Lượt Sử Dụng",
+            value: vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0),
+            color: "#f59e0b", // Amber
+            icon: <CheckCircle />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 3 }} key={index}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Main Content Card */}
+      <Card
         sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: 3,
-          mb: 3,
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          border: "1px solid",
+          borderColor: "grey.100",
+          overflow: "visible",
         }}
       >
-        <Card
-          sx={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-          }}
-        >
-          <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                  Tổng Voucher
-                </Typography>
-                <Typography variant="h3" fontWeight={700}>
-                  {vouchers.length}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CardGiftcard fontSize="large" />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{
-            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-            color: "white",
-          }}
-        >
-          <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                  Đang Hoạt Động
-                </Typography>
-                <Typography variant="h3" fontWeight={700}>
-                  {vouchers.filter((v) => v.isActive).length}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CheckCircle fontSize="large" />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            color: "white",
-          }}
-        >
-          <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                  Voucher Công Khai
-                </Typography>
-                <Typography variant="h3" fontWeight={700}>
-                  {vouchers.filter((v) => v.voucherType === "PUBLIC").length}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CardGiftcard fontSize="large" />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-            color: "white",
-          }}
-        >
-          <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                  Lượt Sử Dụng
-                </Typography>
-                <Typography variant="h3" fontWeight={700}>
-                  {vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CheckCircle fontSize="large" />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
+        {/* Filter Toolbar */}
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+          <TextField
+            fullWidth
+            placeholder="Tìm kiếm theo mã hoặc tên voucher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search color="action" />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: "12px",
+                bgcolor: "grey.50",
+                "& fieldset": { border: "none" },
+                "&:hover": { bgcolor: "grey.100" },
+                "&.Mui-focused": {
+                  bgcolor: "white",
+                  boxShadow:
+                    "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                },
+              },
+            }}
+          />
+        </Box>
 
-      {/* Search */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <TextField
-          fullWidth
-          label="Tìm kiếm"
-          placeholder="Tìm kiếm theo mã hoặc tên voucher..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
-          }}
-          size="small"
-        />
-      </Paper>
-
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "primary.light" }}>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Mã Voucher
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Tên
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Loại
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Giảm Giá
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Thời Gian
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Sử Dụng
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>
-                Trạng Thái
-              </TableCell>
-              <TableCell align="center" sx={{ fontWeight: 700, color: "primary.main" }}>
-                Hành Động
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
+        {/* Table */}
+        <TableContainer>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <CircularProgress />
-                </TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Mã Voucher</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Giảm Giá</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Thời Gian</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Sử Dụng</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Trạng Thái</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Hành Động</TableCell>
               </TableRow>
-            ) : filteredVouchers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    No vouchers found
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredVouchers.map((voucher) => (
-                <TableRow key={voucher.voucherId} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="bold">
-                      {voucher.code}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{voucher.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {voucher.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={voucher.voucherType}
-                      size="small"
-                      color={
-                        voucher.voucherType === "PUBLIC" ? "success" : "info"
-                      }
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {voucher.discountType === "PERCENTAGE"
-                        ? `${voucher.discountValue}%`
-                        : `$${voucher.discountValue}`}
-                    </Typography>
-                    {voucher.maxDiscountAmount && (
-                      <Typography variant="caption" color="text.secondary">
-                        Max: ${voucher.maxDiscountAmount}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption" display="block">
-                      {new Date(voucher.startDate).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      {new Date(voucher.endDate).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {voucher.usedCount || 0} /{" "}
-                      {voucher.totalUsageLimit || "∞"}
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        bgcolor: "grey.200",
-                        borderRadius: 1,
-                        height: 4,
-                        mt: 0.5,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: `${getUsagePercentage(voucher)}%`,
-                          bgcolor: "primary.main",
-                          height: "100%",
-                          borderRadius: 1,
-                        }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={voucher.isActive ? <CheckCircle /> : <Cancel />}
-                      label={voucher.isActive ? "Active" : "Inactive"}
-                      color={voucher.isActive ? "success" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <Tooltip title="Grant to Users">
-                        <IconButton
-                          size="small"
-                          color="info"
-                          onClick={() => {
-                            setGrantVoucherId(voucher.voucherId);
-                            setOpenGrantDialog(true);
-                          }}
-                        >
-                          <Send />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenDialog(voucher)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => {
-                            setItemToDelete(voucher.voucherId);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <CircularProgress size={24} />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : filteredVouchers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">
+                      Không có voucher nào
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredVouchers.map((voucher) => (
+                  <TableRow
+                    key={voucher.voucherId}
+                    sx={{
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Chip
+                        label={voucher.code}
+                        size="small"
+                        sx={{ fontWeight: 700, borderRadius: "6px" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {voucher.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {voucher.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={voucher.voucherType}
+                        size="small"
+                        color={
+                          voucher.voucherType === "PUBLIC" ? "success" : "info"
+                        }
+                        variant="outlined"
+                        sx={{
+                          bgcolor: alpha(voucher.voucherType === "PUBLIC" ? theme.palette.success.main : theme.palette.info.main, 0.1),
+                          color: voucher.voucherType === "PUBLIC" ? "success.main" : "info.main",
+                          fontWeight: 500,
+                          borderRadius: "6px",
+                          border: "none"
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600} color="success.main">
+                        {voucher.discountType === "PERCENTAGE"
+                          ? `${voucher.discountValue}%`
+                          : `$${voucher.discountValue}`}
+                      </Typography>
+                      {voucher.maxDiscountAmount && (
+                        <Typography variant="caption" color="text.secondary">
+                          Max: ${voucher.maxDiscountAmount}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" display="block">
+                        {new Date(voucher.startDate).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="caption" display="block" color="text.secondary">
+                        {new Date(voucher.endDate).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2">
+                          {voucher.usedCount || 0} /{" "}
+                          {voucher.totalUsageLimit || "∞"}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          bgcolor: "grey.100",
+                          borderRadius: 1,
+                          height: 4,
+                          mt: 0.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: `${getUsagePercentage(voucher)}%`,
+                            bgcolor: "primary.main",
+                            height: "100%",
+                            borderRadius: 1,
+                          }}
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={voucher.isActive ? <CheckCircle sx={{ fontSize: 16 }} /> : <Cancel sx={{ fontSize: 16 }} />}
+                        label={voucher.isActive ? "Active" : "Inactive"}
+                        color={voucher.isActive ? "success" : "default"}
+                        size="small"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" justifyContent="center" gap={0.5}>
+                        <Tooltip title="Cấp cho người dùng">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => {
+                              setGrantVoucherId(voucher.voucherId);
+                              setOpenGrantDialog(true);
+                            }}
+                          >
+                            <Send fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Chỉnh sửa">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleOpenDialog(voucher)}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              setItemToDelete(voucher.voucherId);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
 
+      {/* Create/Edit Dialog */}
       {/* Create/Edit Dialog */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          },
+        }}
       >
-        <DialogTitle>
-          {editingId ? "Edit Voucher" : "Create Voucher"}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+        <DialogTitle sx={{ p: 4, pb: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
             <Box
-              sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "14px",
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: "primary.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CardGiftcard fontSize="medium" />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {editingId ? "Edit Voucher" : "Create New Voucher"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {editingId ? "Update existing voucher details" : "Add a new discount code"}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ p: 4, pt: 2 }}>
+          <Stack spacing={3}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 2,
+              }}
             >
               <TextField
                 label="Code"
@@ -592,6 +618,12 @@ const VoucherManagement = () => {
                   })
                 }
                 placeholder="e.g., NEWYEAR2024"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">#</InputAdornment>
+                  ),
+                  sx: { borderRadius: "12px" },
+                }}
               />
               <TextField
                 label="Name"
@@ -600,6 +632,7 @@ const VoucherManagement = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Box>
 
@@ -612,10 +645,15 @@ const VoucherManagement = () => {
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
+              InputProps={{ sx: { borderRadius: "12px" } }}
             />
 
             <Box
-              sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 2,
+              }}
             >
               <FormControl fullWidth>
                 <InputLabel>Voucher Type</InputLabel>
@@ -628,6 +666,7 @@ const VoucherManagement = () => {
                       voucherType: e.target.value as VoucherType,
                     })
                   }
+                  sx={{ borderRadius: "12px" }}
                 >
                   <MenuItem value="PUBLIC">Public</MenuItem>
                   <MenuItem value="PERSONAL">Personal</MenuItem>
@@ -648,6 +687,7 @@ const VoucherManagement = () => {
                       discountType: e.target.value as DiscountType,
                     })
                   }
+                  sx={{ borderRadius: "12px" }}
                 >
                   <MenuItem value="PERCENTAGE">Percentage</MenuItem>
                   <MenuItem value="FIXED">Fixed Amount</MenuItem>
@@ -658,7 +698,7 @@ const VoucherManagement = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
                 gap: 2,
               }}
             >
@@ -673,11 +713,13 @@ const VoucherManagement = () => {
                     discountValue: parseFloat(e.target.value),
                   })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
               <TextField
-                label="Max Discount (optional)"
+                label="Max Discount"
                 type="number"
                 fullWidth
+                placeholder="Optional"
                 value={formData.maxDiscountAmount || ""}
                 onChange={(e) =>
                   setFormData({
@@ -687,6 +729,7 @@ const VoucherManagement = () => {
                       : undefined,
                   })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
               <TextField
                 label="Min Order Value"
@@ -699,11 +742,16 @@ const VoucherManagement = () => {
                     minOrderValue: parseFloat(e.target.value) || 0,
                   })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Box>
 
             <Box
-              sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 2,
+              }}
             >
               <TextField
                 label="Total Usage Limit"
@@ -716,6 +764,7 @@ const VoucherManagement = () => {
                     totalUsageLimit: parseInt(e.target.value),
                   })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
               <TextField
                 label="Per User Limit"
@@ -728,11 +777,16 @@ const VoucherManagement = () => {
                     perUserLimit: parseInt(e.target.value),
                   })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Box>
 
             <Box
-              sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 2,
+              }}
             >
               <TextField
                 label="Start Date"
@@ -743,6 +797,7 @@ const VoucherManagement = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, startDate: e.target.value })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
               <TextField
                 label="End Date"
@@ -753,6 +808,7 @@ const VoucherManagement = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, endDate: e.target.value })
                 }
+                InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Box>
 
@@ -767,12 +823,11 @@ const VoucherManagement = () => {
                     applicableTo: e.target.value as VoucherApplicability,
                   })
                 }
+                sx={{ borderRadius: "12px" }}
               >
                 <MenuItem value="ALL">All Courses</MenuItem>
                 <MenuItem value="SPECIFIC_COURSES">Specific Courses</MenuItem>
-                <MenuItem value="INSTRUCTOR_COURSES">
-                  Instructor Courses
-                </MenuItem>
+                <MenuItem value="INSTRUCTOR_COURSES">Instructor Courses</MenuItem>
               </Select>
             </FormControl>
 
@@ -789,10 +844,26 @@ const VoucherManagement = () => {
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingId ? "Update" : "Create"}
+        <DialogActions sx={{ p: 4, pt: 0 }}>
+          <Button
+            onClick={handleCloseDialog}
+            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, px: 3 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 4,
+              boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+            }}
+          >
+            {editingId ? "Update Voucher" : "Create Voucher"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -803,27 +874,62 @@ const VoucherManagement = () => {
         onClose={() => setOpenGrantDialog(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          },
+        }}
       >
-        <DialogTitle>Grant Voucher to Users</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ p: 3, pb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box
+              sx={{
+                width: 42,
+                height: 42,
+                borderRadius: "12px",
+                bgcolor: alpha(theme.palette.info.main, 0.1),
+                color: "info.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Send fontSize="small" />
+            </Box>
+            <Typography variant="h6" fontWeight={700}>
+              Grant Voucher
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Enter user IDs separated by commas (e.g., 1, 2, 3)
+            Enter user IDs separated by commas to grant this voucher directly to them.
           </Typography>
           <TextField
             fullWidth
             multiline
             rows={4}
-            placeholder="1, 2, 3, 4, 5"
+            placeholder="e.g. 101, 102, 103"
             value={grantUserIds}
             onChange={(e) => setGrantUserIds(e.target.value)}
+            InputProps={{ sx: { borderRadius: "12px" } }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenGrantDialog(false)}>Cancel</Button>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            onClick={() => setOpenGrantDialog(false)}
+            sx={{ borderRadius: "10px", color: "text.secondary" }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleGrantVoucher}
             variant="contained"
+            color="info"
+            disabled={loading}
             startIcon={<Send />}
+            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600 }}
           >
             Grant Voucher
           </Button>
@@ -834,15 +940,55 @@ const VoucherManagement = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+            padding: 1,
+            maxWidth: "400px"
+          },
+        }}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure you want to delete this voucher?</Typography>
+        <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: "50%",
+              bgcolor: alpha(theme.palette.error.main, 0.1),
+              color: "error.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <Delete fontSize="large" />
+          </Box>
+          <Typography variant="h6" fontWeight={800}>
+            Confirm Deletion
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: "center" }}>
+          <Typography color="text.secondary">
+            Are you sure you want to delete this voucher? This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Delete
+        <DialogActions sx={{ justifyContent: "center", pb: 3, gap: 2 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="outlined"
+            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, border: "1px solid #e2e8f0" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, boxShadow: "0 4px 14px 0 rgba(239, 68, 68, 0.4)" }}
+          >
+            Delete Voucher
           </Button>
         </DialogActions>
       </Dialog>

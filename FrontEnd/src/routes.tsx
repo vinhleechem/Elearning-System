@@ -33,6 +33,7 @@ import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
 import NotificationManagement from "./pages/admin/NotificationManagement";
 import RevenueDashboard from "./pages/admin/RevenueDashboard";
+import ReviewManagement from "./pages/admin/ReviewManagement";
 
 export const router = createBrowserRouter([
   {
@@ -189,6 +190,10 @@ export const router = createBrowserRouter([
       {
         path: "revenue",
         element: <RevenueDashboard />,
+      },
+      {
+        path: "reviews",
+        element: <ReviewManagement />,
       },
     ],
   },

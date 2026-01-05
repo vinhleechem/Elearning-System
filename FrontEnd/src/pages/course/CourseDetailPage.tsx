@@ -2,6 +2,7 @@ import { Container, Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { courseService } from "../../service/courseService";
+import { sectionService } from "../../service/sectionService";
 import CourseHero from "../../components/courseDetail/CourseHero";
 import WhatYouWillLearn from "../../components/courseDetail/WhatYouWillLearn";
 import Curriculum from "../../components/courseDetail/Curriculum";
@@ -164,6 +165,22 @@ const CourseDetailPage = () => {
         const course = await courseService.getCourseBySlug(slug);
         console.log("Course data received:", course);
 
+        // Fetch sections with lessons
+        let sections = mockData.sections; // Default to mock
+        try {
+          const sectionsData = await sectionService.getSectionsByCourse(course.courseId);
+          console.log("Sections data received:", sectionsData);
+
+          // Map sections to CourseDetail format
+          sections = sectionsData.map(section => ({
+            id: section.sectionId,
+            title: section.title,
+            lectures: [], // TODO: Fetch lessons for each section when API is available
+          }));
+        } catch (sectionError) {
+          console.warn("Failed to fetch sections, using mock data:", sectionError);
+        }
+
         // Map API response to CourseDetail
         const hasDiscount =
           course.discountPrice !== undefined && course.discountPrice !== null;
@@ -185,7 +202,7 @@ const CourseDetailPage = () => {
           whatYouWillLearn: course.whatYouLearn
             ? course.whatYouLearn.split("\n")
             : [],
-          sections: mockData.sections, // Use mock sections for now
+          sections: sections,
           requirements: course.requirements
             ? course.requirements.split("\n")
             : [],

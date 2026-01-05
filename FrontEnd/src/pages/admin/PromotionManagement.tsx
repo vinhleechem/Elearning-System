@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -31,6 +30,7 @@ import {
   Select,
   InputLabel,
   FormControl,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add,
@@ -82,14 +82,15 @@ const PromotionManagement = () => {
   });
 
   const [currentRule, setCurrentRule] = useState<PromotionRule>({
+    ruleId: 0,
     ruleType: "ALL",
-    targetId: null,
+    targetId: undefined,
     discountType: "PERCENTAGE",
     discountValue: 0,
-    maxDiscountAmount: null,
-    minPurchaseAmount: null,
-    buyQuantity: null,
-    getQuantity: null,
+    maxDiscountAmount: undefined,
+    minPurchaseAmount: undefined,
+    buyQuantity: undefined,
+    getQuantity: undefined,
   });
 
   useEffect(() => {
@@ -249,14 +250,15 @@ const PromotionManagement = () => {
       rules: [...prev.rules, { ...currentRule }],
     }));
     setCurrentRule({
+      ruleId: 0,
       ruleType: "ALL",
-      targetId: null,
+      targetId: undefined,
       discountType: "PERCENTAGE",
       discountValue: 0,
-      maxDiscountAmount: null,
-      minPurchaseAmount: null,
-      buyQuantity: null,
-      getQuantity: null,
+      maxDiscountAmount: undefined,
+      minPurchaseAmount: undefined,
+      buyQuantity: undefined,
+      getQuantity: undefined,
     });
   };
 
@@ -272,304 +274,321 @@ const PromotionManagement = () => {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Stack
-        direction="row"
+    <Box sx={{ pb: 5 }}>
+      {/* Header Section */}
+      <Box
+        display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={3}
+        mb={4}
       >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <LocalOffer
-            sx={{ fontSize: 40, color: theme.palette.primary.main }}
-          />
-          <div>
-            <Typography variant="h4" fontWeight="bold">
-              Promotion Management
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage promotions and discount rules
-            </Typography>
-          </div>
-        </Stack>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+            }}
+          >
+            Quản lý Khuyến mãi
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Quản lý các chương trình khuyến mãi và quy tắc giảm giá
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => handleOpenDialog()}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            px: 3,
+            py: 1.5,
+            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+            "&:hover": {
+              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+              transform: "translateY(-1px)",
+            },
+            transition: "all 0.2s ease-in-out",
+          }}
         >
-          Create Promotion
+          Tạo khuyến mãi mới
         </Button>
-      </Stack>
+      </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Total Promotions
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {promotions.length}
-                  </Typography>
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng khuyến mãi",
+            value: promotions.length,
+            color: "#2563eb",
+            icon: <LocalOffer />,
+          },
+          {
+            label: "Đang hoạt động",
+            value: promotions.filter((p) => p.isActive).length,
+            color: "#10b981",
+            icon: <CheckCircle />,
+          },
+          {
+            label: "Vô hiệu hóa",
+            value: promotions.filter((p) => !p.isActive).length,
+            color: "#ef4444",
+            icon: <Cancel />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255,255,255,0.2)",
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <LocalOffer fontSize="large" />
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Active Promotions
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {promotions.filter((p) => p.isActive).length}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255,255,255,0.2)",
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <CheckCircle fontSize="large" />
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Inactive Promotions
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {promotions.filter((p) => !p.isActive).length}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255,255,255,0.2)",
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Cancel fontSize="large" />
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
-      {/* Search */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="Search promotions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
-          }}
-        />
-      </Paper>
+      {/* Main Content Card */}
+      <Card
+        sx={{
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          border: "1px solid",
+          borderColor: "grey.100",
+          overflow: "visible",
+        }}
+      >
+        {/* Filter Toolbar */}
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+          <TextField
+            fullWidth
+            placeholder="Tìm kiếm khuyến mãi..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search color="action" />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: "12px",
+                bgcolor: "grey.50",
+                "& fieldset": { border: "none" },
+                "&:hover": { bgcolor: "grey.100" },
+                "&.Mui-focused": {
+                  bgcolor: "white",
+                  boxShadow:
+                    "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                },
+              },
+            }}
+          />
+        </Box>
 
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
-              <TableCell>
-                <strong>Name</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Type</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Period</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Priority</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Rules</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Status</strong>
-              </TableCell>
-              <TableCell align="center">
-                <strong>Actions</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
+        {/* Table */}
+        <TableContainer>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                  <CircularProgress />
-                </TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Tên khuyến mãi</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Độ ưu tiên</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Quy tắc</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="center">Thao tác</TableCell>
               </TableRow>
-            ) : filteredPromotions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    No promotions found
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredPromotions.map((promotion) => (
-                <TableRow key={promotion.promotionId} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="bold">
-                      {promotion.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {promotion.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={promotion.promotionType}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption" display="block">
-                      {new Date(promotion.startDate).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      {new Date(promotion.endDate).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={promotion.priority} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={`${promotion.rulesCount} rules`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={promotion.isActive ? <CheckCircle /> : <Cancel />}
-                      label={promotion.isActive ? "Active" : "Inactive"}
-                      color={promotion.isActive ? "success" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <Tooltip title="View Details">
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            handleViewDetail(promotion.promotionId)
-                          }
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenDialog(promotion)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip
-                        title={promotion.isActive ? "Deactivate" : "Activate"}
-                      >
-                        <IconButton
-                          size="small"
-                          color={promotion.isActive ? "warning" : "success"}
-                          onClick={() =>
-                            handleToggleActive(
-                              promotion.promotionId,
-                              promotion.isActive,
-                            )
-                          }
-                        >
-                          {promotion.isActive ? (
-                            <VisibilityOff />
-                          ) : (
-                            <Visibility />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => {
-                            setItemToDelete(promotion.promotionId);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : filteredPromotions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">
+                      Không tìm thấy khuyến mãi nào
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredPromotions.map((promotion) => (
+                  <TableRow
+                    key={promotion.promotionId}
+                    sx={{
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {promotion.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {promotion.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={promotion.promotionType}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: "primary.main",
+                          fontWeight: 500,
+                          borderRadius: "6px",
+                          border: "none"
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" display="block">
+                        {new Date(promotion.startDate).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="caption" display="block" color="text.secondary">
+                        {new Date(promotion.endDate).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={promotion.priority}
+                        size="small"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={`${(promotion as any).rulesCount || (promotion as any).rules?.length || 0} rules`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderRadius: "6px" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={promotion.isActive ? <CheckCircle sx={{ fontSize: 16 }} /> : <Cancel sx={{ fontSize: 16 }} />}
+                        label={promotion.isActive ? "Active" : "Inactive"}
+                        color={promotion.isActive ? "success" : "default"}
+                        size="small"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" justifyContent="center" gap={1}>
+                        <Tooltip title="Xem chi tiết">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              handleViewDetail(promotion.promotionId)
+                            }
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Chỉnh sửa">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => handleOpenDialog(promotion)}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip
+                          title={promotion.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
+                        >
+                          <IconButton
+                            size="small"
+                            color={promotion.isActive ? "warning" : "success"}
+                            onClick={() =>
+                              handleToggleActive(
+                                promotion.promotionId,
+                                promotion.isActive,
+                              )
+                            }
+                          >
+                            {promotion.isActive ? (
+                              <VisibilityOff fontSize="small" />
+                            ) : (
+                              <Visibility fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              setItemToDelete(promotion.promotionId);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
 
       {/* Create/Edit Dialog */}
       <Dialog
@@ -577,6 +596,10 @@ const PromotionManagement = () => {
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          borderRadius: "20px",
+          boxShadow: "0 4px 30px rgba(0,0,0,0.1)",
+        }}
       >
         <DialogTitle>
           {editingId ? "Edit Promotion" : "Create Promotion"}
@@ -621,7 +644,7 @@ const PromotionManagement = () => {
               </Select>
             </FormControl>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Start Date"
                   type="datetime-local"
@@ -633,7 +656,7 @@ const PromotionManagement = () => {
                   }
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="End Date"
                   type="datetime-local"
@@ -706,7 +729,7 @@ const PromotionManagement = () => {
                   Add New Rule
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Rule Type</InputLabel>
                       <Select
@@ -727,7 +750,7 @@ const PromotionManagement = () => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Discount Type</InputLabel>
                       <Select
@@ -745,7 +768,7 @@ const PromotionManagement = () => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <TextField
                       label="Discount Value"
                       type="number"
@@ -760,7 +783,7 @@ const PromotionManagement = () => {
                       }
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <TextField
                       label="Target ID (optional)"
                       type="number"
@@ -772,12 +795,12 @@ const PromotionManagement = () => {
                           ...currentRule,
                           targetId: e.target.value
                             ? parseInt(e.target.value)
-                            : null,
+                            : undefined,
                         })
                       }
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Button
                       variant="outlined"
                       startIcon={<Add />}

@@ -25,7 +25,6 @@ import {
   DialogActions,
   DialogContentText,
   MenuItem,
-  Stack,
   FormControl,
   InputLabel,
   Select,
@@ -52,6 +51,7 @@ import {
   type CategoryTreeResponse,
 } from "../../service/categoryService";
 import { useNavigate } from "react-router-dom";
+import { CourseFormDialog } from "../../components/shared/CourseFormDialog";
 
 const CourseManagement = () => {
   const theme = useTheme();
@@ -68,25 +68,11 @@ const CourseManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(
-    null,
-  );
+  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(null);
   const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [courseToUpdateStatus, setCourseToUpdateStatus] =
-    useState<CourseResponse | null>(null);
+  const [courseToUpdateStatus, setCourseToUpdateStatus] = useState<CourseResponse | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
-  const [formData, setFormData] = useState({
-    title: "",
-    categoryId: "",
-    instructorId: "",
-    shortDescription: "",
-    price: "",
-    discountPrice: "",
-    level: "",
-    language: "",
-    status: "",
-  });
   const itemsPerPage = 10;
 
   // Flatten categories for dropdown
@@ -200,17 +186,7 @@ const CourseManagement = () => {
         course.courseId,
       );
       setEditingCourse(fullCourse);
-      setFormData({
-        title: fullCourse.title || "",
-        categoryId: fullCourse.categoryId.toString(),
-        instructorId: fullCourse.instructorId.toString(),
-        shortDescription: fullCourse.shortDescription || "",
-        price: fullCourse.price?.toString() || "",
-        discountPrice: fullCourse.discountPrice?.toString() || "",
-        level: fullCourse.level || "",
-        language: fullCourse.language || "",
-        status: fullCourse.status || "DRAFT",
-      });
+      setEditingCourse(fullCourse);
       setCreateDialogOpen(true);
     } catch (error) {
       enqueueSnackbar("Không thể tải thông tin khóa học", {
@@ -222,46 +198,28 @@ const CourseManagement = () => {
 
   const handleCreateClick = () => {
     setEditingCourse(null);
-    setFormData({
-      title: "",
-      categoryId: "",
-      instructorId: "",
-      shortDescription: "",
-      price: "",
-      discountPrice: "",
-      level: "",
-      language: "",
-      status: "DRAFT",
-    });
+    setEditingCourse(null);
     setCreateDialogOpen(true);
   };
 
-  const handleSaveCourse = async () => {
+  const handleSaveCourse = async (data: any) => {
     if (!tokens?.accessToken) return;
-    if (!formData.title.trim()) {
-      enqueueSnackbar("Tiêu đề khóa học không được để trống", {
-        variant: "warning",
-      });
-      return;
-    }
-    if (!formData.categoryId) {
-      enqueueSnackbar("Vui lòng chọn danh mục", {
-        variant: "warning",
-      });
-      return;
-    }
 
     try {
       const courseData = {
-        title: formData.title.trim(),
-        categoryId: Number(formData.categoryId),
-        shortDescription: formData.shortDescription || undefined,
-        price: formData.price ? Number(formData.price) : undefined,
-        discountPrice: formData.discountPrice
-          ? Number(formData.discountPrice)
-          : undefined,
-        level: formData.level || undefined,
-        language: formData.language || undefined,
+        title: data.title.trim(),
+        categoryId: Number(data.categoryId),
+        shortDescription: data.shortDescription || undefined,
+        description: data.description || undefined,
+        whatYouLearn: data.whatYouLearn || undefined,
+        requirements: data.requirements || undefined,
+        targetAudience: data.targetAudience || undefined,
+        thumbnailUrl: data.thumbnailUrl || undefined,
+        previewVideoUrl: data.previewVideoUrl || undefined,
+        price: data.price ? Number(data.price) : undefined,
+        level: data.level || undefined,
+        language: data.language || undefined,
+        hasCertificate: data.hasCertificate,
       };
 
       if (editingCourse) {
@@ -272,33 +230,23 @@ const CourseManagement = () => {
           courseData,
         );
 
-        // Update status if changed
-        if (formData.status && formData.status !== editingCourse.status) {
+        // Update status if changed (only if status exists in form data)
+        if (data.status && data.status !== editingCourse.status) {
           await adminCourseService.updateCourseStatus(
             tokens.accessToken,
             editingCourse.courseId,
-            formData.status as any,
+            data.status,
           );
         }
 
-        enqueueSnackbar("Cập nhật khóa học thành công", {
-          variant: "success",
-        });
+        enqueueSnackbar("Cập nhật khóa học thành công", { variant: "success" });
       } else {
         // Create
-        if (!formData.instructorId) {
-          enqueueSnackbar("Vui lòng chọn giảng viên", {
-            variant: "warning",
-          });
-          return;
-        }
         await adminCourseService.createCourse(tokens.accessToken, {
           ...courseData,
-          instructorId: Number(formData.instructorId),
+          instructorId: Number(data.instructorId),
         });
-        enqueueSnackbar("Tạo khóa học thành công", {
-          variant: "success",
-        });
+        enqueueSnackbar("Tạo khóa học thành công", { variant: "success" });
       }
 
       setCreateDialogOpen(false);
@@ -474,7 +422,7 @@ const CourseManagement = () => {
             icon: <Edit />,
           },
         ].map((stat, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
             <Card
               sx={{
                 borderRadius: "16px",
@@ -527,59 +475,67 @@ const CourseManagement = () => {
       >
         <CardContent sx={{ p: 3 }}>
           {/* Search and Filter Bar */}
-          <Box
-            display="flex"
-            gap={2}
-            mb={3}
-            flexWrap="wrap"
-            alignItems="center"
-          >
-            <TextField
-              placeholder="Tìm kiếm khóa học..."
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-              sx={{
-                flex: 1,
-                minWidth: "250px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box display="flex" gap={1} alignItems="center">
-              <FilterList color="action" />
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "12px",
-                  border: "1px solid #e0e0e0",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="ALL">Tất cả trạng thái</option>
-                <option value="PUBLISHED">Đã xuất bản</option>
-                <option value="DRAFT">Bản nháp</option>
-                <option value="ACHIEVED">Đã lưu trữ</option>
-              </select>
-            </Box>
+          {/* Search and Filter Bar */}
+          <Box mb={3} borderBottom="1px solid" borderColor="grey.100" pb={3}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Tìm kiếm khóa học..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search color="action" />
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      borderRadius: "12px",
+                      bgcolor: "grey.50",
+                      "& fieldset": { border: "none" },
+                      "&:hover": { bgcolor: "grey.100" },
+                      "&.Mui-focused": {
+                        bgcolor: "white",
+                        boxShadow:
+                          "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    displayEmpty
+                    sx={{
+                      borderRadius: "12px",
+                      bgcolor: "grey.50",
+                      "& fieldset": { border: "none" },
+                      "&:hover": { bgcolor: "grey.100" },
+                    }}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <FilterList fontSize="small" />
+                      </InputAdornment>
+                    }
+                  >
+                    <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+                    <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+                    <MenuItem value="DRAFT">Bản nháp</MenuItem>
+                    <MenuItem value="ACHIEVED">Đã lưu trữ</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
           </Box>
 
           {/* Table */}
@@ -724,15 +680,7 @@ const CourseManagement = () => {
                         <Typography variant="body2" fontWeight={600}>
                           {formatPrice(course.price)}
                         </Typography>
-                        {course.discountPrice && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ textDecoration: "line-through" }}
-                          >
-                            {formatPrice(course.discountPrice)}
-                          </Typography>
-                        )}
+
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
@@ -900,260 +848,17 @@ const CourseManagement = () => {
       </Dialog>
 
       {/* Create/Edit Course Dialog */}
-      <Dialog
+      <CourseFormDialog
         open={createDialogOpen}
         onClose={() => {
           setCreateDialogOpen(false);
           setEditingCourse(null);
-          setFormData({
-            title: "",
-            categoryId: "",
-            instructorId: "",
-            shortDescription: "",
-            price: "",
-            discountPrice: "",
-            level: "",
-            language: "",
-          });
         }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <School />
-            <Typography variant="h6">
-              {editingCourse ? "Chỉnh sửa khóa học" : "Tạo khóa học mới"}
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={3}>
-            <TextField
-              fullWidth
-              label="Tiêu đề khóa học"
-              placeholder="VD: Java Spring Boot - Xây dựng RESTful API"
-              required
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-            />
-
-            <FormControl fullWidth required>
-              <InputLabel>Chọn danh mục</InputLabel>
-              <Select
-                label="Chọn danh mục"
-                value={formData.categoryId}
-                onChange={(e) =>
-                  setFormData({ ...formData, categoryId: e.target.value })
-                }
-                renderValue={(value) => {
-                  const cat = flatCategories.find(
-                    (c) => c.id === Number(value),
-                  );
-                  if (!cat) return "";
-                  return (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <FolderOpen
-                        sx={{
-                          fontSize: 16,
-                          color:
-                            cat.level === 1
-                              ? "primary.main"
-                              : cat.level === 2
-                                ? "secondary.main"
-                                : "text.secondary",
-                        }}
-                      />
-                      <Typography variant="body2" fontWeight={500}>
-                        {cat.path}
-                      </Typography>
-                      <Chip
-                        label={`Level ${cat.level}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: 10 }}
-                      />
-                    </Box>
-                  );
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300,
-                    },
-                  },
-                }}
-              >
-                {flatCategories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        width: "100%",
-                        pl: (cat.level - 1) * 2,
-                      }}
-                    >
-                      <FolderOpen
-                        sx={{
-                          fontSize: 16,
-                          color:
-                            cat.level === 1
-                              ? "primary.main"
-                              : cat.level === 2
-                                ? "secondary.main"
-                                : "text.secondary",
-                        }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: cat.level === 1 ? 600 : 400,
-                          flex: 1,
-                        }}
-                      >
-                        {cat.name}
-                      </Typography>
-                      <Chip
-                        label={`L${cat.level}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: 10, minWidth: 35 }}
-                      />
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {!editingCourse && (
-              <FormControl fullWidth required>
-                <InputLabel>Chọn giảng viên</InputLabel>
-                <Select
-                  label="Chọn giảng viên"
-                  value={formData.instructorId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, instructorId: e.target.value })
-                  }
-                >
-                  <MenuItem value="1">Nguyễn Văn A</MenuItem>
-                  <MenuItem value="2">Trần Thị B</MenuItem>
-                  <MenuItem value="3">Lê Minh C</MenuItem>
-                  <MenuItem value="4">Phạm Thu D</MenuItem>
-                  <MenuItem value="5">Hoàng Văn E</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-
-            <TextField
-              fullWidth
-              label="Mô tả ngắn"
-              placeholder="Mô tả ngắn gọn về khóa học"
-              multiline
-              rows={2}
-              value={formData.shortDescription}
-              onChange={(e) =>
-                setFormData({ ...formData, shortDescription: e.target.value })
-              }
-            />
-
-            <Stack direction="row" spacing={2}>
-              <TextField
-                fullWidth
-                label="Giá (VND)"
-                type="number"
-                placeholder="0"
-                value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
-              />
-              <TextField
-                fullWidth
-                label="Giá khuyến mãi (VND)"
-                type="number"
-                placeholder="0"
-                value={formData.discountPrice}
-                onChange={(e) =>
-                  setFormData({ ...formData, discountPrice: e.target.value })
-                }
-              />
-            </Stack>
-
-            <Stack direction="row" spacing={2}>
-              <FormControl fullWidth>
-                <InputLabel>Cấp độ</InputLabel>
-                <Select
-                  label="Cấp độ"
-                  value={formData.level}
-                  onChange={(e) =>
-                    setFormData({ ...formData, level: e.target.value })
-                  }
-                >
-                  <MenuItem value="beginner">Beginner</MenuItem>
-                  <MenuItem value="intermediate">Intermediate</MenuItem>
-                  <MenuItem value="advanced">Advanced</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                label="Ngôn ngữ"
-                placeholder="VD: Tiếng Việt"
-                value={formData.language}
-                onChange={(e) =>
-                  setFormData({ ...formData, language: e.target.value })
-                }
-              />
-            </Stack>
-
-            {editingCourse && (
-              <FormControl fullWidth>
-                <InputLabel>Trạng thái</InputLabel>
-                <Select
-                  label="Trạng thái"
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                >
-                  <MenuItem value="DRAFT">Bản nháp</MenuItem>
-                  <MenuItem value="PENDING">Chờ duyệt</MenuItem>
-                  <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
-                  <MenuItem value="REJECTED">Bị từ chối</MenuItem>
-                  <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button
-            onClick={() => {
-              setCreateDialogOpen(false);
-              setEditingCourse(null);
-              setFormData({
-                title: "",
-                categoryId: "",
-                instructorId: "",
-                shortDescription: "",
-                price: "",
-                discountPrice: "",
-                level: "",
-                language: "",
-                status: "",
-              });
-            }}
-          >
-            Hủy
-          </Button>
-          <Button variant="contained" onClick={handleSaveCourse}>
-            {editingCourse ? "Cập nhật" : "Tạo khóa học"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        editingCourse={editingCourse}
+        mode="ADMIN"
+        flatCategories={flatCategories}
+        onSubmit={handleSaveCourse}
+      />
     </Box>
   );
 };

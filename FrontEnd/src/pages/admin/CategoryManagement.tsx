@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -18,13 +17,18 @@ import {
   TextField,
   Typography,
   Switch,
-  FormControlLabel,
   MenuItem,
   Chip,
   useTheme,
   alpha,
   Tooltip,
   CircularProgress,
+  Card,
+  CardContent,
+  Grid,
+  InputAdornment,
+  Select,
+  FormControl,
 } from "@mui/material";
 import {
   Add,
@@ -38,6 +42,8 @@ import {
   FilterList,
   ExpandMore,
   UnfoldMore,
+  CheckCircle,
+  Block,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { adminCategoryService } from "../../service/adminCategoryService";
@@ -65,7 +71,7 @@ const CategoryManagement = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   // Search & Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevel, setFilterLevel] = useState<number | "ALL">("ALL");
@@ -199,7 +205,7 @@ const CategoryManagement = () => {
     if (filterLevel !== "ALL" && filterLevel > 1) {
       // Cần expand các nodes từ level 1 đến (filterLevel - 1)
       const nodesToExpand = new Set<number>();
-      
+
       const collectParentIds = (nodes: CategoryResponse[], targetLevel: number) => {
         nodes.forEach((node) => {
           if (node.level < targetLevel && node.children && node.children.length > 0) {
@@ -208,7 +214,7 @@ const CategoryManagement = () => {
           }
         });
       };
-      
+
       collectParentIds(rawCategories, filterLevel);
       setExpandedIds((prev) => {
         const newSet = new Set(prev);
@@ -349,194 +355,268 @@ const CategoryManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Stack
-        direction="row"
-        alignItems="center"
+    <Box sx={{ pb: 5 }}>
+      {/* Header Section */}
+      <Box
+        display="flex"
         justifyContent="space-between"
+        alignItems="center"
         mb={4}
       >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <CategoryIcon sx={{ fontSize: 32, color: "primary.main" }} />
-          <Box>
-            <Typography variant="h4" fontWeight={700}>
-              Quản lý Danh mục
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Quản lý cấu trúc danh mục khóa học theo dạng cây phân cấp
-            </Typography>
-          </Box>
-        </Stack>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+            }}
+          >
+            Quản lý Danh mục
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Quản lý cấu trúc danh mục khóa học theo dạng cây phân cấp
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => handleOpenAdd(null)}
-          size="large"
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            px: 3,
+            py: 1.5,
+            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+            "&:hover": {
+              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+              transform: "translateY(-1px)",
+            },
+            transition: "all 0.2s ease-in-out",
+          }}
         >
           Thêm danh mục gốc
         </Button>
-      </Stack>
+      </Box>
 
-      {/* Search & Filters */}
-      <Paper
-        elevation={0}
-        sx={{ p: 2, mb: 3, border: "1px solid", borderColor: "divider" }}
-      >
-        <Stack spacing={2}>
-          {/* Search Bar */}
-          <Stack direction="row" spacing={2} alignItems="center">
-            <TextField
-              placeholder="Tìm kiếm danh mục..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              size="small"
-              fullWidth
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
+      {/* Stats Cards */}
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng danh mục",
+            value: flatList.length,
+            color: "#2563eb",
+            icon: <CategoryIcon />,
+          },
+          {
+            label: "Đang hoạt động",
+            value: flatList.filter((c) => c.isActive).length,
+            color: "#10b981",
+            icon: <CheckCircle />,
+          },
+          {
+            label: "Vô hiệu hóa",
+            value: flatList.filter((c) => !c.isActive).length,
+            color: "#ef4444",
+            icon: <Block />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                },
               }}
-            />
-            <Tooltip title="Mở tất cả">
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={expandAll}
-                startIcon={<UnfoldMore />}
-                sx={{ whiteSpace: "nowrap", minWidth: "auto" }}
-              >
-                Mở tất cả
-              </Button>
-            </Tooltip>
-            <Tooltip title="Đóng tất cả">
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={collapseAll}
-                startIcon={<ExpandMore />}
-                sx={{ whiteSpace: "nowrap", minWidth: "auto" }}
-              >
-                Đóng tất cả
-              </Button>
-            </Tooltip>
-          </Stack>
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-          {/* Filter Chips */}
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <FilterList sx={{ color: "text.secondary", fontSize: 20 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-              Cấp độ:
-            </Typography>
-            <Chip
-              label="Tất cả"
-              size="small"
-              onClick={() => setFilterLevel("ALL")}
-              color={filterLevel === "ALL" ? "primary" : "default"}
-              variant={filterLevel === "ALL" ? "filled" : "outlined"}
-            />
-            <Chip
-              label="Level 1"
-              size="small"
-              onClick={() => setFilterLevel(1)}
-              color={filterLevel === 1 ? "primary" : "default"}
-              variant={filterLevel === 1 ? "filled" : "outlined"}
-            />
-            <Chip
-              label="Level 2"
-              size="small"
-              onClick={() => setFilterLevel(2)}
-              color={filterLevel === 2 ? "primary" : "default"}
-              variant={filterLevel === 2 ? "filled" : "outlined"}
-            />
-            <Chip
-              label="Level 3"
-              size="small"
-              onClick={() => setFilterLevel(3)}
-              color={filterLevel === 3 ? "primary" : "default"}
-              variant={filterLevel === 3 ? "filled" : "outlined"}
-            />
-            <Box sx={{ width: 20 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-              Trạng thái:
-            </Typography>
-            <Chip
-              label="Tất cả"
-              size="small"
-              onClick={() => setFilterStatus("ALL")}
-              color={filterStatus === "ALL" ? "primary" : "default"}
-              variant={filterStatus === "ALL" ? "filled" : "outlined"}
-            />
-            <Chip
-              label="Kích hoạt"
-              size="small"
-              onClick={() => setFilterStatus("ACTIVE")}
-              color={filterStatus === "ACTIVE" ? "success" : "default"}
-              variant={filterStatus === "ACTIVE" ? "filled" : "outlined"}
-            />
-            <Chip
-              label="Vô hiệu"
-              size="small"
-              onClick={() => setFilterStatus("INACTIVE")}
-              color={filterStatus === "INACTIVE" ? "warning" : "default"}
-              variant={filterStatus === "INACTIVE" ? "filled" : "outlined"}
-            />
-          </Stack>
-        </Stack>
-      </Paper>
+      {/* Main Content Card */}
+      <Card
+        sx={{
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          border: "1px solid",
+          borderColor: "grey.100",
+          overflow: "visible",
+        }}
+      >
+        {/* Filter Toolbar */}
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+          <Grid container spacing={2} alignItems="center">
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                placeholder="Tìm kiếm danh mục..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search color="action" />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: "12px",
+                    bgcolor: "grey.50",
+                    "& fieldset": { border: "none" },
+                    "&:hover": { bgcolor: "grey.100" },
+                    "&.Mui-focused": {
+                      bgcolor: "white",
+                      boxShadow:
+                        "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                    },
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <FormControl fullWidth>
+                <Select
+                  value={filterLevel}
+                  onChange={(e) => setFilterLevel(e.target.value as number | "ALL")}
+                  displayEmpty
+                  sx={{
+                    borderRadius: "12px",
+                    bgcolor: "grey.50",
+                    "& fieldset": { border: "none" },
+                    "&:hover": { bgcolor: "grey.100" },
+                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <FilterList fontSize="small" />
+                    </InputAdornment>
+                  }
+                >
+                  <MenuItem value="ALL">Tất cả cấp độ</MenuItem>
+                  <MenuItem value={1}>Level 1</MenuItem>
+                  <MenuItem value={2}>Level 2</MenuItem>
+                  <MenuItem value={3}>Level 3</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <FormControl fullWidth>
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as "ALL" | "ACTIVE" | "INACTIVE")}
+                  displayEmpty
+                  sx={{
+                    borderRadius: "12px",
+                    bgcolor: "grey.50",
+                    "& fieldset": { border: "none" },
+                    "&:hover": { bgcolor: "grey.100" },
+                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <CheckCircle fontSize="small" />
+                    </InputAdornment>
+                  }
+                >
+                  <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+                  <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
+                  <MenuItem value="INACTIVE">Vô hiệu hóa</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, md: 2 }}>
+              <Stack direction="row" spacing={1}>
+                <Tooltip title="Mở tất cả">
+                  <Button
+                    variant="outlined"
+                    onClick={expandAll}
+                    sx={{ borderRadius: "10px", minWidth: 48, p: 1, borderColor: "grey.300", color: "text.secondary" }}
+                  >
+                    <UnfoldMore />
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Đóng tất cả">
+                  <Button
+                    variant="outlined"
+                    onClick={collapseAll}
+                    sx={{ borderRadius: "10px", minWidth: 48, p: 1, borderColor: "grey.300", color: "text.secondary" }}
+                  >
+                    <ExpandMore />
+                  </Button>
+                </Tooltip>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Box>
 
-      {/* Statistics */}
-      <Stack direction="row" spacing={2} mb={3}>
-        <Chip
-          label={`Tổng: ${flatList.length} danh mục`}
-          color="primary"
-          variant="outlined"
-        />
-        <Chip
-          label={`Hiển thị: ${filteredList.length} danh mục`}
-          color="info"
-          variant="outlined"
-        />
-        <Chip
-          label={`Kích hoạt: ${flatList.filter((c) => c.isActive).length}`}
-          color="success"
-          variant="outlined"
-        />
-        <Chip
-          label={`Vô hiệu: ${flatList.filter((c) => !c.isActive).length}`}
-          color="warning"
-          variant="outlined"
-        />
-      </Stack>
-
-      {/* Table */}
-      <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+        {/* Table */}
         <TableContainer>
           <Table>
-            <TableHead sx={{ bgcolor: "grey.50" }}>
-              <TableRow>
-                <TableCell width="50%">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Tên danh mục
-                  </Typography>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "grey.50" }}>
+                <TableCell
+                  width="45%"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Tên danh mục
                 </TableCell>
-                <TableCell width="20%">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Slug
-                  </Typography>
+                <TableCell
+                  width="25%"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Slug
                 </TableCell>
-                <TableCell width="10%" align="center">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Cấp độ
-                  </Typography>
+                <TableCell
+                  width="10%"
+                  align="center"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Cấp độ
                 </TableCell>
-                <TableCell width="10%" align="center">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Trạng thái
-                  </Typography>
+                <TableCell
+                  width="10%"
+                  align="center"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Trạng thái
                 </TableCell>
-                <TableCell width="10%" align="right">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Hành động
-                  </Typography>
+                <TableCell
+                  width="10%"
+                  align="right"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Hành động
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -550,28 +630,30 @@ const CategoryManagement = () => {
               ) : filteredList.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                    <CategoryIcon
-                      sx={{ fontSize: 48, color: "text.disabled", mb: 1 }}
-                    />
-                    <Typography color="text.secondary">
-                      {flatList.length === 0
-                        ? "Chưa có danh mục nào"
-                        : "Không tìm thấy danh mục phù hợp"}
-                    </Typography>
+                    <Stack alignItems="center" spacing={2}>
+                      <Box sx={{ p: 2, borderRadius: "50%", bgcolor: "grey.100" }}>
+                        <CategoryIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+                      </Box>
+                      <Typography color="text.secondary">
+                        {flatList.length === 0
+                          ? "Chưa có danh mục nào"
+                          : "Không tìm thấy danh mục phù hợp"}
+                      </Typography>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredList.map((category) => (
                   <TableRow
                     key={category.id}
+                    hover
                     sx={{
+                      transition: "all 0.2s",
                       "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                        bgcolor: "primary.50",
                       },
-                      bgcolor:
-                        category.depth > 0
-                          ? alpha(theme.palette.grey[500], 0.02 * category.depth)
-                          : "inherit",
+                      // Minimal indent styling
+                      bgcolor: "inherit",
                     }}
                   >
                     {/* Tên danh mục với indent */}
@@ -583,12 +665,17 @@ const CategoryManagement = () => {
                           pl: category.depth * 3,
                         }}
                       >
+                        {/* Connecting Lines for Tree Structure (Optional polish) */}
+                        {category.depth > 0 && (
+                          <Box sx={{ width: 12, height: 1, bgcolor: "grey.300", mr: 1, display: "none" }} /> // Hidden for cleaner look, relying on indent
+                        )}
+
                         {/* Icon expand/collapse */}
                         {category.hasChildren ? (
                           <IconButton
                             size="small"
                             onClick={() => toggleExpand(category.id)}
-                            sx={{ mr: 1 }}
+                            sx={{ mr: 1, width: 24, height: 24 }}
                           >
                             {category.isExpanded ? (
                               <KeyboardArrowDown fontSize="small" />
@@ -597,25 +684,21 @@ const CategoryManagement = () => {
                             )}
                           </IconButton>
                         ) : (
-                          <Box sx={{ width: 32, mr: 1 }} /> // Placeholder
+                          <Box sx={{ width: 32, mr: 1 }} />
                         )}
 
-                        {/* Dấu chấm cho các level con */}
-                        {category.depth > 0 && (
-                          <FiberManualRecord
-                            sx={{
-                              fontSize: 6,
-                              color: theme.palette.primary.main,
-                              mr: 1,
-                              opacity: 0.6,
-                            }}
-                          />
+                        {/* Folder/Item Icon based on depth */}
+                        {category.depth === 0 ? (
+                          <CategoryIcon sx={{ fontSize: 20, color: "primary.main", mr: 1.5 }} />
+                        ) : (
+                          <FiberManualRecord sx={{ fontSize: 8, color: "text.disabled", mr: 1.5 }} />
                         )}
 
                         <Typography
                           variant="body2"
                           sx={{
-                            fontWeight: category.depth === 0 ? 600 : 400,
+                            fontWeight: category.depth === 0 ? 600 : 500,
+                            color: "text.primary"
                           }}
                         >
                           {category.name}
@@ -625,42 +708,68 @@ const CategoryManagement = () => {
 
                     {/* Slug */}
                     <TableCell>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontFamily: "monospace", fontSize: 12 }}
-                      >
-                        {category.slug}
-                      </Typography>
+                      <Chip label={category.slug} size="small" sx={{ borderRadius: "6px", bgcolor: "grey.100", height: 24, fontSize: 12, fontFamily: "monospace" }} />
                     </TableCell>
 
                     {/* Level */}
                     <TableCell align="center">
-                      <Chip
-                        label={`Level ${category.level}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: 11 }}
-                      />
+                      <Box sx={{ display: "inline-block", px: 1, py: 0.5, borderRadius: "6px", bgcolor: "action.hover", fontSize: 12, fontWeight: 600, color: "text.secondary" }}>
+                        LVL {category.level}
+                      </Box>
                     </TableCell>
 
                     {/* Trạng thái */}
                     <TableCell align="center">
-                      <Switch checked={category.isActive} size="small" disabled />
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 1,
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: "20px",
+                          bgcolor:
+                            category.isActive
+                              ? alpha(theme.palette.success.main, 0.1)
+                              : alpha(theme.palette.error.main, 0.1),
+                          color:
+                            category.isActive
+                              ? "success.main"
+                              : "error.main",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            bgcolor: "currentColor",
+                          }}
+                        />
+                        <Typography variant="caption" fontWeight="600">
+                          {category.isActive ? "Hoạt động" : "Vô hiệu"}
+                        </Typography>
+                      </Box>
                     </TableCell>
 
                     {/* Actions */}
                     <TableCell align="right">
                       <Stack
                         direction="row"
-                        spacing={0.5}
+                        spacing={1}
                         justifyContent="flex-end"
                       >
                         <Tooltip title="Thêm danh mục con">
                           <IconButton
                             size="small"
-                            color="primary"
                             onClick={() => handleOpenAdd(category.id)}
+                            sx={{
+                              color: "success.main",
+                              bgcolor: alpha(theme.palette.success.main, 0.1),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.success.main, 0.2),
+                              },
+                            }}
                           >
                             <Add fontSize="small" />
                           </IconButton>
@@ -668,8 +777,14 @@ const CategoryManagement = () => {
                         <Tooltip title="Chỉnh sửa">
                           <IconButton
                             size="small"
-                            color="info"
                             onClick={() => handleOpenEdit(category)}
+                            sx={{
+                              color: "primary.main",
+                              bgcolor: alpha(theme.palette.primary.main, 0.1),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.primary.main, 0.2),
+                              },
+                            }}
                           >
                             <Edit fontSize="small" />
                           </IconButton>
@@ -677,8 +792,14 @@ const CategoryManagement = () => {
                         <Tooltip title="Xóa">
                           <IconButton
                             size="small"
-                            color="error"
                             onClick={() => handleDeleteClick(category.id)}
+                            sx={{
+                              color: "error.main",
+                              bgcolor: alpha(theme.palette.error.main, 0.1),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.error.main, 0.2),
+                              },
+                            }}
                           >
                             <Delete fontSize="small" />
                           </IconButton>
@@ -691,7 +812,7 @@ const CategoryManagement = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
+      </Card>
 
       {/* Dialog Add/Edit */}
       <Dialog
@@ -699,11 +820,47 @@ const CategoryManagement = () => {
         onClose={() => setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+          },
+        }}
       >
-        <DialogTitle>
-          {editingId ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
+        <DialogTitle
+          sx={{
+            pb: 1,
+            pt: 3,
+            px: 3,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: "14px",
+              bgcolor: "primary.50",
+              color: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {editingId ? <Edit /> : <Add />}
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight="700">
+              {editingId ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {editingId ? "Cập nhật thông tin chi tiết danh mục" : "Tạo danh mục mới cho hệ thống"}
+            </Typography>
+          </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ px: 3, py: 2 }}>
           <Stack spacing={3} pt={1}>
             <TextField
               label="Tên danh mục"
@@ -713,7 +870,9 @@ const CategoryManagement = () => {
                 setFormData({ ...formData, name: e.target.value })
               }
               required
-              autoFocus
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
             />
             <TextField
               label="Slug (URL)"
@@ -723,20 +882,26 @@ const CategoryManagement = () => {
                 setFormData({ ...formData, slug: e.target.value })
               }
               helperText="Để trống sẽ tự động tạo từ tên"
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
             />
 
             <TextField
               select
               label="Danh mục cha"
               fullWidth
-              value={formData.parentId || ""}
+              value={formData.parentId === null ? "" : formData.parentId}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  parentId: e.target.value ? Number(e.target.value) : null,
+                  parentId: e.target.value === "" ? null : Number(e.target.value),
                 })
               }
               helperText="Chọn 'None' để làm danh mục gốc"
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
             >
               <MenuItem value="">
                 <em>None (Danh mục gốc)</em>
@@ -745,29 +910,56 @@ const CategoryManagement = () => {
                 .filter((c) => c.id !== editingId)
                 .map((option) => (
                   <MenuItem key={option.id} value={option.id}>
-                    <Box sx={{ pl: option.depth * 2 }}>
-                      {option.depth > 0 && "└─ "}
+                    <Box sx={{ pl: option.depth * 2, display: "flex", alignItems: "center", gap: 1 }}>
+                      {option.depth > 0 && <Box sx={{ width: 8, height: 1, bgcolor: "grey.400" }} />}
                       {option.name}
                     </Box>
                   </MenuItem>
                 ))}
             </TextField>
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                />
-              }
-              label="Kích hoạt"
-            />
+            <Box sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: "12px"
+            }}>
+              <Box>
+                <Typography variant="subtitle2">Trạng thái hoạt động</Typography>
+                <Typography variant="body2" color="text.secondary">Kích hoạt để danh mục hiển thị trên hệ thống</Typography>
+              </Box>
+              <Switch
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+              />
+            </Box>
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
-          <Button variant="contained" onClick={handleSave}>
-            {editingId ? "Cập nhật" : "Thêm mới"}
+        <DialogActions sx={{ px: 3, pb: 2, pt: 0 }}>
+          <Button
+            onClick={() => setOpenDialog(false)}
+            variant="text"
+            color="inherit"
+            sx={{ borderRadius: "10px", px: 3, textTransform: "none", fontWeight: 600 }}
+          >
+            Hủy bỏ
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            sx={{
+              borderRadius: "10px",
+              px: 4,
+              py: 1,
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
+              textTransform: "none",
+              fontWeight: 600
+            }}
+          >
+            {editingId ? "Lưu thay đổi" : "Tạo danh mục"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -776,24 +968,51 @@ const CategoryManagement = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+          },
+        }}
       >
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa danh mục này không?
+        <DialogTitle sx={{ pt: 3, px: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={2} color="error.main">
+            <Block />
+            <Typography variant="h6" fontWeight={700}>Xác nhận xóa</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3 }}>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không thể hoàn tác.
           </Typography>
-          <Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>
-            Lưu ý: Không thể xóa danh mục đang chứa danh mục con hoặc khóa học.
-          </Typography>
+          <Box sx={{ mt: 2, p: 2, bgcolor: "error.50", borderRadius: "12px", border: "1px dashed", borderColor: "error.main" }}>
+            <Typography variant="caption" color="error.main" fontWeight={600}>
+              Lưu ý: Không thể xóa danh mục đang chứa danh mục con hoặc khóa học. Hãy đảm bảo danh mục rỗng trước khi xóa.
+            </Typography>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="text"
+            color="inherit"
+            sx={{ borderRadius: "10px", px: 3, textTransform: "none", fontWeight: 600 }}
+          >
+            Hủy bỏ
+          </Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleConfirmDelete}
+            sx={{
+              borderRadius: "10px",
+              px: 3,
+              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
+              textTransform: "none",
+              fontWeight: 600
+            }}
           >
-            Xóa
+            Xóa danh mục
           </Button>
         </DialogActions>
       </Dialog>

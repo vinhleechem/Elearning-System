@@ -25,6 +25,7 @@ public class CourseResponse {
     Long instructorId;
     String instructorName;
     Long categoryId;
+    String categoryName;
     String title;
     String slug;
     String shortDescription;
@@ -37,17 +38,10 @@ public class CourseResponse {
     String level;
     CourseStatus status;
     BigDecimal price;
-    BigDecimal discountPrice;
     String language;
     Boolean hasCertificate;
-    Integer totalDurationMinutes;
-    Integer totalLectures;
     BigDecimal averageRating;
-    Integer totalStudents;
-    Integer totalReviews;
     LocalDateTime publishedAt;
-
-    List<String> tags;
     Boolean isPurchased;
     LocalDateTime purchasedAt;
 

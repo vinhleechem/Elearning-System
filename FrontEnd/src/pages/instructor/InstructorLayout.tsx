@@ -154,7 +154,9 @@ const InstructorLayout = () => {
                       height: 8,
                       bgcolor: "#3b82f6",
                       borderRadius: "50%",
-                      ml: "auto",
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
                     }}
                   />
                 )}

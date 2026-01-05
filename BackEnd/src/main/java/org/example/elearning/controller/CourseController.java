@@ -1,6 +1,7 @@
 package org.example.elearning.controller;
 
 import org.example.elearning.dto.request.CourseRequest;
+import org.example.elearning.dto.request.CourseUpdateRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.dto.response.StandardResponse;
@@ -127,7 +128,7 @@ public class CourseController {
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public ResponseEntity<StandardResponse<CourseResponse>> updateCourse(
             @PathVariable Long id,
-            @Valid @RequestBody CourseRequest request) {
+            @Valid @RequestBody CourseUpdateRequest request) {
         CourseResponse result = courseService.updateCourse(id, request);
         return ResponseEntity.ok(success("Cập nhật khóa học thành công", result));
     }
@@ -168,5 +169,17 @@ public class CourseController {
             @RequestParam String reason) {
         courseService.rejectCourse(id, reason);
         return ResponseEntity.ok(success("Từ chối khóa học thành công"));
+    }
+
+    @Operation(summary = "Cập nhật trạng thái khóa học")
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    public ResponseEntity<StandardResponse<CourseResponse>> updateCourseStatus(
+            @PathVariable Long id, 
+            @RequestBody java.util.Map<String, String> body) {
+            
+        CourseStatus status = CourseStatus.valueOf(body.get("status"));
+        CourseResponse result = courseService.updateCourseStatus(id, status);
+        return ResponseEntity.ok(success("Cập nhật trạng thái thành công", result));
     }
 }

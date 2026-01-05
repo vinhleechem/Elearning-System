@@ -26,6 +26,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  useTheme,
+  alpha,
+  CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -58,7 +62,9 @@ interface Stats {
 }
 
 const NotificationManagement = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(12);
@@ -77,6 +83,7 @@ const NotificationManagement = () => {
   });
 
   const fetchNotifications = async () => {
+    setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append("page", (page - 1).toString());
@@ -105,6 +112,8 @@ const NotificationManagement = () => {
       enqueueSnackbar(error.message || "Lỗi khi tải danh sách thông báo", {
         variant: "error",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -184,284 +193,337 @@ const NotificationManagement = () => {
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
   return (
-    <Box sx={{ p: 3, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Quản lý Thông báo
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Gửi và quản lý thông báo đến người dùng
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+            }}
+          >
+            Quản lý Thông báo
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Gửi và quản lý thông báo đến người dùng
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<SendIcon />}
+          onClick={() => setOpenSendDialog(true)}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            px: 3,
+            py: 1.5,
+            boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.3)",
+            background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+            "&:hover": {
+              boxShadow: "0 6px 20px 0 rgba(37, 99, 235, 0.4)",
+              transform: "translateY(-1px)",
+            },
+            transition: "all 0.2s ease-in-out",
+          }}
+        >
+          Gửi thông báo
+        </Button>
       </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Tổng thông báo
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {totalElements}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 56, height: 56 }}>
-                  <NotificationsIcon fontSize="large" />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Chưa đọc
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {stats.unread}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 56, height: 56 }}>
-                  <UnreadIcon fontSize="large" />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Đã đọc
-                  </Typography>
-                  <Typography variant="h3" fontWeight={700}>
-                    {stats.read}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 56, height: 56 }}>
-                  <CheckCircleIcon fontSize="large" />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filters & Actions */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Tìm kiếm"
-              placeholder="Tìm kiếm thông báo..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={6} md={2}>
-            <TextField
-              fullWidth
-              label="Tên người nhận"
-              placeholder="Nhập tên..."
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={6} md={2.5}>
-            <TextField
-              fullWidth
-              select
-              label="Trạng thái"
-              value={isRead}
-              onChange={(e) => setIsRead(e.target.value)}
-              size="small"
-            >
-              <MenuItem value="">Tất cả</MenuItem>
-              <MenuItem value="false">Chưa đọc</MenuItem>
-              <MenuItem value="true">Đã đọc</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={6} md={2}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchNotifications}
-              fullWidth
-              size="small"
-            >
-              Làm mới
-            </Button>
-          </Grid>
-          <Grid item xs={6} md={2.5}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={() => setOpenSendDialog(true)}
-              fullWidth
-              size="small"
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng thông báo",
+            value: totalElements,
+            color: "#2563eb",
+            icon: <NotificationsIcon />,
+          },
+          {
+            label: "Chưa đọc",
+            value: stats.unread,
+            color: "#f59e0b",
+            icon: <UnreadIcon />,
+          },
+          {
+            label: "Đã đọc",
+            value: stats.read,
+            color: "#10b981",
+            icon: <CheckCircleIcon />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
+            <Card
               sx={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)",
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
                 },
               }}
             >
-              Gửi thông báo
-            </Button>
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
-        </Grid>
-      </Paper>
+        ))}
+      </Grid>
 
-      {/* Notifications Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "primary.light" }}>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>ID</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Người nhận</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Loại</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Tiêu đề</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Nội dung</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Trạng thái</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>Thời gian</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 700, color: "primary.main" }}>
-                Hành động
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredNotifications.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                  <Stack spacing={2} alignItems="center">
-                    <NotificationsIcon sx={{ fontSize: 64, color: "text.disabled" }} />
-                    <Typography variant="h6" color="text.secondary">
-                      Không có thông báo nào
-                    </Typography>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredNotifications.map((notification) => (
-                <TableRow
-                  key={notification.notificationId}
-                  hover
-                  sx={{
-                    bgcolor: notification.isRead ? "transparent" : "action.hover",
-                    "&:hover": { bgcolor: "action.selected" },
-                  }}
-                >
-                  <TableCell>{notification.notificationId}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {notification.userName || `User #${notification.userId}`}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={notification.type}
-                      size="small"
-                      color={getTypeColor(notification.type) as any}
-                      sx={{ fontWeight: 600 }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={notification.isRead ? 400 : 600}>
-                      {notification.title}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: 300 }}>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {notification.message}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={notification.isRead ? <CheckCircleIcon /> : <UnreadIcon />}
-                      label={notification.isRead ? "Đã đọc" : "Chưa đọc"}
-                      size="small"
-                      color={notification.isRead ? "default" : "primary"}
-                      variant={notification.isRead ? "outlined" : "filled"}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {new Date(notification.createdAt).toLocaleString("vi-VN")}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(notification.notificationId)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+      {/* Main Content Card */}
+      <Card
+        sx={{
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          border: "1px solid",
+          borderColor: "grey.100",
+          overflow: "visible",
+        }}
+      >
+        {/* Filter Toolbar */}
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                placeholder="Tìm kiếm thông báo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: "12px",
+                    bgcolor: "grey.50",
+                    "& fieldset": { border: "none" },
+                    "&:hover": { bgcolor: "grey.100" },
+                    "&.Mui-focused": {
+                      bgcolor: "white",
+                      boxShadow: "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                    },
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                placeholder="Tên người nhận..."
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                select
+                value={isRead}
+                onChange={(e) => setIsRead(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  },
+                }}
+              >
+                <MenuItem value="">Tất cả</MenuItem>
+                <MenuItem value="false">Chưa đọc</MenuItem>
+                <MenuItem value="true">Đã đọc</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, md: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchNotifications}
+                fullWidth
+                sx={{
+                  borderRadius: "12px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  height: "100%",
+                }}
+              >
+                Làm mới
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Table */}
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Người nhận</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Tiêu đề</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Nội dung</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>
+                    Hành động
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredNotifications.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                      <Stack spacing={2} alignItems="center">
+                        <NotificationsIcon sx={{ fontSize: 64, color: "text.disabled" }} />
+                        <Typography variant="body1" color="text.secondary">
+                          Không có thông báo nào
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredNotifications.map((notification) => (
+                    <TableRow
+                      key={notification.notificationId}
+                      sx={{
+                        bgcolor: notification.isRead ? "transparent" : alpha(theme.palette.primary.main, 0.02),
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          #{notification.notificationId}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {notification.userName || `User #${notification.userId}`}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={notification.type}
+                          size="small"
+                          color={getTypeColor(notification.type) as any}
+                          sx={{ fontWeight: 500, borderRadius: "6px" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={notification.isRead ? 400 : 600}>
+                          {notification.title}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {notification.message}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={notification.isRead ? <CheckCircleIcon /> : <UnreadIcon />}
+                          label={notification.isRead ? "Đã đọc" : "Chưa đọc"}
+                          size="small"
+                          color={notification.isRead ? "default" : "primary"}
+                          variant={notification.isRead ? "outlined" : "filled"}
+                          sx={{ borderRadius: "6px" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(notification.createdAt).toLocaleString("vi-VN")}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Xóa thông báo">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(notification.notificationId)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-            size="large"
-          />
-        </Box>
-      )}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Box
+            sx={{
+              p: 2,
+              display: "flex",
+              justifyContent: "center",
+              borderTop: "1px solid",
+              borderColor: "grey.100",
+            }}
+          >
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
+      </Card>
 
       {/* Send Notification Dialog */}
       <Dialog
@@ -470,13 +532,23 @@ const NotificationManagement = () => {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2 },
+          sx: { borderRadius: "20px", boxShadow: "0 4px 30px rgba(0,0,0,0.1)" },
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle>
           <Stack direction="row" spacing={1} alignItems="center">
-            <SendIcon color="primary" />
-            <Typography variant="h6" fontWeight={600}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: "8px",
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: "primary.main",
+                display: "flex",
+              }}
+            >
+              <SendIcon />
+            </Box>
+            <Typography variant="h6" fontWeight={700}>
               Gửi thông báo mới
             </Typography>
           </Stack>
@@ -487,21 +559,19 @@ const NotificationManagement = () => {
             <TextField
               label="User ID"
               value={sendForm.userId}
-              onChange={(e) =>
-                setSendForm({ ...sendForm, userId: e.target.value })
-              }
+              onChange={(e) => setSendForm({ ...sendForm, userId: e.target.value })}
               fullWidth
               required
               type="number"
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
             <TextField
               select
               label="Loại thông báo"
               value={sendForm.type}
-              onChange={(e) =>
-                setSendForm({ ...sendForm, type: e.target.value })
-              }
+              onChange={(e) => setSendForm({ ...sendForm, type: e.target.value })}
               fullWidth
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             >
               <MenuItem value="SYSTEM">SYSTEM</MenuItem>
               <MenuItem value="SUCCESS">SUCCESS</MenuItem>
@@ -511,42 +581,48 @@ const NotificationManagement = () => {
             <TextField
               label="Tiêu đề"
               value={sendForm.title}
-              onChange={(e) =>
-                setSendForm({ ...sendForm, title: e.target.value })
-              }
+              onChange={(e) => setSendForm({ ...sendForm, title: e.target.value })}
               fullWidth
               required
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
             <TextField
               label="Nội dung"
               value={sendForm.message}
-              onChange={(e) =>
-                setSendForm({ ...sendForm, message: e.target.value })
-              }
+              onChange={(e) => setSendForm({ ...sendForm, message: e.target.value })}
               fullWidth
               multiline
               rows={4}
               required
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
             <TextField
               label="Link (không bắt buộc)"
               value={sendForm.link}
-              onChange={(e) =>
-                setSendForm({ ...sendForm, link: e.target.value })
-              }
+              onChange={(e) => setSendForm({ ...sendForm, link: e.target.value })}
               fullWidth
               placeholder="/admin/courses"
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setOpenSendDialog(false)}>Hủy</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => setOpenSendDialog(false)}
+            variant="outlined"
+            sx={{ borderRadius: "10px", textTransform: "none" }}
+          >
+            Hủy
+          </Button>
           <Button
             variant="contained"
             onClick={handleSendNotification}
             startIcon={<SendIcon />}
             sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              borderRadius: "10px",
+              textTransform: "none",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
+              background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
             }}
           >
             Gửi ngay

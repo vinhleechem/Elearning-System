@@ -35,18 +35,17 @@ export interface PublicCourseResponse {
   publishedAt?: string;
   totalDurationMinutes?: number;
   totalLectures?: number;
-  tags?: string[];
   isPurchased?: boolean;
   purchasedAt?: string;
   // Promotion info
   promotionName?: string;
   promotionType?:
-    | "SEASONAL"
-    | "FLASH_SALE"
-    | "CLEARANCE"
-    | "NEW_YEAR"
-    | "BLACK_FRIDAY"
-    | "SPECIAL_EVENT";
+  | "SEASONAL"
+  | "FLASH_SALE"
+  | "CLEARANCE"
+  | "NEW_YEAR"
+  | "BLACK_FRIDAY"
+  | "SPECIAL_EVENT";
   discountPercentage?: number;
   promotionEndDate?: string;
 }
@@ -148,6 +147,25 @@ export const courseService = {
       throw new Error(response.message || "Không lấy được danh sách khóa học");
     }
 
+    return response.data;
+  },
+
+  updateCourse: async (
+    token: string,
+    courseId: number,
+    data: Partial<CreateCourseRequest>,
+  ): Promise<PublicCourseResponse> => {
+    const response = await httpClient<PublicCourseResponse>(`/courses/${courseId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.data) {
+      throw new Error(response.message || "Không thể cập nhật khóa học");
+    }
     return response.data;
   },
 
