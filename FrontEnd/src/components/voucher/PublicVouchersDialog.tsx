@@ -6,16 +6,14 @@ import {
   DialogTitle,
   DialogContent,
   Typography,
-  Grid,
   Card,
   CardContent,
   Chip,
   IconButton,
   Alert,
-  TextField,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { voucherService } from "../../service/voucherService";
 import type { Voucher } from "../../types/voucher";
@@ -130,7 +128,7 @@ export const PublicVouchersDialog: React.FC<PublicVouchersDialogProps> = ({
                 voucher.currentUsageCount >= voucher.totalUsageLimit;
 
               return (
-                <Grid item xs={12} key={voucher.voucherId}>
+                <Grid size={{ xs: 12 }} key={voucher.voucherId}>
                   <Card
                     sx={{
                       border: "1px solid",

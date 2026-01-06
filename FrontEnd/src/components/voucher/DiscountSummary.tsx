@@ -1,9 +1,6 @@
 import React from "react";
 import { Box, Typography, Divider, Paper, Stack, Chip } from "@mui/material";
-import type {
-  DiscountCalculationResponse,
-  DiscountDetail,
-} from "../../types/voucher";
+import type { DiscountCalculationResponse } from "../../types/voucher";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CampaignIcon from "@mui/icons-material/Campaign";
 

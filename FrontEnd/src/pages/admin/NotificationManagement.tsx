@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Paper,
   Grid,
   Card,
   CardContent,
-  Avatar,
   IconButton,
   Chip,
   TextField,
@@ -187,7 +185,7 @@ const NotificationManagement = () => {
   const filteredNotifications = notifications.filter(
     (n) =>
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().includes(searchQuery.toLowerCase())
+      n.message.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const totalPages = Math.ceil(totalElements / rowsPerPage);
@@ -195,7 +193,12 @@ const NotificationManagement = () => {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
+      >
         <Box>
           <Typography
             variant="h4"
@@ -332,7 +335,8 @@ const NotificationManagement = () => {
                     "&:hover": { bgcolor: "grey.100" },
                     "&.Mui-focused": {
                       bgcolor: "white",
-                      boxShadow: "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
+                      boxShadow:
+                        "0 0 0 2px " + alpha(theme.palette.primary.main, 0.2),
                     },
                   },
                 }}
@@ -414,7 +418,9 @@ const NotificationManagement = () => {
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                       <Stack spacing={2} alignItems="center">
-                        <NotificationsIcon sx={{ fontSize: 64, color: "text.disabled" }} />
+                        <NotificationsIcon
+                          sx={{ fontSize: 64, color: "text.disabled" }}
+                        />
                         <Typography variant="body1" color="text.secondary">
                           Không có thông báo nào
                         </Typography>
@@ -426,7 +432,9 @@ const NotificationManagement = () => {
                     <TableRow
                       key={notification.notificationId}
                       sx={{
-                        bgcolor: notification.isRead ? "transparent" : alpha(theme.palette.primary.main, 0.02),
+                        bgcolor: notification.isRead
+                          ? "transparent"
+                          : alpha(theme.palette.primary.main, 0.02),
                         "&:hover": {
                           bgcolor: alpha(theme.palette.primary.main, 0.04),
                         },
@@ -439,7 +447,8 @@ const NotificationManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          {notification.userName || `User #${notification.userId}`}
+                          {notification.userName ||
+                            `User #${notification.userId}`}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -451,7 +460,10 @@ const NotificationManagement = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight={notification.isRead ? 400 : 600}>
+                        <Typography
+                          variant="body2"
+                          fontWeight={notification.isRead ? 400 : 600}
+                        >
                           {notification.title}
                         </Typography>
                       </TableCell>
@@ -471,7 +483,13 @@ const NotificationManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          icon={notification.isRead ? <CheckCircleIcon /> : <UnreadIcon />}
+                          icon={
+                            notification.isRead ? (
+                              <CheckCircleIcon />
+                            ) : (
+                              <UnreadIcon />
+                            )
+                          }
                           label={notification.isRead ? "Đã đọc" : "Chưa đọc"}
                           size="small"
                           color={notification.isRead ? "default" : "primary"}
@@ -481,7 +499,9 @@ const NotificationManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          {new Date(notification.createdAt).toLocaleString("vi-VN")}
+                          {new Date(notification.createdAt).toLocaleString(
+                            "vi-VN",
+                          )}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
@@ -489,7 +509,9 @@ const NotificationManagement = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDelete(notification.notificationId)}
+                            onClick={() =>
+                              handleDelete(notification.notificationId)
+                            }
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -559,7 +581,9 @@ const NotificationManagement = () => {
             <TextField
               label="User ID"
               value={sendForm.userId}
-              onChange={(e) => setSendForm({ ...sendForm, userId: e.target.value })}
+              onChange={(e) =>
+                setSendForm({ ...sendForm, userId: e.target.value })
+              }
               fullWidth
               required
               type="number"
@@ -569,7 +593,9 @@ const NotificationManagement = () => {
               select
               label="Loại thông báo"
               value={sendForm.type}
-              onChange={(e) => setSendForm({ ...sendForm, type: e.target.value })}
+              onChange={(e) =>
+                setSendForm({ ...sendForm, type: e.target.value })
+              }
               fullWidth
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             >
@@ -581,7 +607,9 @@ const NotificationManagement = () => {
             <TextField
               label="Tiêu đề"
               value={sendForm.title}
-              onChange={(e) => setSendForm({ ...sendForm, title: e.target.value })}
+              onChange={(e) =>
+                setSendForm({ ...sendForm, title: e.target.value })
+              }
               fullWidth
               required
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
@@ -589,7 +617,9 @@ const NotificationManagement = () => {
             <TextField
               label="Nội dung"
               value={sendForm.message}
-              onChange={(e) => setSendForm({ ...sendForm, message: e.target.value })}
+              onChange={(e) =>
+                setSendForm({ ...sendForm, message: e.target.value })
+              }
               fullWidth
               multiline
               rows={4}
@@ -599,7 +629,9 @@ const NotificationManagement = () => {
             <TextField
               label="Link (không bắt buộc)"
               value={sendForm.link}
-              onChange={(e) => setSendForm({ ...sendForm, link: e.target.value })}
+              onChange={(e) =>
+                setSendForm({ ...sendForm, link: e.target.value })
+              }
               fullWidth
               placeholder="/admin/courses"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Box, Button, Typography, Grid } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Button, Grid } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import VoucherInput from "./VoucherInput";
@@ -31,7 +31,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({
 
       {/* Quick Actions */}
       <Grid container spacing={2} mt={2}>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <Button
             fullWidth
             variant="outlined"
@@ -41,7 +41,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({
             Voucher của tôi
           </Button>
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <Button
             fullWidth
             variant="outlined"

@@ -11,10 +11,7 @@ import {
   Stack,
 } from "@mui/material";
 import { Notifications as NotificationsIcon } from "@mui/icons-material";
-import {
-  webSocketService,
-  type Notification,
-} from "../../service/webSocketService";
+import { type Notification } from "../../service/webSocketService";
 import { useAuthStore } from "../../store/authStore";
 import { useSnackbar } from "notistack";
 

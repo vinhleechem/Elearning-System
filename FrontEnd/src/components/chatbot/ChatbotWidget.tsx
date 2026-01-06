@@ -397,7 +397,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const inactivityTimerRef = useRef<number | null>(null);
 
   // Computed values
   const suggestedQuestions = useMemo(

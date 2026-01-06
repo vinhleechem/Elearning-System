@@ -8,6 +8,19 @@ export interface OrderItemResponse {
   finalPrice?: number;
 }
 
+export interface DiscountApplied {
+  type: 'PROMOTION' | 'VOUCHER';
+  name: string;
+  description: string;
+  amount: number;
+  code?: string;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
+  applicableTo?: string;
+  minOrderValue?: number;
+  usageCount?: number;
+}
+
 export interface OrderResponse {
   orderId: number;
   userId: number;
@@ -18,6 +31,7 @@ export interface OrderResponse {
   finalAmount: number;
   status: string;
   createdAt: string;
+  discountsApplied?: DiscountApplied[];
 }
 
 export interface CreateOrderRequest {

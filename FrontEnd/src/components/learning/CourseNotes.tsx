@@ -8,7 +8,7 @@ import {
     IconButton,
     Paper
 } from "@mui/material";
-import { Add, Edit, Delete, AccessTime } from "@mui/icons-material";
+import { Add, Delete, AccessTime } from "@mui/icons-material";
 
 interface Note {
     id: number;
@@ -26,7 +26,6 @@ const CourseNotes: React.FC<CourseNotesProps> = ({ currentTime, onSeek }) => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [isAdding, setIsAdding] = useState(false);
     const [newNoteContent, setNewNoteContent] = useState("");
-    const [editingId, setEditingId] = useState<number | null>(null);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

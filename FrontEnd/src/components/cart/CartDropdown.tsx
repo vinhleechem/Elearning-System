@@ -95,7 +95,6 @@ const CartDropdown: React.FC<CartDropdownProps> = ({
   items,
   anchorEl,
   open,
-  onClose,
   onMouseEnter,
   onMouseLeave,
 }) => {

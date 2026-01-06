@@ -141,25 +141,25 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ open, onClose, orde
                 <Divider sx={{ my: 2 }} />
 
                 {/* Discounts Applied */}
-                {(order as any).discountsApplied && (order as any).discountsApplied.length > 0 && (
+                {order.discountsApplied && order.discountsApplied.length > 0 && (
                     <>
                         <Box mb={3}>
                             <Box display="flex" alignItems="center" gap={1} mb={1.5}>
                                 <LocalOfferIcon color="error" fontSize="small" />
                                 <Typography variant="subtitle1" fontWeight="bold">
-                                    Discounts Applied ({order.discountsApplied.length})
+                                    Discounts Applied ({order.discountsApplied?.length})
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                {(order as any).discountsApplied.map((discount: any, index: number) => (
+                                {order.discountsApplied?.map((discount, index) => (
                                     <Box
                                         key={index}
                                         sx={{
                                             p: 2,
                                             borderRadius: 2,
                                             border: '2px solid',
-                                            borderColor: discount.type === 'PROMOTION' ? 'orange.300' : 'purple.300',
-                                            bgcolor: discount.type === 'PROMOTION' ? 'orange.50' : 'purple.50',
+                                            borderColor: discount.type === 'PROMOTION' ? 'warning.main' : 'secondary.main',
+                                            bgcolor: discount.type === 'PROMOTION' ? 'warning.light' : 'secondary.light',
                                         }}
                                     >
                                         <Box display="flex" justifyContent="space-between" alignItems="start" mb={1}>
@@ -208,8 +208,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ open, onClose, orde
                                                 <Chip
                                                     label={
                                                         discount.discountType === 'PERCENTAGE'
-                                                            ? `${discount.discountValue}% OFF`
-                                                            : formatCurrency(discount.discountValue)
+                                                            ? `${discount.discountValue ?? 0}% OFF`
+                                                            : formatCurrency(discount.discountValue ?? 0)
                                                     }
                                                     size="small"
                                                     variant="outlined"

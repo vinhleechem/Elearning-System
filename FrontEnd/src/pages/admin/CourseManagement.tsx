@@ -70,10 +70,13 @@ const CourseManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(null);
+  const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(
+    null,
+  );
   const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [courseToUpdateStatus, setCourseToUpdateStatus] = useState<CourseResponse | null>(null);
+  const [courseToUpdateStatus, setCourseToUpdateStatus] =
+    useState<CourseResponse | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false); // Imported
   const itemsPerPage = 10;
@@ -352,16 +355,6 @@ const CourseManagement = () => {
     }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "N/A";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
-
   const handleImportExcel = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -381,7 +374,7 @@ const CourseManagement = () => {
             size: itemsPerPage,
             search: searchTerm || undefined,
             status: statusFilter !== "ALL" ? (statusFilter as any) : undefined,
-          }
+          },
         );
         setCourses(pageResult.data || []);
         setTotalPages(pageResult.pagination?.totalPages ?? 1);
@@ -750,7 +743,6 @@ const CourseManagement = () => {
                         <Typography variant="body2" fontWeight={600}>
                           {formatPrice(course.price)}
                         </Typography>
-
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">

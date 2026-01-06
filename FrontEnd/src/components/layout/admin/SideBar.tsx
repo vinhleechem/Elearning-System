@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router";
 import { useSidebar } from "../../../context/SidebarContext";
 import {
   AccountCircle,
-  CalendarViewMonthRounded,
   ChevronRight,
   GridView,
   MoreHoriz,

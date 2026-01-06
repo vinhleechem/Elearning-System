@@ -15,12 +15,10 @@ import { Favorite } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { formatCurrency } from "../libs/utils";
 import { useWishlistStore } from "../store/wishlistStore";
-import { useCartStore } from "../store/cartStore";
 
 const WishlistPage = () => {
   const navigate = useNavigate();
   const { items: wishlistCourses, removeFromWishlist } = useWishlistStore();
-  const { addToCart } = useCartStore();
 
   const handleRemoveFromWishlist = async (courseId: number) => {
     await removeFromWishlist(courseId);

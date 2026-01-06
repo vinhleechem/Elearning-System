@@ -1,6 +1,6 @@
 /**
  * Demo Page - Test ChatbotWidget
- * 
+ *
  * Trang demo để test chatbot với các scenarios khác nhau
  */
 
@@ -11,10 +11,10 @@ import {
   Typography,
   Paper,
   Button,
-  Grid,
   Card,
   CardContent,
   Chip,
+  Grid,
 } from "@mui/material";
 import ChatbotWidget from "../components/chatbot/ChatbotWidget";
 
@@ -36,7 +36,11 @@ const ChatbotDemoPage: React.FC = () => {
     },
     {
       name: "Chi tiết khóa học",
-      context: { page: "course_detail", course_id: 123, course_title: "Python Basic" },
+      context: {
+        page: "course_detail",
+        course_id: 123,
+        course_title: "Python Basic",
+      },
       description: "Câu hỏi về khóa học cụ thể",
     },
     {
@@ -75,7 +79,7 @@ const ChatbotDemoPage: React.FC = () => {
         </Typography>
         <Grid container spacing={2}>
           {scenarios.map((scenario, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
               <Card
                 sx={{
                   cursor: "pointer",
@@ -96,7 +100,11 @@ const ChatbotDemoPage: React.FC = () => {
                   <Typography variant="h6" fontWeight={600} gutterBottom>
                     {scenario.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1 }}
+                  >
                     {scenario.description}
                   </Typography>
                   <Chip
@@ -118,15 +126,17 @@ const ChatbotDemoPage: React.FC = () => {
           📍 Vị trí Chatbot
         </Typography>
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          {["bottom-right", "bottom-left", "top-right", "top-left"].map((pos) => (
-            <Button
-              key={pos}
-              variant={position === pos ? "contained" : "outlined"}
-              onClick={() => setPosition(pos as any)}
-            >
-              {pos}
-            </Button>
-          ))}
+          {["bottom-right", "bottom-left", "top-right", "top-left"].map(
+            (pos) => (
+              <Button
+                key={pos}
+                variant={position === pos ? "contained" : "outlined"}
+                onClick={() => setPosition(pos as any)}
+              >
+                {pos}
+              </Button>
+            ),
+          )}
         </Box>
       </Paper>
 
@@ -155,7 +165,7 @@ const ChatbotDemoPage: React.FC = () => {
           ✨ Tính năng có thể test
         </Typography>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               📝 Chat Features:
             </Typography>
@@ -167,7 +177,7 @@ const ChatbotDemoPage: React.FC = () => {
               <li>Message status</li>
             </ul>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               🎯 Smart Features:
             </Typography>
@@ -179,7 +189,7 @@ const ChatbotDemoPage: React.FC = () => {
               <li>Smart suggestions</li>
             </ul>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               📎 Upload Features:
             </Typography>
@@ -189,7 +199,7 @@ const ChatbotDemoPage: React.FC = () => {
               <li>Supported: JPG, PNG, PDF, DOC, TXT, CSV</li>
             </ul>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               🧠 AI Features:
             </Typography>
@@ -235,4 +245,3 @@ const ChatbotDemoPage: React.FC = () => {
 };
 
 export default ChatbotDemoPage;
-

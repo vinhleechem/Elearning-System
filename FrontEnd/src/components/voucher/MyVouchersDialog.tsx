@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   Typography,
-  Grid,
   Card,
   CardContent,
   Chip,
   IconButton,
   Alert,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -91,7 +90,7 @@ export const MyVouchersDialog: React.FC<MyVouchersDialogProps> = ({
         ) : (
           <Grid container spacing={2}>
             {vouchers.map((voucher) => (
-              <Grid item xs={12} key={voucher.userVoucherId}>
+              <Grid size={{ xs: 12 }} key={voucher.userVoucherId}>
                 <Card
                   sx={{
                     border:

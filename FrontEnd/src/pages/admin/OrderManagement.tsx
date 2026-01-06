@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -15,7 +14,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   Pagination,
@@ -25,13 +23,8 @@ import {
   Grid,
   Card,
   CardContent,
-  Stack,
   useTheme,
   alpha,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
 } from "@mui/material";
 import {
   Visibility as VisibilityIcon,
@@ -50,12 +43,13 @@ import OrderDetailModal from "../../components/admin/OrderDetailModal";
 
 const OrderManagement: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(
+    null,
+  );
   const [openDetailModal, setOpenDetailModal] = useState<boolean>(false);
   const [openCancelDialog, setOpenCancelDialog] = useState<boolean>(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderResponse | null>(
@@ -82,7 +76,7 @@ const OrderManagement: React.FC = () => {
   }, [page]);
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
+    _event: React.ChangeEvent<unknown>,
     value: number,
   ) => {
     setPage(value);
@@ -141,7 +135,12 @@ const OrderManagement: React.FC = () => {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
+      >
         <Box>
           <Typography
             variant="h4"

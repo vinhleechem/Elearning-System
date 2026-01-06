@@ -1,37 +1,62 @@
-// Voucher Enums (must be defined before interfaces that use them)
-export enum VoucherType {
-  PUBLIC = "PUBLIC",
-  PERSONAL = "PERSONAL",
-  REFERRAL = "REFERRAL",
-  BIRTHDAY = "BIRTHDAY",
-  FIRST_ORDER = "FIRST_ORDER",
-  LOYALTY = "LOYALTY",
-}
+// Voucher Types
+export type VoucherType =
+  | "PUBLIC"
+  | "PERSONAL"
+  | "REFERRAL"
+  | "BIRTHDAY"
+  | "FIRST_ORDER"
+  | "LOYALTY";
 
-export enum VoucherApplicability {
-  ALL = "ALL",
-  SPECIFIC_COURSES = "SPECIFIC_COURSES",
-  INSTRUCTOR_COURSES = "INSTRUCTOR_COURSES",
-}
+export type VoucherApplicability =
+  | "ALL"
+  | "SPECIFIC_COURSES"
+  | "INSTRUCTOR_COURSES";
 
-export enum VoucherSource {
-  ADMIN_GRANTED = "ADMIN_GRANTED",
-  SELF_CLAIMED = "SELF_CLAIMED",
-  REFERRAL = "REFERRAL",
-  BIRTHDAY_GIFT = "BIRTHDAY_GIFT",
-  LOYALTY_REWARD = "LOYALTY_REWARD",
-}
+export type VoucherSource =
+  | "ADMIN_GRANTED"
+  | "SELF_CLAIMED"
+  | "REFERRAL"
+  | "BIRTHDAY_GIFT"
+  | "LOYALTY_REWARD";
 
-export enum VoucherStatus {
-  AVAILABLE = "AVAILABLE",
-  USED = "USED",
-  EXPIRED = "EXPIRED",
-}
+export type VoucherStatus = "AVAILABLE" | "USED" | "EXPIRED";
 
-export enum DiscountType {
-  PERCENTAGE = "PERCENTAGE",
-  FIXED = "FIXED",
-}
+export type DiscountType = "PERCENTAGE" | "FIXED";
+
+// Constants for easy reference
+export const VoucherType = {
+  PUBLIC: "PUBLIC",
+  PERSONAL: "PERSONAL",
+  REFERRAL: "REFERRAL",
+  BIRTHDAY: "BIRTHDAY",
+  FIRST_ORDER: "FIRST_ORDER",
+  LOYALTY: "LOYALTY",
+} as const;
+
+export const VoucherApplicability = {
+  ALL: "ALL",
+  SPECIFIC_COURSES: "SPECIFIC_COURSES",
+  INSTRUCTOR_COURSES: "INSTRUCTOR_COURSES",
+} as const;
+
+export const VoucherSource = {
+  ADMIN_GRANTED: "ADMIN_GRANTED",
+  SELF_CLAIMED: "SELF_CLAIMED",
+  REFERRAL: "REFERRAL",
+  BIRTHDAY_GIFT: "BIRTHDAY_GIFT",
+  LOYALTY_REWARD: "LOYALTY_REWARD",
+} as const;
+
+export const VoucherStatus = {
+  AVAILABLE: "AVAILABLE",
+  USED: "USED",
+  EXPIRED: "EXPIRED",
+} as const;
+
+export const DiscountType = {
+  PERCENTAGE: "PERCENTAGE",
+  FIXED: "FIXED",
+} as const;
 
 // Voucher Interfaces
 export interface Voucher {
@@ -47,6 +72,7 @@ export interface Voucher {
   totalUsageLimit?: number;
   perUserLimit: number;
   usedCount: number;
+  currentUsageCount?: number;
   startDate: string;
   endDate: string;
   isActive: boolean;

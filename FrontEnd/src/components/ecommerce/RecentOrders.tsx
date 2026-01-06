@@ -29,7 +29,7 @@ export default function RecentOrders() {
     fetchRecentOrders();
   }, []);
 
-  const getStatusBadgeColor = (status: string) => {
+  const getStatusBadgeColor = (status: string): "success" | "warning" | "error" | "light" => {
     switch (status.toUpperCase()) {
       case "COMPLETED":
       case "DELIVERED":
@@ -42,7 +42,7 @@ export default function RecentOrders() {
       case "FAILED":
         return "error";
       default:
-        return "default";
+        return "light";
     }
   };
 

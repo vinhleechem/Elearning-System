@@ -29,14 +29,16 @@ class WebSocketService {
       return;
     }
 
-    const baseUrl = import.meta.env.VITE_BASE_URL;
+    // WebSocket URL from env (should include /ws in the URL)
+    const wsUrl = import.meta.env.VITE_WS_URL;
+
     const token = getAuthStoreState().tokens?.accessToken;
-    const wsUrl = `${baseUrl}/ws?token=${token}`;
+    const wsUrlWithToken = `${wsUrl}?token=${token}`;
 
     console.log("🔌 Connecting WebSocket with token:", token ? "✅ Token exists" : "❌ No token");
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS(wsUrl) as any,
+      webSocketFactory: () => new SockJS(wsUrlWithToken) as any,
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },

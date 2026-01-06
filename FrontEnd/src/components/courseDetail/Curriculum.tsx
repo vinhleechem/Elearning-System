@@ -34,7 +34,6 @@ const formatSeconds = (secs: number) => {
   if (!secs) return "";
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
-  const s = secs % 60;
   if (h > 0) return `${h} giờ ${m} phút`;
   return `${m} phút`;
 };

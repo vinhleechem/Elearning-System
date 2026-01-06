@@ -16,9 +16,8 @@ import {
     Tab,
     Divider,
     Switch,
-    FormControlLabel,
 } from "@mui/material";
-import { School, FolderOpen, CloudUpload, Edit, Add } from "@mui/icons-material";
+import { FolderOpen, CloudUpload, Edit, Add } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { useState, useEffect } from "react";
 import { fileUploadService } from "../../service/fileUploadService";

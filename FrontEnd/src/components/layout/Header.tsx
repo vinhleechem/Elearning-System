@@ -9,7 +9,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import {
   ShoppingCartOutlined,
   FavoriteBorder,
-  NotificationsOutlined,
 } from "@mui/icons-material";
 import {
   Badge,

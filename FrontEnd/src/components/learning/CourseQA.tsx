@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
     Box,
     Typography,
@@ -9,10 +9,9 @@ import {
     Avatar,
     IconButton,
     InputAdornment,
-    Chip,
     type SelectChangeEvent
 } from "@mui/material";
-import { Search, ThumbUp, ChatBubbleOutline, FilterList } from "@mui/icons-material";
+import { Search, ThumbUp, ChatBubbleOutline } from "@mui/icons-material";
 
 interface Question {
     id: number;

@@ -25,13 +25,13 @@ import {
   Tooltip,
   Card,
   CardContent,
-  Grid,
   Tabs,
   Tab,
   Chip,
   useTheme,
   alpha,
   CircularProgress,
+  Grid,
 } from "@mui/material";
 import {
   Edit,
@@ -98,14 +98,11 @@ const UserManagement = () => {
     const fetchUsers = async () => {
       if (!tokens?.accessToken) return;
       try {
-        const pageResult = await adminUserService.getUsers(
-          tokens.accessToken,
-          {
-            page: page - 1,
-            size: itemsPerPage,
-            search: searchTerm,
-          },
-        );
+        const pageResult = await adminUserService.getUsers(tokens.accessToken, {
+          page: page - 1,
+          size: itemsPerPage,
+          search: searchTerm,
+        });
 
         const mappedUsers: User[] = (pageResult.data || []).map((u) => {
           const normalizedRoles =
@@ -130,16 +127,16 @@ const UserManagement = () => {
             instructor:
               role === "INSTRUCTOR"
                 ? {
-                  id: u.instructorId,
-                  headline: u.instructorHeadline,
-                  biography: u.instructorBiography,
-                  website: u.instructorWebsite,
-                  linkedin: u.instructorLinkedin,
-                  twitter: u.instructorTwitter,
-                  youtube: u.instructorYoutube,
-                  totalStudents: u.instructorTotalStudents,
-                  totalCourses: u.instructorTotalCourses,
-                }
+                    id: u.instructorId,
+                    headline: u.instructorHeadline,
+                    biography: u.instructorBiography,
+                    website: u.instructorWebsite,
+                    linkedin: u.instructorLinkedin,
+                    twitter: u.instructorTwitter,
+                    youtube: u.instructorYoutube,
+                    totalStudents: u.instructorTotalStudents,
+                    totalCourses: u.instructorTotalCourses,
+                  }
                 : undefined,
           };
         });
@@ -296,26 +293,26 @@ const UserManagement = () => {
         users.map((user) =>
           user.id === editingUser.id
             ? {
-              ...user,
-              name: formData.name,
-              email: formData.email,
-              role: formData.role,
-              status: formData.status,
-              instructor:
-                formData.role === "INSTRUCTOR"
-                  ? {
-                    ...(user.instructor ?? {}),
-                    headline: formData.instructorHeadline || undefined,
-                    biography: formData.instructorBiography || undefined,
-                    website: formData.instructorWebsite || undefined,
-                    linkedin: formData.instructorLinkedin || undefined,
-                    twitter: formData.instructorTwitter || undefined,
-                    youtube: formData.instructorYoutube || undefined,
-                    totalStudents: user.instructor?.totalStudents,
-                    totalCourses: user.instructor?.totalCourses,
-                  }
-                  : undefined,
-            }
+                ...user,
+                name: formData.name,
+                email: formData.email,
+                role: formData.role,
+                status: formData.status,
+                instructor:
+                  formData.role === "INSTRUCTOR"
+                    ? {
+                        ...(user.instructor ?? {}),
+                        headline: formData.instructorHeadline || undefined,
+                        biography: formData.instructorBiography || undefined,
+                        website: formData.instructorWebsite || undefined,
+                        linkedin: formData.instructorLinkedin || undefined,
+                        twitter: formData.instructorTwitter || undefined,
+                        youtube: formData.instructorYoutube || undefined,
+                        totalStudents: user.instructor?.totalStudents,
+                        totalCourses: user.instructor?.totalCourses,
+                      }
+                    : undefined,
+              }
             : user,
         ),
       );
@@ -329,13 +326,13 @@ const UserManagement = () => {
         instructor:
           formData.role === "INSTRUCTOR"
             ? {
-              headline: formData.instructorHeadline || undefined,
-              biography: formData.instructorBiography || undefined,
-              website: formData.instructorWebsite || undefined,
-              linkedin: formData.instructorLinkedin || undefined,
-              twitter: formData.instructorTwitter || undefined,
-              youtube: formData.instructorYoutube || undefined,
-            }
+                headline: formData.instructorHeadline || undefined,
+                biography: formData.instructorBiography || undefined,
+                website: formData.instructorWebsite || undefined,
+                linkedin: formData.instructorLinkedin || undefined,
+                twitter: formData.instructorTwitter || undefined,
+                youtube: formData.instructorYoutube || undefined,
+              }
             : undefined,
         createdAt: new Date().toISOString().split("T")[0],
       };
@@ -355,9 +352,9 @@ const UserManagement = () => {
       users.map((user) =>
         user.id === id
           ? {
-            ...user,
-            status: user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE",
-          }
+              ...user,
+              status: user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE",
+            }
           : user,
       ),
     );
@@ -433,7 +430,9 @@ const UserManagement = () => {
           <Button
             component="label"
             variant="outlined"
-            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            startIcon={
+              isImporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
             disabled={isImporting}
             sx={{
               borderRadius: "12px",
@@ -668,7 +667,7 @@ const UserManagement = () => {
                 </FormControl>
               </Grid>
             )}
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth>
                 <Select
                   value={statusFilter}
@@ -733,45 +732,76 @@ const UserManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(activeTab === "USERS" ? filteredUsers : instructorUsers).map((user) => (
-                <TableRow
-                  key={user.id}
-                  hover
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    transition: "all 0.2s",
-                    "&:hover": { bgcolor: "primary.50" },
-                  }}
-                >
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar
-                        src={user.avatar}
-                        alt={user.name}
-                        sx={{
-                          width: 46,
-                          height: 46,
-                          border: "2px solid white",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        {user.name.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight="600"
-                          color="text.primary"
+              {(activeTab === "USERS" ? filteredUsers : instructorUsers).map(
+                (user) => (
+                  <TableRow
+                    key={user.id}
+                    hover
+                    sx={{
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      transition: "all 0.2s",
+                      "&:hover": { bgcolor: "primary.50" },
+                    }}
+                  >
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar
+                          src={user.avatar}
+                          alt={user.name}
+                          sx={{
+                            width: 46,
+                            height: 46,
+                            border: "2px solid white",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          }}
                         >
-                          {user.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {user.email}
-                        </Typography>
+                          {user.name.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="600"
+                            color="text.primary"
+                          >
+                            {user.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
-                  {activeTab === "USERS" && (
+                    </TableCell>
+                    {activeTab === "USERS" && (
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 1,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: "8px",
+                            bgcolor:
+                              user.role === "ADMIN"
+                                ? alpha(theme.palette.error.main, 0.1)
+                                : user.role === "INSTRUCTOR"
+                                  ? alpha(theme.palette.primary.main, 0.1)
+                                  : alpha(theme.palette.grey[500], 0.1),
+                            color:
+                              user.role === "ADMIN"
+                                ? "error.main"
+                                : user.role === "INSTRUCTOR"
+                                  ? "primary.main"
+                                  : "text.secondary",
+                          }}
+                        >
+                          {getRoleIcon(user.role)}
+                          <Typography variant="caption" fontWeight="600">
+                            {getRoleLabel(user.role)}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Box
                         sx={{
@@ -780,218 +810,191 @@ const UserManagement = () => {
                           gap: 1,
                           px: 1.5,
                           py: 0.5,
-                          borderRadius: "8px",
+                          borderRadius: "20px",
                           bgcolor:
-                            user.role === "ADMIN"
-                              ? alpha(theme.palette.error.main, 0.1)
-                              : user.role === "INSTRUCTOR"
-                                ? alpha(theme.palette.primary.main, 0.1)
-                                : alpha(theme.palette.grey[500], 0.1),
+                            user.status === "ACTIVE"
+                              ? alpha(theme.palette.success.main, 0.1)
+                              : alpha(theme.palette.error.main, 0.1),
                           color:
-                            user.role === "ADMIN"
-                              ? "error.main"
-                              : user.role === "INSTRUCTOR"
-                                ? "primary.main"
-                                : "text.secondary",
+                            user.status === "ACTIVE"
+                              ? "success.main"
+                              : "error.main",
                         }}
                       >
-                        {getRoleIcon(user.role)}
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            bgcolor: "currentColor",
+                          }}
+                        />
                         <Typography variant="caption" fontWeight="600">
-                          {getRoleLabel(user.role)}
+                          {user.status === "ACTIVE" ? "Hoạt động" : "Đã khóa"}
                         </Typography>
                       </Box>
                     </TableCell>
-                  )}
-                  <TableCell>
-                    <Box
-                      sx={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 1,
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "20px",
-                        bgcolor:
-                          user.status === "ACTIVE"
-                            ? alpha(theme.palette.success.main, 0.1)
-                            : alpha(theme.palette.error.main, 0.1),
-                        color:
-                          user.status === "ACTIVE"
-                            ? "success.main"
-                            : "error.main",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "currentColor",
-                        }}
-                      />
-                      <Typography variant="caption" fontWeight="600">
-                        {user.status === "ACTIVE" ? "Hoạt động" : "Đã khóa"}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(user.createdAt).toLocaleDateString("vi-VN")}
-                    </Typography>
-                  </TableCell>
-                  {activeTab === "INSTRUCTORS" && (
                     <TableCell>
-                      <Box display="flex" flexDirection="column" gap={0.5}>
-                        {user.instructor?.headline && (
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color="text.primary"
-                          >
-                            {user.instructor.headline}
-                          </Typography>
-                        )}
-                        <Box display="flex" flexWrap="wrap" gap={1}>
-                          {typeof user.instructor?.totalCourses === "number" && (
-                            <Chip
-                              size="small"
-                              label={`${user.instructor.totalCourses} khóa học`}
-                              color="primary"
-                              variant="outlined"
-                            />
-                          )}
-                          {typeof user.instructor?.totalStudents === "number" && (
-                            <Chip
-                              size="small"
-                              label={`${user.instructor.totalStudents} học viên`}
-                              color="success"
-                              variant="outlined"
-                            />
-                          )}
-                        </Box>
-                        <Box display="flex" gap={0.5} mt={0.5}>
-                          {user.instructor?.website && (
-                            <Tooltip title="Website cá nhân">
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={user.instructor.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Language fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {user.instructor?.linkedin && (
-                            <Tooltip title="LinkedIn">
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={user.instructor.linkedin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <LinkedIn fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {user.instructor?.twitter && (
-                            <Tooltip title="Twitter / X">
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={user.instructor.twitter}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Twitter fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {user.instructor?.youtube && (
-                            <Tooltip title="YouTube">
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={user.instructor.youtube}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <YouTube fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                      </Typography>
                     </TableCell>
-                  )}
-                  <TableCell align="right">
-                    <Box display="flex" justifyContent="flex-end" gap={1}>
-                      <Tooltip title="Chỉnh sửa">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(user)}
-                          sx={{
-                            color: "primary.main",
-                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                            "&:hover": {
-                              bgcolor: alpha(theme.palette.primary.main, 0.2),
-                            },
-                          }}
+                    {activeTab === "INSTRUCTORS" && (
+                      <TableCell>
+                        <Box display="flex" flexDirection="column" gap={0.5}>
+                          {user.instructor?.headline && (
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.primary"
+                            >
+                              {user.instructor.headline}
+                            </Typography>
+                          )}
+                          <Box display="flex" flexWrap="wrap" gap={1}>
+                            {typeof user.instructor?.totalCourses ===
+                              "number" && (
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalCourses} khóa học`}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            )}
+                            {typeof user.instructor?.totalStudents ===
+                              "number" && (
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalStudents} học viên`}
+                                color="success"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                          <Box display="flex" gap={0.5} mt={0.5}>
+                            {user.instructor?.website && (
+                              <Tooltip title="Website cá nhân">
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={user.instructor.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Language fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {user.instructor?.linkedin && (
+                              <Tooltip title="LinkedIn">
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={user.instructor.linkedin}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <LinkedIn fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {user.instructor?.twitter && (
+                              <Tooltip title="Twitter / X">
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={user.instructor.twitter}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Twitter fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {user.instructor?.youtube && (
+                              <Tooltip title="YouTube">
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={user.instructor.youtube}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <YouTube fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                    )}
+                    <TableCell align="right">
+                      <Box display="flex" justifyContent="flex-end" gap={1}>
+                        <Tooltip title="Chỉnh sửa">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenDialog(user)}
+                            sx={{
+                              color: "primary.main",
+                              bgcolor: alpha(theme.palette.primary.main, 0.1),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.primary.main, 0.2),
+                              },
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip
+                          title={user.status === "ACTIVE" ? "Khóa" : "Mở khóa"}
                         >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip
-                        title={user.status === "ACTIVE" ? "Khóa" : "Mở khóa"}
-                      >
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleStatus(user.id)}
-                          sx={{
-                            color:
-                              user.status === "ACTIVE"
-                                ? "warning.main"
-                                : "success.main",
-                            bgcolor:
-                              user.status === "ACTIVE"
-                                ? alpha(theme.palette.warning.main, 0.1)
-                                : alpha(theme.palette.success.main, 0.1),
-                            "&:hover": {
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleStatus(user.id)}
+                            sx={{
+                              color:
+                                user.status === "ACTIVE"
+                                  ? "warning.main"
+                                  : "success.main",
                               bgcolor:
                                 user.status === "ACTIVE"
-                                  ? alpha(theme.palette.warning.main, 0.2)
-                                  : alpha(theme.palette.success.main, 0.2),
-                            },
-                          }}
-                        >
-                          {user.status === "ACTIVE" ? (
-                            <Block fontSize="small" />
-                          ) : (
-                            <CheckCircle fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Xóa">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteUser(user.id)}
-                          sx={{
-                            color: "error.main",
-                            bgcolor: alpha(theme.palette.error.main, 0.1),
-                            "&:hover": {
-                              bgcolor: alpha(theme.palette.error.main, 0.2),
-                            },
-                          }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
+                                  ? alpha(theme.palette.warning.main, 0.1)
+                                  : alpha(theme.palette.success.main, 0.1),
+                              "&:hover": {
+                                bgcolor:
+                                  user.status === "ACTIVE"
+                                    ? alpha(theme.palette.warning.main, 0.2)
+                                    : alpha(theme.palette.success.main, 0.2),
+                              },
+                            }}
+                          >
+                            {user.status === "ACTIVE" ? (
+                              <Block fontSize="small" />
+                            ) : (
+                              <CheckCircle fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteUser(user.id)}
+                            sx={{
+                              color: "error.main",
+                              bgcolor: alpha(theme.palette.error.main, 0.1),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.error.main, 0.2),
+                              },
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ),
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -1092,7 +1095,7 @@ const UserManagement = () => {
                   onClick={handleClickAvatarUpload}
                 >
                   {avatarUploading ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     <CloudUpload fontSize="small" />
                   )}

@@ -37,10 +37,6 @@ import type {
   DailyRevenue,
   CategoryRevenue,
   CourseRevenue,
-  InstructorRevenue,
-  PaymentMethodRevenue,
-  MonthlyRevenue,
-  DiscountImpact,
 } from "../../service/revenueService";
 import { formatCurrency } from "../../libs/utils";
 import { format, subDays } from "date-fns";
@@ -127,7 +123,12 @@ const RevenueDashboard: React.FC = () => {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
+      >
         <Box>
           <Typography
             variant="h4"
@@ -148,7 +149,15 @@ const RevenueDashboard: React.FC = () => {
       </Box>
 
       {/* Navigation Tabs */}
-      <Card sx={{ mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: "20px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+          border: "1px solid",
+          borderColor: "grey.100",
+        }}
+      >
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
@@ -175,24 +184,52 @@ const RevenueDashboard: React.FC = () => {
       {activeTab === 0 && (
         <Box>
           {/* Date Range Picker with Quick Filters */}
-          <Card sx={{ p: 3, mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
-            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <Card
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: "20px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+              border: "1px solid",
+              borderColor: "grey.100",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              flexWrap="wrap"
+            >
               <ButtonGroup size="small" variant="outlined">
                 <Button
                   onClick={() => setQuickRange(7)}
-                  sx={{ borderRadius: "8px 0 0 8px", textTransform: "none", fontWeight: 600 }}
+                  sx={{
+                    borderRadius: "8px 0 0 8px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
                 >
                   7 ngày
                 </Button>
-                <Button onClick={() => setQuickRange(30)} sx={{ textTransform: "none", fontWeight: 600 }}>
+                <Button
+                  onClick={() => setQuickRange(30)}
+                  sx={{ textTransform: "none", fontWeight: 600 }}
+                >
                   30 ngày
                 </Button>
-                <Button onClick={() => setQuickRange(90)} sx={{ textTransform: "none", fontWeight: 600 }}>
+                <Button
+                  onClick={() => setQuickRange(90)}
+                  sx={{ textTransform: "none", fontWeight: 600 }}
+                >
                   90 ngày
                 </Button>
                 <Button
                   onClick={() => setQuickRange(365)}
-                  sx={{ borderRadius: "0 8px 8px 0", textTransform: "none", fontWeight: 600 }}
+                  sx={{
+                    borderRadius: "0 8px 8px 0",
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
                 >
                   1 năm
                 </Button>
@@ -281,19 +318,33 @@ const RevenueDashboard: React.FC = () => {
                         {stat.icon}
                       </Box>
                       <Box flex={1}>
-                        <Typography variant="body2" color="text.secondary" mb={0.5}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          mb={0.5}
+                        >
                           {stat.label}
                         </Typography>
                         <Typography variant="h5" fontWeight="700" mb={0.5}>
                           {stat.value}
                         </Typography>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.5}
+                        >
                           {stat.trend !== undefined && (
                             <>
                               {stat.trend >= 0 ? (
-                                <TrendingUpIcon fontSize="small" sx={{ color: "success.main" }} />
+                                <TrendingUpIcon
+                                  fontSize="small"
+                                  sx={{ color: "success.main" }}
+                                />
                               ) : (
-                                <TrendingDownIcon fontSize="small" sx={{ color: "error.main" }} />
+                                <TrendingDownIcon
+                                  fontSize="small"
+                                  sx={{ color: "error.main" }}
+                                />
                               )}
                             </>
                           )}
@@ -310,13 +361,25 @@ const RevenueDashboard: React.FC = () => {
           </Grid>
 
           {/* Charts Row 1: Line Chart */}
-          <Card sx={{ p: 3, mb: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100" }}>
+          <Card
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: "20px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+              border: "1px solid",
+              borderColor: "grey.100",
+            }}
+          >
             <Typography variant="h6" fontWeight={700} mb={3}>
               Xu Hướng Doanh Thu
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dailyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={alpha(theme.palette.divider, 0.5)}
+                />
                 <XAxis dataKey="date" style={{ fontSize: "0.875rem" }} />
                 <YAxis style={{ fontSize: "0.875rem" }} />
                 <Tooltip
@@ -344,7 +407,16 @@ const RevenueDashboard: React.FC = () => {
           {/* Charts Row 2: Pie + Bar */}
           <Grid container spacing={3} mb={3}>
             <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ p: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100", height: "100%" }}>
+              <Card
+                sx={{
+                  p: 3,
+                  borderRadius: "20px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                  border: "1px solid",
+                  borderColor: "grey.100",
+                  height: "100%",
+                }}
+              >
                 <Typography variant="h6" fontWeight={700} mb={3}>
                   Doanh Thu Theo Danh Mục
                 </Typography>
@@ -369,7 +441,9 @@ const RevenueDashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      formatter={(value: any) =>
+                        formatCurrency(Number(value) || 0)
+                      }
                       contentStyle={{
                         borderRadius: "12px",
                         border: "1px solid",
@@ -382,24 +456,48 @@ const RevenueDashboard: React.FC = () => {
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ p: 3, borderRadius: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", border: "1px solid", borderColor: "grey.100", height: "100%" }}>
+              <Card
+                sx={{
+                  p: 3,
+                  borderRadius: "20px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                  border: "1px solid",
+                  borderColor: "grey.100",
+                  height: "100%",
+                }}
+              >
                 <Typography variant="h6" fontWeight={700} mb={3}>
                   Top 10 Khóa Học Bán Chạy
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={topCourses} layout="horizontal">
-                    <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={alpha(theme.palette.divider, 0.5)}
+                    />
                     <XAxis type="number" style={{ fontSize: "0.875rem" }} />
-                    <YAxis dataKey="courseTitle" type="category" width={150} style={{ fontSize: "0.75rem" }} />
+                    <YAxis
+                      dataKey="courseTitle"
+                      type="category"
+                      width={150}
+                      style={{ fontSize: "0.75rem" }}
+                    />
                     <Tooltip
-                      formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      formatter={(value: any) =>
+                        formatCurrency(Number(value) || 0)
+                      }
                       contentStyle={{
                         borderRadius: "12px",
                         border: "1px solid",
                         borderColor: theme.palette.divider,
                       }}
                     />
-                    <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Doanh thu" radius={[0, 8, 8, 0]} />
+                    <Bar
+                      dataKey="revenue"
+                      fill={theme.palette.primary.main}
+                      name="Doanh thu"
+                      radius={[0, 8, 8, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </Card>

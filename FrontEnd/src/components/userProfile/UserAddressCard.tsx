@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
   Typography,
   Stack,
   Button,
-  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,6 +13,7 @@ import {
   Box,
   useTheme,
   alpha,
+  Grid,
 } from "@mui/material";
 import { Edit as EditIcon } from "@mui/icons-material";
 
@@ -84,19 +84,19 @@ export default function UserAddressCard() {
           </Stack>
 
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <InfoItem label="Country" value="United States" />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <InfoItem
                 label="City/State"
                 value="Phoenix, Arizona, United States"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <InfoItem label="Postal Code" value="ERT 2489" />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <InfoItem label="TAX ID" value="AS4568384" />
             </Grid>
           </Grid>
@@ -118,7 +118,7 @@ export default function UserAddressCard() {
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Country"
@@ -127,7 +127,7 @@ export default function UserAddressCard() {
                 InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="City/State"
@@ -136,7 +136,7 @@ export default function UserAddressCard() {
                 InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Postal Code"
@@ -145,7 +145,7 @@ export default function UserAddressCard() {
                 InputProps={{ sx: { borderRadius: "12px" } }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="TAX ID"

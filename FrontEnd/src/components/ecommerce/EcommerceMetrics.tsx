@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { ArrowDownward, ArrowUpward, Group, Inbox } from "@mui/icons-material";
 import { dashboardService } from "../../service/dashboardService";
 import type { DashboardStats } from "../../service/dashboardService";
-import { webSocketService } from "../../service/webSocketService";
 import { useAuthStore } from "../../store/authStore";
 
 export default function EcommerceMetrics() {
@@ -97,11 +96,10 @@ export default function EcommerceMetrics() {
             </h4>
           </div>
           <span
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-              stats.userGrowth >= 0
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${stats.userGrowth >= 0
                 ? "bg-success-50 text-success-500"
                 : "bg-error-50 text-error-500"
-            }`}
+              }`}
           >
             {stats.userGrowth >= 0 ? (
               <ArrowUpward sx={{ fontSize: 14 }} />
@@ -130,11 +128,10 @@ export default function EcommerceMetrics() {
           </div>
 
           <span
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-              stats.orderGrowth >= 0
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${stats.orderGrowth >= 0
                 ? "bg-success-50 text-success-500"
                 : "bg-error-50 text-error-500"
-            }`}
+              }`}
           >
             {stats.orderGrowth >= 0 ? (
               <ArrowUpward sx={{ fontSize: 14 }} />

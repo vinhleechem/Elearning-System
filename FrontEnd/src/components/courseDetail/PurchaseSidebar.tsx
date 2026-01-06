@@ -50,8 +50,6 @@ const PurchaseSidebar: React.FC<Props> = ({
   sx,
   isPurchased,
   purchasedAt,
-  promotionName,
-  promotionType,
   discountPercentage,
   promotionEndDate,
 }) => {
