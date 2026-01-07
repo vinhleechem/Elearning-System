@@ -43,11 +43,11 @@ import {
 import { reviewService, type ReviewResponse } from "../../service/reviewService";
 import { adminCourseService } from "../../service/adminCourseService";
 import { useAuthStore } from "../../store/authStore";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 
 const ReviewManagement = () => {
     const theme = useTheme();
-    const { enqueueSnackbar } = useSnackbar();
+    const { enqueueSnackbar } = useToast();
     const { tokens } = useAuthStore();
 
     const [reviews, setReviews] = useState<ReviewResponse[]>([]);

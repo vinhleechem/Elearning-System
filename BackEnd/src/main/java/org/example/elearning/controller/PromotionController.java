@@ -90,6 +90,22 @@ public class PromotionController {
         return ResponseEntity.ok(StandardResponse.success("Promotion deactivated successfully"));
     }
 
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Export promotions to Excel", description = "Export all promotions to Excel file (Admin only)")
+    public ResponseEntity<byte[]> exportPromotions() {
+        try {
+            byte[] excelFile = promotionService.exportPromotions();
+            String filename = "promotions_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(excelFile);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to export promotions", e);
+        }
+    }
+
     @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Import promotions from Excel", description = "Import promotions from Excel file (Admin only)")

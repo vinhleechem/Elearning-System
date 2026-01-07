@@ -15,11 +15,11 @@ import { Notifications as NotificationsIcon } from "@mui/icons-material";
 import type { Notification } from "../../../../service/webSocketService";
 import { notificationService } from "../../../../service/notificationService";
 import { useAuthStore } from "../../../../store/authStore";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../../../hooks/useToast";
 
 const NotificationDropdown = () => {
   const { user } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(false);
@@ -57,13 +57,16 @@ const NotificationDropdown = () => {
   };
 
   useEffect(() => {
+    if (!user?.userId) return;
+
     fetchUnreadCount();
 
     // Poll for unread count every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
 
     return () => clearInterval(interval);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.userId]); // Only re-run when userId changes, not the entire user object
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -190,7 +193,7 @@ const NotificationDropdown = () => {
             {notifications.map((notif, index) => (
               <MenuItem
                 key={notif.notificationId}
-                onClick={() => handleMarkAsRead(notif.notificationId, index)}
+                onClick={() => notif.notificationId && handleMarkAsRead(notif.notificationId, index)}
                 sx={{
                   bgcolor: notif.isRead ? "transparent" : "action.hover",
                   display: "block",

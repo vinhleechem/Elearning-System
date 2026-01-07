@@ -3,6 +3,7 @@ package org.example.elearning.constant;
 public final class SecurityConstant {
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
+            "/api/v1/password-reset/**",
             "/api/v1/categories/**",
             "/api/v1/courses/**",
             "/api/v1/courses",

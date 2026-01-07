@@ -40,9 +40,10 @@ import {
   FolderOpen,
   VideoLibrary,
   CloudUpload,
+  Download,
 } from "@mui/icons-material";
 import { CircularProgress } from "@mui/material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { useAuthStore } from "../../store/authStore";
 import {
   adminCourseService,
@@ -59,7 +60,7 @@ const CourseManagement = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { tokens } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -79,18 +80,20 @@ const CourseManagement = () => {
     useState<CourseResponse | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false); // Imported
+  const [isExporting, setIsExporting] = useState(false);
   const itemsPerPage = 10;
 
   // Flatten categories for dropdown
   const flattenCategories = (
     cats: CategoryTreeResponse[],
-    result: { id: number; name: string; level: number; path: string }[] = [],
+    result: { id: number; name: string; level: number; path: string; hasChildren: boolean }[] = [],
     parentPath = "",
-  ): { id: number; name: string; level: number; path: string }[] => {
+  ): { id: number; name: string; level: number; path: string; hasChildren: boolean }[] => {
     cats.forEach((cat) => {
       const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
-      result.push({ id: cat.id, name: cat.name, level: cat.level, path });
-      if (cat.children && cat.children.length > 0) {
+      const hasChildren = cat.children && cat.children.length > 0;
+      result.push({ id: cat.id, name: cat.name, level: cat.level, path, hasChildren });
+      if (hasChildren) {
         flattenCategories(cat.children, result, path);
       }
     });
@@ -98,6 +101,7 @@ const CourseManagement = () => {
   };
 
   const flatCategories = flattenCategories(categories);
+
 
   // Helper function để tìm category info từ categoryId
   const getCategoryInfo = (categoryId: number) => {
@@ -271,18 +275,14 @@ const CourseManagement = () => {
         },
       );
       setCourses(pageResult.data || []);
-    } catch (error) {
-      enqueueSnackbar(
-        editingCourse ? "Cập nhật khóa học thất bại" : "Tạo khóa học thất bại",
-        {
-          variant: "error",
-        },
-      );
+    } catch (error: any) {
       console.error("Save course failed", error);
+      throw error; // Re-throw to let CourseFormDialog handle the UI feedback
     }
   };
 
   const getStatusColor = (status: string) => {
+
     switch (status) {
       case "PUBLISHED":
         return "success";
@@ -389,6 +389,27 @@ const CourseManagement = () => {
     }
   };
 
+  const handleExportExcel = async () => {
+    if (!tokens?.accessToken) return;
+    setIsExporting(true);
+    try {
+      const blob = await adminCourseService.exportCourses(tokens.accessToken);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `courses_admin_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      enqueueSnackbar("Export danh sách khóa học thành công", { variant: "success" });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Không thể export khóa học", { variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -446,6 +467,28 @@ const CourseManagement = () => {
             }}
           >
             {isImporting ? "Đang tải..." : "Import Excel"}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={
+              isExporting ? <CircularProgress size={20} /> : <Download />
+            }
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              px: 2,
+              bgcolor: "white",
+              borderColor: "grey.300",
+              color: "text.primary",
+              "&:hover": {
+                bgcolor: "grey.50",
+                borderColor: "grey.400",
+              },
+            }}
+          >
+            {isExporting ? "Đang xuất..." : "Xuất Excel"}
           </Button>
           <Button
             variant="contained"
@@ -754,8 +797,9 @@ const CourseManagement = () => {
                           <Typography variant="body2" fontWeight={600}>
                             {course.averageRating
                               ? course.averageRating.toFixed(1)
-                              : "N/A"}
+                              : "0"}
                           </Typography>
+
                           {course.totalReviews !== undefined &&
                             course.totalReviews > 0 && (
                               <Typography

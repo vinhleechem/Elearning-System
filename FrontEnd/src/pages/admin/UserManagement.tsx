@@ -50,7 +50,7 @@ import {
   Twitter,
   YouTube,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { useAuthStore } from "../../store/authStore";
 import { adminUserService } from "../../service/adminUserService";
 
@@ -78,7 +78,7 @@ interface User {
 const UserManagement = () => {
   const theme = useTheme();
   const { tokens } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<"USERS" | "INSTRUCTORS">("USERS");
@@ -92,6 +92,7 @@ const UserManagement = () => {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -127,16 +128,16 @@ const UserManagement = () => {
             instructor:
               role === "INSTRUCTOR"
                 ? {
-                    id: u.instructorId,
-                    headline: u.instructorHeadline,
-                    biography: u.instructorBiography,
-                    website: u.instructorWebsite,
-                    linkedin: u.instructorLinkedin,
-                    twitter: u.instructorTwitter,
-                    youtube: u.instructorYoutube,
-                    totalStudents: u.instructorTotalStudents,
-                    totalCourses: u.instructorTotalCourses,
-                  }
+                  id: u.instructorId,
+                  headline: u.instructorHeadline,
+                  biography: u.instructorBiography,
+                  website: u.instructorWebsite,
+                  linkedin: u.instructorLinkedin,
+                  twitter: u.instructorTwitter,
+                  youtube: u.instructorYoutube,
+                  totalStudents: u.instructorTotalStudents,
+                  totalCourses: u.instructorTotalCourses,
+                }
                 : undefined,
           };
         });
@@ -151,7 +152,6 @@ const UserManagement = () => {
       }
     };
 
-    void fetchUsers();
     void fetchUsers();
   }, [tokens?.accessToken, page, searchTerm, refreshKey]);
 
@@ -182,6 +182,7 @@ const UserManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    password: "",
     role: "STUDENT" as User["role"],
     status: "ACTIVE" as User["status"],
     instructorHeadline: "",
@@ -198,6 +199,7 @@ const UserManagement = () => {
       setFormData({
         name: user.name,
         email: user.email,
+        password: "", // Password not editable when updating
         role: user.role,
         status: user.status,
         instructorHeadline: user.instructor?.headline ?? "",
@@ -212,6 +214,7 @@ const UserManagement = () => {
       setFormData({
         name: "",
         email: "",
+        password: "",
         role: "STUDENT",
         status: "ACTIVE",
         instructorHeadline: "",
@@ -231,6 +234,7 @@ const UserManagement = () => {
     setFormData({
       name: "",
       email: "",
+      password: "",
       role: "STUDENT",
       status: "ACTIVE",
       instructorHeadline: "",
@@ -240,6 +244,31 @@ const UserManagement = () => {
       instructorTwitter: "",
       instructorYoutube: "",
     });
+  };
+
+  const handleExportExcel = async () => {
+    if (!tokens?.accessToken) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await adminUserService.exportUsers(tokens.accessToken);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `users_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      enqueueSnackbar("Export Excel thành công!", { variant: "success" });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Export Excel thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleClickAvatarUpload = () => {
@@ -287,77 +316,82 @@ const UserManagement = () => {
     }
   };
 
-  const handleSaveUser = () => {
-    if (editingUser) {
-      setUsers(
-        users.map((user) =>
-          user.id === editingUser.id
-            ? {
-                ...user,
-                name: formData.name,
-                email: formData.email,
-                role: formData.role,
-                status: formData.status,
-                instructor:
-                  formData.role === "INSTRUCTOR"
-                    ? {
-                        ...(user.instructor ?? {}),
-                        headline: formData.instructorHeadline || undefined,
-                        biography: formData.instructorBiography || undefined,
-                        website: formData.instructorWebsite || undefined,
-                        linkedin: formData.instructorLinkedin || undefined,
-                        twitter: formData.instructorTwitter || undefined,
-                        youtube: formData.instructorYoutube || undefined,
-                        totalStudents: user.instructor?.totalStudents,
-                        totalCourses: user.instructor?.totalCourses,
-                      }
-                    : undefined,
-              }
-            : user,
-        ),
+  const handleSaveUser = async () => {
+    if (!tokens?.accessToken) return;
+
+    try {
+      if (editingUser) {
+        // Update existing user
+        await adminUserService.updateUser(tokens.accessToken, editingUser.id, {
+          fullName: formData.name,
+          email: formData.email,
+          avatarUrl: editingUser.avatar,
+        });
+        enqueueSnackbar("Cập nhật người dùng thành công", {
+          variant: "success",
+        });
+      } else {
+        // Create new user
+        const payload: any = {
+          fullName: formData.name,
+          email: formData.email,
+        };
+
+        // Only include password if user provided one
+        if (formData.password) {
+          payload.passwordHash = formData.password;
+        }
+
+        await adminUserService.createUser(tokens.accessToken, payload);
+        enqueueSnackbar("Tạo người dùng thành công", { variant: "success" });
+      }
+      // Refresh the user list
+      setRefreshKey((prev) => prev + 1);
+      handleCloseDialog();
+    } catch (error: any) {
+      enqueueSnackbar(
+        error.message ||
+        (editingUser
+          ? "Cập nhật người dùng thất bại"
+          : "Tạo người dùng thất bại"),
+        { variant: "error" },
       );
-    } else {
-      const newUser: User = {
-        id: Math.max(...users.map((u) => u.id)) + 1,
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-        instructor:
-          formData.role === "INSTRUCTOR"
-            ? {
-                headline: formData.instructorHeadline || undefined,
-                biography: formData.instructorBiography || undefined,
-                website: formData.instructorWebsite || undefined,
-                linkedin: formData.instructorLinkedin || undefined,
-                twitter: formData.instructorTwitter || undefined,
-                youtube: formData.instructorYoutube || undefined,
-              }
-            : undefined,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setUsers([...users, newUser]);
-    }
-    handleCloseDialog();
-  };
-
-  const handleDeleteUser = (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
-      setUsers(users.filter((user) => user.id !== id));
+      console.error("Save user error:", error);
     }
   };
 
-  const handleToggleStatus = (id: number) => {
-    setUsers(
-      users.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE",
-            }
-          : user,
-      ),
-    );
+  const handleDeleteUser = async (id: number) => {
+    if (!tokens?.accessToken) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
+
+    try {
+      await adminUserService.deleteUser(tokens.accessToken, id);
+      enqueueSnackbar("Xóa người dùng thành công", { variant: "success" });
+      setRefreshKey((prev) => prev + 1);
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Xóa người dùng thất bại", {
+        variant: "error",
+      });
+      console.error("Delete user error:", error);
+    }
+  };
+
+  const handleToggleStatus = async (id: number) => {
+    if (!tokens?.accessToken) return;
+
+    try {
+      await adminUserService.toggleUserStatus(tokens.accessToken, id);
+      enqueueSnackbar("Thay đổi trạng thái người dùng thành công", {
+        variant: "success",
+      });
+      setRefreshKey((prev) => prev + 1);
+    } catch (error: any) {
+      enqueueSnackbar(
+        error.message || "Thay đổi trạng thái người dùng thất bại",
+        { variant: "error" },
+      );
+      console.error("Toggle user status error:", error);
+    }
   };
 
   const baseFilteredUsers = users.filter((user) => {
@@ -427,6 +461,29 @@ const UserManagement = () => {
           </Typography>
         </Box>
         <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={
+              isExporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
+            disabled={isExporting}
+            onClick={handleExportExcel}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#10b981",
+              color: "#10b981",
+              "&:hover": {
+                borderColor: "#059669",
+                bgcolor: alpha("#10b981", 0.04),
+              },
+            }}
+          >
+            {isExporting ? "Đang xuất..." : "Xuất Excel"}
+          </Button>
           <Button
             component="label"
             variant="outlined"
@@ -854,22 +911,22 @@ const UserManagement = () => {
                           <Box display="flex" flexWrap="wrap" gap={1}>
                             {typeof user.instructor?.totalCourses ===
                               "number" && (
-                              <Chip
-                                size="small"
-                                label={`${user.instructor.totalCourses} khóa học`}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            )}
+                                <Chip
+                                  size="small"
+                                  label={`${user.instructor.totalCourses} khóa học`}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              )}
                             {typeof user.instructor?.totalStudents ===
                               "number" && (
-                              <Chip
-                                size="small"
-                                label={`${user.instructor.totalStudents} học viên`}
-                                color="success"
-                                variant="outlined"
-                              />
-                            )}
+                                <Chip
+                                  size="small"
+                                  label={`${user.instructor.totalStudents} học viên`}
+                                  color="success"
+                                  variant="outlined"
+                                />
+                              )}
                           </Box>
                           <Box display="flex" gap={0.5} mt={0.5}>
                             {user.instructor?.website && (
@@ -1132,6 +1189,25 @@ const UserManagement = () => {
                 sx: { borderRadius: "12px" },
               }}
             />
+
+            {/* Password field - only for creating new user */}
+            {!editingUser && (
+              <TextField
+                label="Mật khẩu"
+                type="password"
+                fullWidth
+                required
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
+                helperText="Để trống, backend sẽ tự động tạo mật khẩu mặc định"
+                InputProps={{
+                  sx: { borderRadius: "12px" },
+                }}
+              />
+            )}
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>

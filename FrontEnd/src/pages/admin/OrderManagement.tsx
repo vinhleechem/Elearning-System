@@ -35,7 +35,7 @@ import {
   CheckCircle,
   Cancel,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { adminOrderService } from "../../service/adminOrderService";
 import type { OrderResponse } from "../../service/orderService";
 import { formatCurrency } from "../../libs/utils";
@@ -55,7 +55,7 @@ const OrderManagement: React.FC = () => {
   const [orderToCancel, setOrderToCancel] = useState<OrderResponse | null>(
     null,
   );
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   const fetchOrders = async (pageNo: number) => {
     setLoading(true);

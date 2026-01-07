@@ -1,10 +1,7 @@
 package org.example.elearning.exception;
 
 import org.example.elearning.dto.response.StandardResponse;
-import org.example.elearning.exception.exceptions.ForbiddenException;
-import org.example.elearning.exception.exceptions.ResourceConflictException;
-import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.exception.exceptions.UnauthorizedException;
+import org.example.elearning.exception.exceptions.*;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -39,14 +38,28 @@ public class GlobalExceptionHandler {
         StandardResponse<Void> response = StandardResponse.<Void>error(ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Object> handleBadRequestException(BadRequestException ex) {
+        StandardResponse<Void> response = StandardResponse.<Void>error(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        String errorMsg = exception.getBindingResult()
+        Map<String, String> fieldErrors = new HashMap<>();
+        exception.getBindingResult().getFieldErrors().forEach(error -> {
+            fieldErrors.put(error.getField(), error.getDefaultMessage());
+        });
+        String firstErrorMessage = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.joining(", "));
-        StandardResponse<Void> response = StandardResponse.<Void>error(errorMsg);
+                .findFirst()
+                .map(org.springframework.validation.FieldError::getDefaultMessage)
+                .orElse("Dữ liệu không hợp lệ");
+        StandardResponse<Map<String, String>> response = StandardResponse.<Map<String, String>>builder()
+                .success(false)
+                .message(firstErrorMessage)
+                .data(fieldErrors)
+                .build();
         return ResponseEntity.badRequest().body(response);
     }
 

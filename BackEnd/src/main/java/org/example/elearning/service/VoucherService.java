@@ -61,4 +61,6 @@ public interface VoucherService {
     void grantVoucherToUsers(Long voucherId, List<Long> userIds);
 
     void importVouchers(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+
+    byte[] exportVouchers() throws java.io.IOException;
 }

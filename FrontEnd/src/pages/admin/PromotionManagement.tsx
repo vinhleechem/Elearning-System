@@ -44,7 +44,7 @@ import {
   Cancel,
   CloudUpload,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { promotionService } from "../../service/promotionService";
 import type {
   Promotion,
@@ -55,7 +55,7 @@ import type {
 
 const PromotionManagement = () => {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,6 +71,7 @@ const PromotionManagement = () => {
     useState<PromotionDetail | null>(null);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [formData, setFormData] = useState<PromotionRequest>({
     name: "",
@@ -275,6 +276,22 @@ const PromotionManagement = () => {
     promotion.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      await promotionService.exportPromotions();
+      enqueueSnackbar("Xuất danh sách khuyến mãi thành công", {
+        variant: "success",
+      });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Xuất Excel thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleImportExcel = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -326,9 +343,34 @@ const PromotionManagement = () => {
         </Box>
         <Box display="flex" gap={2}>
           <Button
+            variant="outlined"
+            startIcon={
+              isExporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
+            disabled={isExporting}
+            onClick={handleExportExcel}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#10b981",
+              color: "#10b981",
+              "&:hover": {
+                borderColor: "#059669",
+                bgcolor: alpha("#10b981", 0.04),
+              },
+            }}
+          >
+            {isExporting ? "Đang xuất..." : "Xuất Excel"}
+          </Button>
+          <Button
             component="label"
             variant="outlined"
-            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            startIcon={
+              isImporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
             disabled={isImporting}
             sx={{
               borderRadius: "12px",
@@ -374,76 +416,74 @@ const PromotionManagement = () => {
             Tạo khuyến mãi mới
           </Button>
         </Box>
-      </Box >
+      </Box>
 
       {/* Stats Cards */}
-      < Grid container spacing={3} mb={4} >
-        {
-          [
-            {
-              label: "Tổng khuyến mãi",
-              value: promotions.length,
-              color: "#2563eb",
-              icon: <LocalOffer />,
-            },
-            {
-              label: "Đang hoạt động",
-              value: promotions.filter((p) => p.isActive).length,
-              color: "#10b981",
-              icon: <CheckCircle />,
-            },
-            {
-              label: "Vô hiệu hóa",
-              value: promotions.filter((p) => !p.isActive).length,
-              color: "#ef4444",
-              icon: <Cancel />,
-            },
-          ].map((stat, index) => (
-            <Grid size={{ xs: 12, md: 4 }} key={index}>
-              <Card
-                sx={{
-                  borderRadius: "16px",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-                  border: "1px solid",
-                  borderColor: "grey.100",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "12px",
-                        bgcolor: alpha(stat.color, 0.1),
-                        color: stat.color,
-                        display: "flex",
-                      }}
-                    >
-                      {stat.icon}
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {stat.label}
-                      </Typography>
-                      <Typography variant="h4" fontWeight="700">
-                        {stat.value}
-                      </Typography>
-                    </Box>
+      <Grid container spacing={3} mb={4}>
+        {[
+          {
+            label: "Tổng khuyến mãi",
+            value: promotions.length,
+            color: "#2563eb",
+            icon: <LocalOffer />,
+          },
+          {
+            label: "Đang hoạt động",
+            value: promotions.filter((p) => p.isActive).length,
+            color: "#10b981",
+            icon: <CheckCircle />,
+          },
+          {
+            label: "Vô hiệu hóa",
+            value: promotions.filter((p) => !p.isActive).length,
+            color: "#ef4444",
+            icon: <Cancel />,
+          },
+        ].map((stat, index) => (
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                border: "1px solid",
+                borderColor: "grey.100",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha(stat.color, 0.1),
+                      color: stat.color,
+                      display: "flex",
+                    }}
+                  >
+                    {stat.icon}
                   </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))
-        }
-      </Grid >
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="700">
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       {/* Main Content Card */}
-      < Card
+      <Card
         sx={{
           borderRadius: "20px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
@@ -453,7 +493,7 @@ const PromotionManagement = () => {
         }}
       >
         {/* Filter Toolbar */}
-        < Box p={3} borderBottom="1px solid" borderColor="grey.100" >
+        <Box p={3} borderBottom="1px solid" borderColor="grey.100">
           <TextField
             fullWidth
             placeholder="Tìm kiếm khuyến mãi..."
@@ -478,10 +518,10 @@ const PromotionManagement = () => {
               },
             }}
           />
-        </Box >
+        </Box>
 
         {/* Table */}
-        < TableContainer >
+        <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
@@ -491,7 +531,9 @@ const PromotionManagement = () => {
                 <TableCell sx={{ fontWeight: 700 }}>Độ ưu tiên</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Quy tắc</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="center">Thao tác</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="center">
+                  Thao tác
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -547,7 +589,7 @@ const PromotionManagement = () => {
                           color: "primary.main",
                           fontWeight: 500,
                           borderRadius: "6px",
-                          border: "none"
+                          border: "none",
                         }}
                       />
                     </TableCell>
@@ -555,7 +597,11 @@ const PromotionManagement = () => {
                       <Typography variant="caption" display="block">
                         {new Date(promotion.startDate).toLocaleDateString()}
                       </Typography>
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        color="text.secondary"
+                      >
                         {new Date(promotion.endDate).toLocaleDateString()}
                       </Typography>
                     </TableCell>
@@ -576,7 +622,13 @@ const PromotionManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        icon={promotion.isActive ? <CheckCircle sx={{ fontSize: 16 }} /> : <Cancel sx={{ fontSize: 16 }} />}
+                        icon={
+                          promotion.isActive ? (
+                            <CheckCircle sx={{ fontSize: 16 }} />
+                          ) : (
+                            <Cancel sx={{ fontSize: 16 }} />
+                          )
+                        }
                         label={promotion.isActive ? "Active" : "Inactive"}
                         color={promotion.isActive ? "success" : "default"}
                         size="small"
@@ -605,7 +657,9 @@ const PromotionManagement = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip
-                          title={promotion.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
+                          title={
+                            promotion.isActive ? "Vô hiệu hóa" : "Kích hoạt"
+                          }
                         >
                           <IconButton
                             size="small"
@@ -643,11 +697,11 @@ const PromotionManagement = () => {
               )}
             </TableBody>
           </Table>
-        </TableContainer >
-      </Card >
+        </TableContainer>
+      </Card>
 
       {/* Create/Edit Dialog */}
-      < Dialog
+      <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
         maxWidth="md"
@@ -877,10 +931,10 @@ const PromotionManagement = () => {
             {editingId ? "Update" : "Create"}
           </Button>
         </DialogActions>
-      </Dialog >
+      </Dialog>
 
       {/* Detail Dialog */}
-      < Dialog
+      <Dialog
         open={openDetailDialog}
         onClose={() => setOpenDetailDialog(false)}
         maxWidth="md"
@@ -949,10 +1003,10 @@ const PromotionManagement = () => {
         <DialogActions>
           <Button onClick={() => setOpenDetailDialog(false)}>Close</Button>
         </DialogActions>
-      </Dialog >
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      < Dialog
+      <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
@@ -968,8 +1022,8 @@ const PromotionManagement = () => {
             Delete
           </Button>
         </DialogActions>
-      </Dialog >
-    </Box >
+      </Dialog>
+    </Box>
   );
 };
 

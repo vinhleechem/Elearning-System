@@ -36,6 +36,9 @@ public interface CategoryService {
     void importCategories(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 
     byte[] generateImportTemplate() throws java.io.IOException;
+    
+    // Kiểm tra xem category có phải là cấp 3 (level = 3)
+    boolean isLevel3Category(Long categoryId);
 }
 
 

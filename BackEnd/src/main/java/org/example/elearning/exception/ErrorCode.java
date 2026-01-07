@@ -44,8 +44,10 @@ public enum ErrorCode {
             HttpStatus.INTERNAL_SERVER_ERROR.value()),
     USER_NO_AVATAR("Người dùng chưa có avatar!", HttpStatus.NOT_FOUND.value()),
 
+    INVALID_CATEGORY_LEVEL("Danh mục không hợp lệ (phải là cấp 3)", HttpStatus.BAD_REQUEST.value()),
     // Course errors
     COURSE_NOT_FOUND("Khóa học không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    CATEGORY_NOT_FOUND("Danh mục không tìm thấy", HttpStatus.NOT_FOUND.value()),
     COURSE_ALREADY_ENROLLED("Bạn đã đăng ký khóa học này rồi", HttpStatus.CONFLICT.value()),
     COURSE_NOT_FOUND_LIST("Không tìm thấy khóa học nào", HttpStatus.NOT_FOUND.value()),
 

@@ -43,7 +43,7 @@ import {
   CloudUpload,
   Send,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { voucherService } from "../../service/voucherService";
 import type {
   Voucher,
@@ -55,7 +55,7 @@ import type {
 
 const VoucherManagement = () => {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,6 +64,7 @@ const VoucherManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [page] = useState(0);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -217,6 +218,22 @@ const VoucherManagement = () => {
       voucher.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      await voucherService.exportVouchers();
+      enqueueSnackbar("Xuất danh sách voucher thành công", {
+        variant: "success",
+      });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Xuất Excel thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleImportExcel = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -273,9 +290,34 @@ const VoucherManagement = () => {
         </Box>
         <Box display="flex" gap={2}>
           <Button
+            variant="outlined"
+            startIcon={
+              isExporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
+            disabled={isExporting}
+            onClick={handleExportExcel}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#10b981",
+              color: "#10b981",
+              "&:hover": {
+                borderColor: "#059669",
+                bgcolor: alpha("#10b981", 0.04),
+              },
+            }}
+          >
+            {isExporting ? "Đang xuất..." : "Xuất Excel"}
+          </Button>
+          <Button
             component="label"
             variant="outlined"
-            startIcon={isImporting ? <CircularProgress size={20} /> : <CloudUpload />}
+            startIcon={
+              isImporting ? <CircularProgress size={20} /> : <CloudUpload />
+            }
             disabled={isImporting}
             sx={{
               borderRadius: "12px",
@@ -443,7 +485,9 @@ const VoucherManagement = () => {
                 <TableCell sx={{ fontWeight: 700 }}>Thời Gian</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Sử Dụng</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Trạng Thái</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>Hành Động</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>
+                  Hành Động
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -504,16 +548,28 @@ const VoucherManagement = () => {
                         }
                         variant="outlined"
                         sx={{
-                          bgcolor: alpha(voucher.voucherType === "PUBLIC" ? theme.palette.success.main : theme.palette.info.main, 0.1),
-                          color: voucher.voucherType === "PUBLIC" ? "success.main" : "info.main",
+                          bgcolor: alpha(
+                            voucher.voucherType === "PUBLIC"
+                              ? theme.palette.success.main
+                              : theme.palette.info.main,
+                            0.1,
+                          ),
+                          color:
+                            voucher.voucherType === "PUBLIC"
+                              ? "success.main"
+                              : "info.main",
                           fontWeight: 500,
                           borderRadius: "6px",
-                          border: "none"
+                          border: "none",
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={600} color="success.main">
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        color="success.main"
+                      >
                         {voucher.discountType === "PERCENTAGE"
                           ? `${voucher.discountValue}%`
                           : `$${voucher.discountValue}`}
@@ -528,7 +584,11 @@ const VoucherManagement = () => {
                       <Typography variant="caption" display="block">
                         {new Date(voucher.startDate).toLocaleDateString()}
                       </Typography>
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        color="text.secondary"
+                      >
                         {new Date(voucher.endDate).toLocaleDateString()}
                       </Typography>
                     </TableCell>
@@ -560,7 +620,13 @@ const VoucherManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        icon={voucher.isActive ? <CheckCircle sx={{ fontSize: 16 }} /> : <Cancel sx={{ fontSize: 16 }} />}
+                        icon={
+                          voucher.isActive ? (
+                            <CheckCircle sx={{ fontSize: 16 }} />
+                          ) : (
+                            <Cancel sx={{ fontSize: 16 }} />
+                          )
+                        }
                         label={voucher.isActive ? "Active" : "Inactive"}
                         color={voucher.isActive ? "success" : "default"}
                         size="small"
@@ -647,7 +713,9 @@ const VoucherManagement = () => {
                 {editingId ? "Edit Voucher" : "Create New Voucher"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {editingId ? "Update existing voucher details" : "Add a new discount code"}
+                {editingId
+                  ? "Update existing voucher details"
+                  : "Add a new discount code"}
               </Typography>
             </Box>
           </Stack>
@@ -881,7 +949,9 @@ const VoucherManagement = () => {
               >
                 <MenuItem value="ALL">All Courses</MenuItem>
                 <MenuItem value="SPECIFIC_COURSES">Specific Courses</MenuItem>
-                <MenuItem value="INSTRUCTOR_COURSES">Instructor Courses</MenuItem>
+                <MenuItem value="INSTRUCTOR_COURSES">
+                  Instructor Courses
+                </MenuItem>
               </Select>
             </FormControl>
 
@@ -901,7 +971,12 @@ const VoucherManagement = () => {
         <DialogActions sx={{ p: 4, pt: 0 }}>
           <Button
             onClick={handleCloseDialog}
-            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, px: 3 }}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+            }}
           >
             Cancel
           </Button>
@@ -958,7 +1033,8 @@ const VoucherManagement = () => {
         </DialogTitle>
         <DialogContent sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Enter user IDs separated by commas to grant this voucher directly to them.
+            Enter user IDs separated by commas to grant this voucher directly to
+            them.
           </Typography>
           <TextField
             fullWidth
@@ -983,7 +1059,11 @@ const VoucherManagement = () => {
             color="info"
             disabled={loading}
             startIcon={<Send />}
-            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600 }}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
           >
             Grant Voucher
           </Button>
@@ -999,7 +1079,7 @@ const VoucherManagement = () => {
             borderRadius: "20px",
             boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
             padding: 1,
-            maxWidth: "400px"
+            maxWidth: "400px",
           },
         }}
       >
@@ -1025,14 +1105,20 @@ const VoucherManagement = () => {
         </DialogTitle>
         <DialogContent sx={{ textAlign: "center" }}>
           <Typography color="text.secondary">
-            Are you sure you want to delete this voucher? This action cannot be undone.
+            Are you sure you want to delete this voucher? This action cannot be
+            undone.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 3, gap: 2 }}>
           <Button
             onClick={() => setDeleteDialogOpen(false)}
             variant="outlined"
-            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, border: "1px solid #e2e8f0" }}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontWeight: 600,
+              border: "1px solid #e2e8f0",
+            }}
           >
             Cancel
           </Button>
@@ -1040,13 +1126,18 @@ const VoucherManagement = () => {
             onClick={handleDelete}
             color="error"
             variant="contained"
-            sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 600, boxShadow: "0 4px 14px 0 rgba(239, 68, 68, 0.4)" }}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontWeight: 600,
+              boxShadow: "0 4px 14px 0 rgba(239, 68, 68, 0.4)",
+            }}
           >
             Delete Voucher
           </Button>
         </DialogActions>
       </Dialog>
-    </Box >
+    </Box>
   );
 };
 

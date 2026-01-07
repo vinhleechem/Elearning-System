@@ -114,7 +114,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Tạo user thành công")
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("CREATE_USER")
+    @SecuredEndpoint("ADD_USER")
     public ResponseEntity<StandardResponse<UserResponse>> addUser(@Valid @RequestBody UserCreateRequest userRequest) {
         UserResponse user = userService.createUser(userRequest);
         return ResponseEntity.ok(success("Tạo user thành công", user));
@@ -198,13 +198,31 @@ public class UserController {
     @Operation(summary = "Import user từ Excel", description = "API import danh sách user từ file Excel (Admin)")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("CREATE_USER")
+    @SecuredEndpoint("ADD_USER")
     public ResponseEntity<StandardResponse<String>> importUsers(@RequestParam("file") MultipartFile file) {
          try {
             userService.importUsers(file);
             return ResponseEntity.ok(success("Import users thành công"));
         } catch (java.io.IOException e) {
             return ResponseEntity.badRequest().body(StandardResponse.error("Lỗi khi đọc file: " + e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Export danh sách users ra Excel", description = "API export danh sách users ra file Excel (Admin)")
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecuredEndpoint("VIEW_USER")
+    public ResponseEntity<byte[]> exportUsers() {
+        try {
+            byte[] data = userService.exportUsers();
+            String filename = "users_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+            
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(data);
+        } catch (java.io.IOException e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

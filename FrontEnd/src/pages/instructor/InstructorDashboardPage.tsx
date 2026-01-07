@@ -15,7 +15,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
-import { Search, FilterList, Add, MoreVert } from "@mui/icons-material";
+import { Search, FilterList, Add, MoreVert, Download } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import {
@@ -32,12 +32,12 @@ import {
   type CreateCourseRequest,
   type PublicCourseResponse,
 } from "../../service/courseService";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { useLocation } from "react-router-dom";
 
 
 const InstructorDashboardPage = () => {
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const location = useLocation();
   const [activeSection, setActiveSection] = useState<"COURSES" | "PROFILE">(
     "COURSES",
@@ -79,23 +79,26 @@ const InstructorDashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCourse, setEditingCourse] = useState<PublicCourseResponse | null>(null);
   const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Flatten categories util
   const flattenCategories = (
     cats: CategoryTreeResponse[],
-    result: { id: number; name: string; level: number; path: string }[] = [],
+    result: { id: number; name: string; level: number; path: string; hasChildren: boolean }[] = [],
     parentPath = "",
-  ): { id: number; name: string; level: number; path: string }[] => {
+  ): { id: number; name: string; level: number; path: string; hasChildren: boolean }[] => {
     cats.forEach((cat) => {
       const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
-      result.push({ id: cat.id, name: cat.name, level: cat.level, path });
-      if (cat.children && cat.children.length > 0) {
+      const hasChildren = cat.children && cat.children.length > 0;
+      result.push({ id: cat.id, name: cat.name, level: cat.level, path, hasChildren });
+      if (hasChildren) {
         flattenCategories(cat.children, result, path);
       }
     });
     return result;
   };
   const flatCategories = flattenCategories(categories);
+
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -241,10 +244,9 @@ const InstructorDashboardPage = () => {
       };
       // Manually add extra fields if CreateCourseRequest interface is strict but backend accepts them
       (request as any).thumbnailUrl = data.thumbnailUrl;
-      (request as any).previewVideoUrl = data.previewVideoUrl;
-
 
       if (editingCourse) {
+
         await courseService.updateCourse(tokens.accessToken, editingCourse.courseId, request);
         enqueueSnackbar("Cập nhật khóa học thành công!", { variant: "success" });
       } else {
@@ -263,9 +265,6 @@ const InstructorDashboardPage = () => {
       setEditingCourse(null);
 
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Thao tác thất bại", {
-        variant: "error",
-      });
       throw error;
     }
   };
@@ -291,6 +290,27 @@ const InstructorDashboardPage = () => {
       enqueueSnackbar(error.message || "Không thể gửi yêu cầu", {
         variant: "error",
       });
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!tokens?.accessToken) return;
+    try {
+      setExportLoading(true);
+      const blob = await courseService.exportCourses(tokens.accessToken);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `courses_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      enqueueSnackbar("Export danh sách khóa học thành công", { variant: "success" });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Không thể export khóa học", { variant: "error" });
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -361,6 +381,16 @@ const InstructorDashboardPage = () => {
                 sx={{ textTransform: "none", whiteSpace: "nowrap" }}
               >
                 Mới nhất
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={exportLoading ? <CircularProgress size={20} /> : <Download />}
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+              >
+                Xuất Excel
               </Button>
               <Button
                 variant="contained"

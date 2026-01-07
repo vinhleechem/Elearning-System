@@ -16,7 +16,7 @@ import PurchasedCourseCard from "../../components/learning/PurchasedCourseCard";
 import type { PurchasedCourse } from "../../types/purchasedCourse";
 
 import { httpClient } from "../../service/httpClient";
-import { enqueueSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 
 interface EnrollmentResponse {
   enrollmentId: number;
@@ -36,6 +36,7 @@ const MyLearningPage = () => {
   const [purchasedCourses, setPurchasedCourses] = useState<PurchasedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useToast();
 
   useEffect(() => {
     fetchMyEnrollments();

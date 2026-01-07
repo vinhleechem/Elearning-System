@@ -1,7 +1,7 @@
 import { Box, Divider, IconButton, Typography } from "@mui/material";
 import { Facebook, Twitter, Google } from "@mui/icons-material";
 import { useGoogleLogin } from "@react-oauth/google";
-import { useSnackbar } from "notistack";
+import { useToast } from "../hooks/useToast";
 import { authService } from "../service/authService";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 export default function SocialAuth() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {

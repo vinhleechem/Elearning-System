@@ -43,6 +43,8 @@ public interface CourseService {
     CourseResponse updateCourseStatus(Long id, CourseStatus status);
 
     void importCourses(MultipartFile file) throws IOException;
+
+    byte[] exportCourses() throws IOException;
 }
 
 

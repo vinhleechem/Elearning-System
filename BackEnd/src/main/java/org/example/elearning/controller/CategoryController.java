@@ -70,7 +70,7 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Tạo thành công")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("CREATE_USER")
+    @SecuredEndpoint("ADD_USER")
     public ResponseEntity<StandardResponse<CategoryResponse>> createCategory(
             @Valid @RequestBody CategoryRequest request) {
         CategoryResponse result = categoryService.create(request);

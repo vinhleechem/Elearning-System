@@ -42,6 +42,8 @@ public interface UserService {
 
     String resetPassword(Long id);
     
+    byte[] exportUsers() throws java.io.IOException;
+    
     // For internal service usage
     List<UserEntity> findAllAdmins();
 

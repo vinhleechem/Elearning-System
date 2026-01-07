@@ -36,6 +36,26 @@ public class CloudinaryUtil {
         return cloudinary.url().generate(StringUtils.join(publicValue, ".", extension));
     }
 
+    public String uploadVideo(MultipartFile file) throws IOException {
+        assert file.getOriginalFilename() != null;
+        String publicValue = generatePublicValue(file.getOriginalFilename());
+        String extension = getFileName(file.getOriginalFilename())[1];
+        File fileUpload = convert(file);
+        
+        // Upload video với resource_type = "video"
+        cloudinary.uploader().upload(fileUpload, ObjectUtils.asMap(
+            "public_id", publicValue,
+            "resource_type", "video"
+        ));
+        
+        cleanDisk(fileUpload);
+        
+        // Return video URL
+        return cloudinary.url()
+            .resourceType("video")
+            .generate(StringUtils.join(publicValue, ".", extension));
+    }
+
     public void deleteImageByUrl(String imageUrl) {
         if (StringUtils.isBlank(imageUrl)) {
             return;
@@ -47,6 +67,20 @@ public class CloudinaryUtil {
             }
         } catch (Exception e) {
             log.error("Không thể xoá ảnh trên Cloudinary, url: {}", imageUrl, e);
+        }
+    }
+
+    public void deleteVideoByUrl(String videoUrl) {
+        if (StringUtils.isBlank(videoUrl)) {
+            return;
+        }
+        try {
+            String publicId = extractPublicIdFromUrl(videoUrl);
+            if (StringUtils.isNotBlank(publicId)) {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "video"));
+            }
+        } catch (Exception e) {
+            log.error("Không thể xoá video trên Cloudinary, url: {}", videoUrl, e);
         }
     }
 

@@ -27,9 +27,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -183,6 +188,57 @@ public class PromotionServiceImpl implements PromotionService {
         promotionRepository.save(promotion);
 
         log.info("Promotion deactivated successfully");
+    }
+
+    @Override
+    public byte[] exportPromotions() throws IOException {
+        log.info("Exporting all promotions to Excel");
+        List<PromotionEntity> promotions = promotionRepository.findAll();
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Promotions");
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"ID", "Tên khuyến mãi", "Mô tả", "Loại", "Ngày bắt đầu", "Ngày kết thúc", "Độ ưu tiên", "Trạng thái"};
+            
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Fill data rows
+            int rowNum = 1;
+            for (PromotionEntity promotion : promotions) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(promotion.getPromotionId());
+                row.createCell(1).setCellValue(promotion.getName());
+                row.createCell(2).setCellValue(promotion.getDescription() != null ? promotion.getDescription() : "");
+                row.createCell(3).setCellValue(promotion.getPromotionType().name());
+                row.createCell(4).setCellValue(promotion.getStartDate().format(dateFormatter));
+                row.createCell(5).setCellValue(promotion.getEndDate().format(dateFormatter));
+                row.createCell(6).setCellValue(promotion.getPriority());
+                row.createCell(7).setCellValue(promotion.getIsActive() ? "Đang hoạt động" : "Không hoạt động");
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write to byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            log.info("Successfully exported {} promotions", promotions.size());
+            return outputStream.toByteArray();
+        }
     }
 
     @Override

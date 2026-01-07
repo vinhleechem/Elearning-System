@@ -35,7 +35,7 @@ import {
   ArrowBack,
   LibraryAdd,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import {
   courseService,
   type PublicCourseResponse,
@@ -75,7 +75,7 @@ const CourseContentManagementPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   const isInstructor = location.pathname.startsWith("/instructor");
   const backLink = isInstructor ? "/instructor/dashboard" : "/admin/courses";
@@ -168,7 +168,7 @@ const CourseContentManagementPage: React.FC = () => {
       }
     };
     fetchData();
-  }, [courseId, enqueueSnackbar]);
+  }, [courseId]); // Remove enqueueSnackbar from dependencies
 
   const toggleSection = (sectionId: number) => {
     setExpandedSections((prev) => ({

@@ -47,7 +47,7 @@ import {
   CloudUpload,
   Download,
 } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { adminCategoryService } from "../../service/adminCategoryService";
 import type {
   CategoryRequest,
@@ -65,7 +65,7 @@ interface FlatCategory extends CategoryResponse {
 const CategoryManagement = () => {
   const theme = useTheme();
   const { tokens } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [rawCategories, setRawCategories] = useState<CategoryResponse[]>([]);
   const [flatList, setFlatList] = useState<FlatCategory[]>([]);
   const [filteredList, setFilteredList] = useState<FlatCategory[]>([]);

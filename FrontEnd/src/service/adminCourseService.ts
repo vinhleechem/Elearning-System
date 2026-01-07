@@ -238,4 +238,20 @@ export const adminCourseService = {
       throw new Error(response.message || "Import thất bại");
     }
   },
+
+  exportCourses: async (accessToken: string): Promise<Blob> => {
+    const API_BASE_URL = import.meta.env.VITE_BASE_URL;
+    const response = await fetch(`${API_BASE_URL}/courses/export`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Không thể export danh sách khóa học");
+    }
+
+    return await response.blob();
+  },
 };

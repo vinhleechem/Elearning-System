@@ -18,7 +18,7 @@ export class ApiError extends Error {
 }
 
 import { getAuthStoreState } from "../store/authStore";
-import { enqueueSnackbar } from "notistack";
+import { toast } from "react-hot-toast";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -151,9 +151,8 @@ function handleLogout() {
 
     if (!isSessionExpiredNotified) {
       isSessionExpiredNotified = true;
-      enqueueSnackbar("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
-        variant: "warning",
-        autoHideDuration: 3000,
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
+        duration: 3000,
       });
     }
 

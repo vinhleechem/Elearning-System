@@ -56,6 +56,11 @@ public interface PromotionService {
     void deactivatePromotion(Long promotionId);
 
     /**
+     * Export promotions to Excel
+     */
+    byte[] exportPromotions() throws java.io.IOException;
+
+    /**
      * Apply best promotion to course response
      * Finds the best applicable promotion and updates the response with discount information
      */

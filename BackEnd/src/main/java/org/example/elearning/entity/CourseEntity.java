@@ -80,10 +80,8 @@ public class CourseEntity extends BaseEntity {
     @Column(name = "thumbnail_url")
     String thumbnailUrl;
 
-    @Column(name = "preview_video_url")
-    String previewVideoUrl;
-
     @Column(name = "level", length = 50)
+
     String level; // beginner, intermediate, advanced
 
     @Enumerated(EnumType.STRING)

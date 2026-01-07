@@ -34,8 +34,8 @@ public class CourseResponse {
     String requirements;
     String targetAudience;
     String thumbnailUrl;
-    String previewVideoUrl;
     String level;
+
     CourseStatus status;
     BigDecimal price;
     String language;

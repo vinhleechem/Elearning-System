@@ -3,7 +3,7 @@ import type { CourseDetailProps } from "../../types/course";
 import { TAGS_STYLE } from "../../libs/constants";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { Favorite, FavoriteBorder } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { useState } from "react";
 import { useCartStore } from "../../store/cartStore";
 import { useWishlistStore } from "../../store/wishlistStore";
@@ -24,7 +24,7 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
   isPurchased,
 }) => {
   const style = tag ? TAGS_STYLE[tag] : null;
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [loading, setLoading] = useState(false);
   const { addToCart, isInCart } = useCartStore();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();

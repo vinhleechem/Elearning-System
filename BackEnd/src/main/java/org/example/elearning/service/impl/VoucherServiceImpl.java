@@ -2,6 +2,8 @@ package org.example.elearning.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.elearning.dto.request.VoucherRequest;
 import org.example.elearning.dto.response.UserVoucherResponse;
 import org.example.elearning.dto.response.VoucherResponse;
@@ -21,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -407,5 +411,57 @@ public class VoucherServiceImpl implements VoucherService {
             }
         } catch (Exception e) { return null; }
         return null;
+    }
+
+    @Override
+    public byte[] exportVouchers() throws IOException {
+        List<VoucherEntity> vouchers = voucherRepository.findAll().stream()
+                .filter(v -> !v.isDeleted())
+                .collect(Collectors.toList());
+        
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Vouchers");
+            
+            // Header style
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            // Create header row
+            String[] columns = {"ID", "Mã voucher", "Loại", "Giá trị", "Phạm vi", "Số lượng", "Đã dùng", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Fill data
+            int rowIdx = 1;
+            for (VoucherEntity voucher : vouchers) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(voucher.getVoucherId());
+                row.createCell(1).setCellValue(voucher.getCode());
+                row.createCell(2).setCellValue(voucher.getVoucherType() != null ? voucher.getVoucherType().toString() : "");
+                row.createCell(3).setCellValue(voucher.getDiscountValue() != null ? voucher.getDiscountValue().doubleValue() : 0);
+                row.createCell(4).setCellValue(voucher.getApplicableTo() != null ? voucher.getApplicableTo().toString() : "");
+                row.createCell(5).setCellValue(voucher.getTotalUsageLimit() != null ? voucher.getTotalUsageLimit() : 0);
+                row.createCell(6).setCellValue(voucher.getUsedCount() != null ? voucher.getUsedCount() : 0);
+                row.createCell(7).setCellValue(voucher.getStartDate() != null ? voucher.getStartDate().toString() : "");
+                row.createCell(8).setCellValue(voucher.getEndDate() != null ? voucher.getEndDate().toString() : "");
+                row.createCell(9).setCellValue(voucher.getIsActive() ? "Active" : "Inactive");
+            }
+            
+            // Auto-size columns
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            workbook.write(out);
+            return out.toByteArray();
+        }
     }
 }

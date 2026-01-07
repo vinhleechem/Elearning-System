@@ -46,7 +46,7 @@ import chatbotService, {
   type SuggestedQuestion,
   type QuickReply,
 } from "../../service/chatbotService";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 
 // ============= TYPES =============
 
@@ -376,7 +376,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   position = "bottom-right",
 }) => {
   const { user } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
 
   // State
   const [isOpen, setIsOpen] = useState(false);

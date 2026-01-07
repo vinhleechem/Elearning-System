@@ -30,7 +30,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { revenueService } from "../../service/revenueService";
 import type {
   RevenueStats,
@@ -58,7 +58,7 @@ const COLORS = [
 
 const RevenueDashboard: React.FC = () => {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<RevenueStats | null>(null);
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenue[]>([]);

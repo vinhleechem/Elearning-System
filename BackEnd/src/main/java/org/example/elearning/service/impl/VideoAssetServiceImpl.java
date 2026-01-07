@@ -3,35 +3,28 @@ package org.example.elearning.service.impl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.dto.request.VideoAssetRequest;
 import org.example.elearning.dto.response.VideoAssetResponse;
 import org.example.elearning.entity.VideoAssetEntity;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.VideoAssetRepository;
 import org.example.elearning.service.VideoAssetService;
-import org.springframework.beans.factory.annotation.Value;
+import org.example.elearning.util.CloudinaryUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class VideoAssetServiceImpl implements VideoAssetService {
 
     VideoAssetRepository videoAssetRepository;
-
-    @NonFinal
-    @Value("${file.upload.dir:uploads/videos}")
-    String uploadDir;
+    CloudinaryUtil cloudinaryUtil;
 
     @Override
     @Transactional
@@ -41,37 +34,26 @@ public class VideoAssetServiceImpl implements VideoAssetService {
         }
 
         try {
-            // Create upload directory if not exists
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : "";
-            String filename = UUID.randomUUID().toString() + extension;
-            Path filePath = uploadPath.resolve(filename);
-
-            // Save file
-            try (var inputStream = file.getInputStream()) {
-                Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-            }
+            log.info("Uploading video to Cloudinary: {}", file.getOriginalFilename());
+            
+            // Upload to Cloudinary
+            String videoUrl = cloudinaryUtil.uploadVideo(file);
+            
+            log.info("Video uploaded successfully. URL: {}", videoUrl);
 
             // Create video asset entity
-            String videoUrl = "/uploads/videos/" + filename;
+            String originalFilename = file.getOriginalFilename();
             VideoAssetEntity entity = VideoAssetEntity.builder()
                     .title(title != null ? title : originalFilename)
                     .originalUrl(videoUrl)
-                    .provider("local")
+                    .provider("cloudinary")
                     .status("ready")
                     .sizeBytes(file.getSize())
                     .build();
 
             return toResponse(videoAssetRepository.save(entity));
         } catch (IOException e) {
+            log.error("Failed to upload video: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to upload video: " + e.getMessage(), e);
         }
     }
@@ -116,6 +98,17 @@ public class VideoAssetServiceImpl implements VideoAssetService {
     public void delete(Long id) {
         VideoAssetEntity entity = videoAssetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Video asset not found"));
+        
+        // Delete from Cloudinary if provider is cloudinary
+        if ("cloudinary".equals(entity.getProvider()) && entity.getOriginalUrl() != null) {
+            try {
+                cloudinaryUtil.deleteVideoByUrl(entity.getOriginalUrl());
+                log.info("Deleted video from Cloudinary: {}", entity.getOriginalUrl());
+            } catch (Exception e) {
+                log.error("Failed to delete video from Cloudinary: {}", e.getMessage(), e);
+            }
+        }
+        
         videoAssetRepository.delete(entity);
     }
 

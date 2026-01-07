@@ -39,7 +39,7 @@ import {
   RadioButtonUnchecked as UnreadIcon,
 } from "@mui/icons-material";
 import { httpClient } from "../../service/httpClient";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 
 interface Notification {
   notificationId: number;
@@ -61,7 +61,7 @@ interface Stats {
 
 const NotificationManagement = () => {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [page, setPage] = useState(1);

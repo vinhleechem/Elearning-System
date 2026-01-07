@@ -1,11 +1,15 @@
 package org.example.elearning.service.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.elearning.constant.PredefinedRole;
 import org.example.elearning.dto.request.ChangePasswordRequest;
 import org.example.elearning.dto.request.UpdateProfileRequest;
@@ -52,6 +56,7 @@ public class UserServiceImpl implements UserService {
     InstructorRepository instructorRepository;
     PasswordEncoder passwordEncoder;
     CloudinaryUtil cloudinaryUtil;
+    PasswordResetService passwordResetService;
 
 
     @Override
@@ -210,7 +215,33 @@ public class UserServiceImpl implements UserService {
         });
 
         UserEntity newUser = userMapper.toEntity(userRequest);
-        return userMapper.toEntityDTO(userRepository.save(newUser));
+        
+        // If password is provided, encode it
+        if (newUser.getPasswordHash() != null && !newUser.getPasswordHash().isEmpty()) {
+            newUser.setPasswordHash(passwordEncoder.encode(newUser.getPasswordHash()));
+        } else {
+            // No password provided - set a temporary placeholder
+            // User will set their own password via activation link
+            newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        }
+        
+        // Set default role if not provided
+        if (newUser.getRoles() == null || newUser.getRoles().isEmpty()) {
+            RoleEntity studentRole = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
+            newUser.setRoles(Set.of(studentRole));
+        }
+        
+        // Set default status
+        newUser.setStatus(UserStatus.ACTIVE);
+        
+        UserEntity savedUser = userRepository.save(newUser);
+        
+        // Send activation email if password was not provided
+        if (userRequest.getPasswordHash() == null || userRequest.getPasswordHash().isEmpty()) {
+            passwordResetService.createActivationToken(savedUser.getUserId());
+        }
+        
+        return userMapper.toEntityDTO(savedUser);
     }
 
     @Override
@@ -423,6 +454,54 @@ public class UserServiceImpl implements UserService {
         }
          if (!users.isEmpty()) {
             userRepository.saveAll(users);
+        }
+    }
+
+    @Override
+    public byte[] exportUsers() throws IOException {
+        List<UserEntity> users = userRepository.findAll();
+        
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Users");
+            
+            // Header style
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            // Create header row
+            String[] columns = {"ID", "Họ tên", "Email", "Role", "Trạng thái", "Ngày tạo"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Fill data
+            int rowIdx = 1;
+            for (UserEntity user : users) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(user.getUserId());
+                row.createCell(1).setCellValue(user.getFullName());
+                row.createCell(2).setCellValue(user.getEmail());
+                row.createCell(3).setCellValue(user.getRoles().stream()
+                    .map(RoleEntity::getRoleName)
+                    .collect(Collectors.joining(", ")));
+                row.createCell(4).setCellValue(user.getStatus().toString());
+                row.createCell(5).setCellValue(user.getCreatedAt() != null ? user.getCreatedAt().toString() : "");
+            }
+            
+            // Auto-size columns
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            workbook.write(out);
+            return out.toByteArray();
         }
     }
 

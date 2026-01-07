@@ -11,7 +11,7 @@ import { useCartStore } from "../store/cartStore";
 import { orderService } from "../service/orderService";
 import { voucherService } from "../service/voucherService";
 import { useAuthStore } from "../store/authStore";
-import { enqueueSnackbar } from "notistack";
+import { useToast } from "../hooks/useToast";
 import type {
   DiscountCalculationRequest,
   DiscountCalculationResponse,
@@ -20,6 +20,7 @@ import type {
 const CheckoutPage = () => {
   const { items, voucherCode, setVoucherCode } = useCartStore();
   const { user } = useAuthStore();
+  const { enqueueSnackbar } = useToast();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
   const [loading, setLoading] = useState(false);

@@ -95,6 +95,23 @@ public class VoucherController {
         }
     }
 
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Export vouchers to Excel", description = "Export vouchers list to Excel file (Admin only)")
+    public ResponseEntity<byte[]> exportVouchers() {
+        try {
+            byte[] data = voucherService.exportVouchers();
+            String filename = "vouchers_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+            
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(data);
+        } catch (java.io.IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // ========== PUBLIC & USER APIs ==========
 
     @GetMapping("/public")

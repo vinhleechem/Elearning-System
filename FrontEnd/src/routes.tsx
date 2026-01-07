@@ -34,6 +34,8 @@ import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
 import NotificationManagement from "./pages/admin/NotificationManagement";
 import RevenueDashboard from "./pages/admin/RevenueDashboard";
 import ReviewManagement from "./pages/admin/ReviewManagement";
+import SetPasswordPage from "./pages/SetPasswordPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 export const router = createBrowserRouter([
   {
@@ -140,6 +142,14 @@ export const router = createBrowserRouter([
       {
         path: "auth/facebook/callback",
         element: <FacebookCallbackPage />,
+      },
+      {
+        path: "set-password",
+        element: <SetPasswordPage />,
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPasswordPage />,
       },
     ],
   },

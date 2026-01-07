@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 import { authService } from "../../service/authService";
 import { useAuthStore } from "../../store/authStore";
 
 export default function FacebookCallbackPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const hasHandledRef = useRef(false);
 
   useEffect(() => {

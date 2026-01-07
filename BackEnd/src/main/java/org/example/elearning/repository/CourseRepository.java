@@ -29,6 +29,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
     @Query("SELECT COUNT(c) FROM CourseEntity c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
     Long countByCreatedAtBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
 
+    java.util.List<CourseEntity> findAllByIsDeletedFalse();
 }
 
 

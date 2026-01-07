@@ -13,11 +13,11 @@ import {
 import { Notifications as NotificationsIcon } from "@mui/icons-material";
 import { type Notification } from "../../service/webSocketService";
 import { useAuthStore } from "../../store/authStore";
-import { useSnackbar } from "notistack";
+import { useToast } from "../../hooks/useToast";
 
 const NotificationBell = () => {
   const { user } = useAuthStore();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);

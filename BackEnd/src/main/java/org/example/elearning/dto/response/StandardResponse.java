@@ -34,6 +34,13 @@ public class StandardResponse<T> {
                 .data(data)
                 .build();
     }
+
+    public static <T> StandardResponse<T> success(String message) {
+        return StandardResponse.<T>builder()
+                .message(message)
+                .build();
+    }
+
     public static <T> StandardResponse<T> error(String message) {
         return StandardResponse.<T>builder()
                 .success(false)

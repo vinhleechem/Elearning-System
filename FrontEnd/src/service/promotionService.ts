@@ -123,6 +123,30 @@ export const promotionService = {
       body: formData,
     });
   },
+
+  // Admin - Export promotions to Excel
+  exportPromotions: async (): Promise<void> => {
+    const response = await fetch(`/api/v1${PROMOTION_BASE_URL}/export`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Xuất Excel thất bại");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `promotions_${new Date().getTime()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 };
 
 export default promotionService;

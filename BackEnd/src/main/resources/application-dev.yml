@@ -79,3 +79,19 @@ logging:
   level:
     org.springframework.messaging: DEBUG
     org.springframework.web.socket: DEBUG
+  mail:
+    host: smtp.mailtrap.io
+    port: 2525
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Frontend URL for email links
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}

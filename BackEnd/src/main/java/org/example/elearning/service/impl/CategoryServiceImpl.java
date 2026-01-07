@@ -50,7 +50,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse getById(Long id) {
         CategoryEntity entity = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
         return categoryMapper.toResponse(entity);
     }
 
@@ -58,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryEntity getCategoryEntityById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
     }
 
     @Override
@@ -79,7 +79,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (request.getParentId() != null) {
             parent = categoryRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
             level = parent.getLevel() + 1;
         }
 
@@ -98,14 +98,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse update(Long id, CategoryRequest request) {
         CategoryEntity entity = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
 
         entity.setName(request.getName());
         entity.setSlug(request.getSlug());
 
         if (request.getParentId() != null) {
             CategoryEntity parent = categoryRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
             entity.setParent(parent);
             entity.setLevel(parent.getLevel() + 1);
         }
@@ -117,7 +117,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void delete(Long id) {
         CategoryEntity entity = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
         categoryRepository.delete(entity);
     }
 
@@ -191,6 +191,17 @@ public class CategoryServiceImpl implements CategoryService {
             return bos.toByteArray();
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isLevel3Category(Long categoryId) {
+        CategoryEntity category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        
+        // Chỉ cho phép category cấp 3
+        return category.getLevel() == 3;
+    }
+
 
     private String getCellValue(Row row, int index) {
         Cell cell = row.getCell(index);

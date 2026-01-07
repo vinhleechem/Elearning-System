@@ -211,6 +211,25 @@ export const voucherService = {
     }
     return response.data;
   },
+
+  // Export vouchers to Excel
+  exportVouchers: async (accessToken: string): Promise<Blob> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_BASE_URL}/vouchers/export`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Export vouchers thất bại");
+    }
+
+    return await response.blob();
+  },
 };
 
 export default voucherService;
