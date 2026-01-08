@@ -82,6 +82,21 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
     @Override
+    @Transactional
+    public InstructorResponse updateInstructorByUserId(Long userId, UpdateInstructorProfileRequest request) {
+        UserEntity user = userService.getUserByIdEntity(userId);
+
+        InstructorEntity instructor = instructorRepository.findByUser(user)
+                .orElseGet(() -> createDefaultInstructorProfile(user));
+
+        instructorMapper.updateEntity(instructor, request);
+
+        instructor = instructorRepository.save(instructor);
+
+        return instructorMapper.toResponse(instructor);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public InstructorEntity getInstructorEntityById(Long instructorId) {
         return instructorRepository.findById(instructorId)

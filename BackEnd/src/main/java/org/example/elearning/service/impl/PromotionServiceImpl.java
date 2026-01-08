@@ -16,6 +16,7 @@ import org.example.elearning.entity.PromotionRuleEntity;
 import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.PromotionRuleType;
 import org.example.elearning.exception.ErrorCode;
+import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.PromotionMapper;
 import org.example.elearning.repository.PromotionRepository;
@@ -56,6 +57,10 @@ public class PromotionServiceImpl implements PromotionService {
         PromotionEntity promotion = promotionMapper.toEntity(request);
         promotion.setRules(new ArrayList<>());
         
+        if (request.getRules() == null || request.getRules().isEmpty()) {
+            throw new BusinessException("Vui lòng thêm ít nhất một quy tắc (rule) cho chương trình khuyến mãi.");
+        }
+        
         // Create promotion rules
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
             PromotionRuleEntity rule = PromotionRuleEntity.builder()
@@ -92,6 +97,10 @@ public class PromotionServiceImpl implements PromotionService {
 
         // Clear old rules and add new ones
         promotion.getRules().clear();
+
+        if (request.getRules() == null || request.getRules().isEmpty()) {
+            throw new BusinessException("Vui lòng thêm ít nhất một quy tắc (rule) cho chương trình khuyến mãi.");
+        }
 
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
             PromotionRuleEntity rule = PromotionRuleEntity.builder()
@@ -334,11 +343,11 @@ public class PromotionServiceImpl implements PromotionService {
         List<PromotionEntity> promotions = new ArrayList<>();
         
         try (java.io.InputStream inputStream = file.getInputStream()) {
-             org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
-             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+             Workbook workbook = WorkbookFactory.create(inputStream);
+             Sheet sheet = workbook.getSheetAt(0);
              
              // Date format expected: yyyy-MM-dd HH:mm
-             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
              
              for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
@@ -399,7 +408,7 @@ public class PromotionServiceImpl implements PromotionService {
                 case STRING -> cell.getStringCellValue();
                 case NUMERIC -> {
                     if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
-                         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
                          yield cell.getLocalDateTimeCellValue().format(formatter);
                     }
                     yield String.valueOf((long) cell.getNumericCellValue());

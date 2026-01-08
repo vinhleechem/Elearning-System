@@ -13,9 +13,6 @@ public interface RoleService {
     RoleResponse add(RoleRequest roleRequest);
     RoleResponse update(Long id,RoleRequest roleRequest);
     void update(Long roleID, Long permissionID);
-    void softDelete(Long id);
-    void restore(Long id);
-    RoleResponse findByIdToResponse(Long id);
     RoleEntity findByIdToEntity(Long id);
     RoleEntity findByRoleName(String roleName);
     

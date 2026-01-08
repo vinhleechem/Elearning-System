@@ -72,4 +72,17 @@ public class InstructorController {
                 .data(instructorService.becomeInstructor())
                 .build();
     }
+
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin cập nhật thông tin giảng viên của user")
+    public ApiResponse<InstructorResponse> updateInstructorByUserId(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateInstructorProfileRequest request) {
+        return ApiResponse.<InstructorResponse>builder()
+                .code(HttpStatus.OK.value())
+                .message("Cập nhật thông tin giảng viên thành công")
+                .data(instructorService.updateInstructorByUserId(userId, request))
+                .build();
+    }
 }

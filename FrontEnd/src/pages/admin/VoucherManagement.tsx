@@ -43,8 +43,18 @@ import {
   CloudUpload,
   Send,
 } from "@mui/icons-material";
+import Autocomplete from "@mui/material/Autocomplete";
 import { useToast } from "../../hooks/useToast";
 import { voucherService } from "../../service/voucherService";
+import {
+  courseService,
+  type PublicCourseResponse,
+} from "../../service/courseService";
+import {
+  categoryService,
+  type CategoryTreeResponse,
+} from "../../service/categoryService";
+import { formatCurrency } from "../../libs/utils";
 import type {
   Voucher,
   VoucherRequest,
@@ -58,6 +68,8 @@ const VoucherManagement = () => {
   const { enqueueSnackbar } = useToast();
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openGrantDialog, setOpenGrantDialog] = useState(false);
@@ -87,7 +99,8 @@ const VoucherManagement = () => {
     endDate: "",
     isActive: true,
     applicableTo: "ALL" as VoucherApplicability,
-    specificCourseIds: [],
+    applicableCourseIds: [],
+    applicableCategoryIds: [],
     instructorId: undefined,
   });
 
@@ -104,11 +117,34 @@ const VoucherManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, enqueueSnackbar]);
+  }, [page]); // Removed enqueueSnackbar from dependencies
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      const response = await courseService.getPublicCourses({
+        page: 0,
+        size: 1000,
+      });
+      setCourses(response.data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await categoryService.getCategoryTree();
+      setCategories(response);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchVouchers();
-  }, [fetchVouchers]);
+    fetchCourses();
+    fetchCategories();
+  }, [fetchVouchers, fetchCourses, fetchCategories]);
 
   const handleOpenDialog = (voucher?: Voucher) => {
     if (voucher) {
@@ -128,7 +164,8 @@ const VoucherManagement = () => {
         endDate: voucher.endDate,
         isActive: voucher.isActive,
         applicableTo: voucher.applicableTo,
-        specificCourseIds: voucher.specificCourseIds || [],
+        applicableCourseIds: voucher.applicableCourseIds || [],
+        applicableCategoryIds: voucher.applicableCategoryIds || [],
         instructorId: voucher.instructorId,
       });
     } else {
@@ -148,7 +185,8 @@ const VoucherManagement = () => {
         endDate: "",
         isActive: true,
         applicableTo: "ALL" as VoucherApplicability,
-        specificCourseIds: [],
+        applicableCourseIds: [],
+        applicableCategoryIds: [],
         instructorId: undefined,
       });
     }
@@ -161,6 +199,36 @@ const VoucherManagement = () => {
   };
 
   const handleSubmit = async () => {
+    // Frontend validation
+    if (!formData.code.trim()) {
+      enqueueSnackbar("Voucher code is required", { variant: "warning" });
+      return;
+    }
+    if (!formData.name.trim()) {
+      enqueueSnackbar("Voucher name is required", { variant: "warning" });
+      return;
+    }
+    if (formData.discountValue <= 0) {
+      enqueueSnackbar("Discount value must be greater than 0", {
+        variant: "warning",
+      });
+      return;
+    }
+    if (!formData.startDate) {
+      enqueueSnackbar("Start date is required", { variant: "warning" });
+      return;
+    }
+    if (!formData.endDate) {
+      enqueueSnackbar("End date is required", { variant: "warning" });
+      return;
+    }
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      enqueueSnackbar("End date must be after start date", {
+        variant: "warning",
+      });
+      return;
+    }
+
     try {
       if (editingId) {
         await voucherService.updateVoucher(editingId, formData);
@@ -839,32 +907,50 @@ const VoucherManagement = () => {
               />
               <TextField
                 label="Max Discount"
-                type="number"
                 fullWidth
-                placeholder="Optional"
-                value={formData.maxDiscountAmount || ""}
-                onChange={(e) =>
+                placeholder="0"
+                value={
+                  formData.maxDiscountAmount
+                    ? formData.maxDiscountAmount.toLocaleString("vi-VN")
+                    : ""
+                }
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\./g, "");
                   setFormData({
                     ...formData,
-                    maxDiscountAmount: e.target.value
-                      ? parseFloat(e.target.value)
-                      : undefined,
-                  })
-                }
-                InputProps={{ sx: { borderRadius: "12px" } }}
+                    maxDiscountAmount: value ? parseFloat(value) : undefined,
+                  });
+                }}
+                InputProps={{
+                  sx: { borderRadius: "12px" },
+                  endAdornment: (
+                    <InputAdornment position="end">₫</InputAdornment>
+                  ),
+                }}
+                helperText="Để trống nếu không giới hạn"
               />
               <TextField
                 label="Min Order Value"
-                type="number"
                 fullWidth
-                value={formData.minOrderValue}
-                onChange={(e) =>
+                value={
+                  formData.minOrderValue > 0
+                    ? formData.minOrderValue.toLocaleString("vi-VN")
+                    : ""
+                }
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\./g, "");
                   setFormData({
                     ...formData,
-                    minOrderValue: parseFloat(e.target.value) || 0,
-                  })
-                }
-                InputProps={{ sx: { borderRadius: "12px" } }}
+                    minOrderValue: parseFloat(value) || 0,
+                  });
+                }}
+                InputProps={{
+                  sx: { borderRadius: "12px" },
+                  endAdornment: (
+                    <InputAdornment position="end">₫</InputAdornment>
+                  ),
+                }}
+                helperText="Nhập 0 nếu không yêu cầu giá trị tối thiểu"
               />
             </Box>
 
@@ -943,17 +1029,186 @@ const VoucherManagement = () => {
                   setFormData({
                     ...formData,
                     applicableTo: e.target.value as VoucherApplicability,
+                    applicableCourseIds: [], // Reset course selection
+                    applicableCategoryIds: [], // Reset category selection
                   })
                 }
                 sx={{ borderRadius: "12px" }}
               >
                 <MenuItem value="ALL">All Courses</MenuItem>
                 <MenuItem value="SPECIFIC_COURSES">Specific Courses</MenuItem>
-                <MenuItem value="INSTRUCTOR_COURSES">
-                  Instructor Courses
-                </MenuItem>
+                <MenuItem value="CATEGORY">Category</MenuItem>
               </Select>
             </FormControl>
+
+            {/* Course selector for SPECIFIC_COURSES */}
+            {formData.applicableTo === "SPECIFIC_COURSES" && (
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: "12px",
+                  backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                  border: `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 1.5,
+                    fontWeight: 600,
+                    color: theme.palette.primary.main,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <CardGiftcard fontSize="small" />
+                  Chọn khóa học áp dụng voucher
+                </Typography>
+                <Autocomplete
+                  multiple
+                  options={courses}
+                  getOptionLabel={(option) => option.title}
+                  value={courses.filter((course) =>
+                    formData.applicableCourseIds?.includes(course.courseId),
+                  )}
+                  onChange={(_, newValue) => {
+                    setFormData({
+                      ...formData,
+                      applicableCourseIds: newValue.map(
+                        (course) => course.courseId,
+                      ),
+                    });
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Courses"
+                      placeholder="Chọn các khóa học cụ thể..."
+                      helperText={`Đã chọn ${formData.applicableCourseIds?.length || 0} khóa học`}
+                      InputProps={{
+                        ...params.InputProps,
+                        sx: { borderRadius: "12px", bgcolor: "white" },
+                      }}
+                    />
+                  )}
+                  sx={{ width: "100%" }}
+                />
+              </Box>
+            )}
+
+            {/* Category selector for CATEGORY */}
+            {formData.applicableTo === "CATEGORY" && (
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: "12px",
+                  backgroundColor: alpha(theme.palette.warning.main, 0.04),
+                  border: `1px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 1.5,
+                    fontWeight: 600,
+                    color: theme.palette.warning.main,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <CardGiftcard fontSize="small" />
+                  Chọn danh mục áp dụng voucher
+                </Typography>
+                <Autocomplete
+                  multiple
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  options={(() => {
+                    const flatten = (
+                      cats: CategoryTreeResponse[],
+                      depth = 0
+                    ): (CategoryTreeResponse & { displayName: string })[] => {
+                      return cats.reduce((acc, cat) => {
+                        // Add non-breaking spaces for indentation effect
+                        const prefix = depth > 0 ? "— ".repeat(depth) : "";
+                        acc.push({ ...cat, displayName: prefix + cat.name });
+                        if (cat.children?.length) {
+                          acc.push(...flatten(cat.children, depth + 1));
+                        }
+                        return acc;
+                      }, [] as (CategoryTreeResponse & { displayName: string })[]);
+                    };
+                    return flatten(categories);
+                  })()}
+                  getOptionLabel={(option) => option.displayName || option.name}
+                  value={(() => {
+                    // Reuse the same flattening logic to find the selected objects
+                    const flatten = (
+                      cats: CategoryTreeResponse[],
+                      depth = 0
+                    ): (CategoryTreeResponse & { displayName: string })[] => {
+                      return cats.reduce((acc, cat) => {
+                        const prefix = depth > 0 ? "— ".repeat(depth) : "";
+                        acc.push({ ...cat, displayName: prefix + cat.name });
+                        if (cat.children?.length) {
+                          acc.push(...flatten(cat.children, depth + 1));
+                        }
+                        return acc;
+                      }, [] as (CategoryTreeResponse & { displayName: string })[]);
+                    };
+                    const flatCategories = flatten(categories);
+                    return flatCategories.filter((cat) =>
+                      formData.applicableCategoryIds?.includes(cat.id),
+                    );
+                  })()}
+                  onChange={(_, newValue) => {
+                    // Helper to get all descendant IDs
+                    const getDescendantIds = (
+                      cat: CategoryTreeResponse,
+                    ): number[] => {
+                      let ids: number[] = []; // Don't include self
+                      if (cat.children && cat.children.length > 0) {
+                        cat.children.forEach((child) => {
+                          ids.push(child.id);
+                          ids = [...ids, ...getDescendantIds(child)];
+                        });
+                      }
+                      return ids;
+                    };
+
+                    // Calculate all descendants of the currently selected categories
+                    const allDescendantsOfSelected = new Set(
+                      newValue.flatMap((cat) => getDescendantIds(cat)),
+                    );
+
+                    // Filter out any selected category that is actually a descendant of another selected category
+                    // This ensures only the highest-level selected categories are kept
+                    const optimizedIds = newValue
+                      .map((cat) => cat.id)
+                      .filter((id) => !allDescendantsOfSelected.has(id));
+
+                    setFormData({
+                      ...formData,
+                      applicableCategoryIds: optimizedIds,
+                    });
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Categories"
+                      placeholder="Chọn các danh mục..."
+                      helperText={`Đã chọn ${formData.applicableCategoryIds?.length || 0} danh mục`}
+                      InputProps={{
+                        ...params.InputProps,
+                        sx: { borderRadius: "12px", bgcolor: "white" },
+                      }}
+                    />
+                  )}
+                  sx={{ width: "100%" }}
+                />
+              </Box>
+            )}
 
             <FormControlLabel
               control={

@@ -11,6 +11,7 @@ export type UserResponse = {
   providerId?: string;
   provider?: string;
   roles?: string[];
+  status?: "ACTIVE" | "LOCKED"; // User status from backend
   // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
   instructorId?: number;
   instructorHeadline?: string;

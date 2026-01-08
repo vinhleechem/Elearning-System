@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.example.elearning.enums.UserStatus;
 
 @Getter
 @Setter
@@ -24,7 +25,7 @@ public class UserResponse{
     String providerId;
     Provider provider = Provider.LOCAL;
     List<String> roles;
-
+    UserStatus status;
     // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
     Long instructorId;
     String instructorHeadline;

@@ -33,8 +33,8 @@ public class PasswordResetTokenEntity {
     @Column(nullable = false)
     Boolean isUsed = false;
     
-    @Column(nullable = false)
-    LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    LocalDateTime createdAt;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,6 +43,19 @@ public class PasswordResetTokenEntity {
     public enum TokenType {
         PASSWORD_RESET,
         ACCOUNT_ACTIVATION
+    }
+    
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (isUsed == null) {
+            isUsed = false;
+        }
+        if (tokenType == null) {
+            tokenType = TokenType.PASSWORD_RESET;
+        }
     }
     
     public boolean isExpired() {

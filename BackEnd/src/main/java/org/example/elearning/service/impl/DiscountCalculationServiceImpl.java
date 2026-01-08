@@ -31,9 +31,31 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
     private final UserVoucherRepository userVoucherRepository;
     private final CourseRepository courseRepository;
     private final OrderDiscountRepository orderDiscountRepository;
+    private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository; // Added OrderRepository
 
-    @Override
-    @Transactional(readOnly = true)
+
+    private ApplyDiscountRequest buildRequestFromOrder(OrderEntity order) {
+        ApplyDiscountRequest request = new ApplyDiscountRequest();
+        request.setUserId(order.getUser().getUserId());
+
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
+        
+        List<ApplyDiscountRequest.CartItemRequest> cartItems = orderItems.stream()
+                .map(item -> {
+                    ApplyDiscountRequest.CartItemRequest cartItem = new ApplyDiscountRequest.CartItemRequest();
+                    cartItem.setCourseId(item.getCourse().getCourseId());
+                    cartItem.setPrice(item.getPrice());
+                    return cartItem;
+                })
+                .collect(Collectors.toList());
+
+        request.setCartItems(cartItems);
+        
+        return request;
+    }
+
     public DiscountCalculationResponse calculateDiscount(ApplyDiscountRequest request) {
         log.info("Calculating discount for user: {}", request.getUserId());
         
@@ -88,23 +110,27 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                     .build());
         }
         
-        // Calculate cart total after promotions
-        BigDecimal cartTotal = itemPrices.stream()
-                .map(DiscountCalculationResponse.ItemPrice::getDiscountPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
         // Apply voucher if provided
         if (request.getVoucherCode() != null && !request.getVoucherCode().isEmpty()) {
             VoucherEntity voucher = voucherRepository.findByCodeAndIsDeletedFalse(request.getVoucherCode())
                     .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.VOUCHER_CODE_NOT_FOUND.getMessage()));
             
-            validateVoucherForUse(voucher, request.getUserId(), cartTotal);
+            // Filter applicable items
+            List<DiscountCalculationResponse.ItemPrice> applicableItems = itemPrices.stream()
+                    .filter(item -> isCourseApplicableForVoucher(item.getCourseId(), voucher))
+                    .collect(Collectors.toList());
+
+            BigDecimal applicableTotal = applicableItems.stream()
+                    .map(DiscountCalculationResponse.ItemPrice::getDiscountPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            validateVoucherForUse(voucher, request.getUserId(), applicableTotal, applicableItems.isEmpty());
             
-            BigDecimal voucherDiscount = calculateVoucherDiscount(voucher, cartTotal);
+            BigDecimal voucherDiscount = calculateVoucherDiscount(voucher, applicableTotal);
             
             if (voucherDiscount.compareTo(BigDecimal.ZERO) > 0) {
-                // Apply voucher discount proportionally to items
-                applyVoucherToItems(itemPrices, voucherDiscount);
+                // Apply voucher discount proportionally to APPLICABLE items
+                applyVoucherToItems(applicableItems, voucherDiscount);
                 
                 addOrUpdateDiscount(discounts, OrderDiscountType.VOUCHER.name(),
                         voucher.getName(), voucher.getDescription(), voucherDiscount);
@@ -138,6 +164,24 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
 
         DiscountCalculationResponse calculation = calculateDiscount(request);
 
+        // Update Order Items final price
+        // Note: calculateDiscount returns ItemPrices with finalPrice. 
+        // We need to map these back to OrderItemEntities.
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
+        
+        for (DiscountCalculationResponse.ItemPrice itemPrice : calculation.getItemPrices()) {
+             orderItems.stream()
+                 .filter(oi -> oi.getCourse().getCourseId().equals(itemPrice.getCourseId()))
+                 .findFirst()
+                 .ifPresent(oi -> {
+                     oi.setDiscountPrice(itemPrice.getDiscountPrice()); // Price after promotion
+                     oi.setFinalPrice(itemPrice.getFinalPrice());     // Price after voucher
+                     // Update discount amount on item (original - final)
+                     // or accumulate savings
+                     orderItemRepository.save(oi);
+                 });
+        }
+
         // Create order discount records
         for (DiscountCalculationResponse.DiscountDetail discount : calculation.getDiscounts()) {
             OrderDiscountEntity orderDiscount = OrderDiscountEntity.builder()
@@ -149,6 +193,11 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
 
             orderDiscountRepository.save(orderDiscount);
         }
+
+        // Update order totals
+        order.setDiscountAmount(calculation.getTotalDiscount());
+        order.setFinalAmount(calculation.getFinalAmount());
+        orderRepository.save(order);
 
         // Mark voucher as used if applicable
         if (voucherCode != null && !voucherCode.isEmpty()) {
@@ -233,9 +282,13 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
     }
 
     private void applyVoucherToItems(List<DiscountCalculationResponse.ItemPrice> items, BigDecimal voucherDiscount) {
-        BigDecimal totalBeforeVoucher = items.stream()
+        if (items.isEmpty()) return;
+        
+        BigDecimal totalApplicableAmount = items.stream()
                 .map(DiscountCalculationResponse.ItemPrice::getDiscountPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalApplicableAmount.compareTo(BigDecimal.ZERO) == 0) return;
 
         BigDecimal remainingDiscount = voucherDiscount;
 
@@ -247,10 +300,17 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                 // Last item gets remaining discount
                 itemDiscount = remainingDiscount;
             } else {
-                // Proportional discount
-                BigDecimal proportion = item.getDiscountPrice().divide(totalBeforeVoucher, 4, RoundingMode.HALF_UP);
+                // Proportional discount based on item's share of APPLICABLE total
+                BigDecimal proportion = item.getDiscountPrice().divide(totalApplicableAmount, 4, RoundingMode.HALF_UP);
                 itemDiscount = voucherDiscount.multiply(proportion).setScale(2, RoundingMode.HALF_UP);
                 remainingDiscount = remainingDiscount.subtract(itemDiscount);
+            }
+            
+            // Ensure discount doesn't exceed price
+            if (itemDiscount.compareTo(item.getDiscountPrice()) > 0) {
+                 itemDiscount = item.getDiscountPrice();
+                 // If limited, we might have leftover discount. 
+                 // Simple logic: just cap it. Real logic might redistribute.
             }
 
             BigDecimal newFinalPrice = item.getDiscountPrice().subtract(itemDiscount);
@@ -259,7 +319,7 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         }
     }
 
-    private void validateVoucherForUse(VoucherEntity voucher, Long userId, BigDecimal cartTotal) {
+    private void validateVoucherForUse(VoucherEntity voucher, Long userId, BigDecimal applicableTotal, boolean noApplicableItems) {
         LocalDateTime now = LocalDateTime.now();
 
         if (!voucher.getIsActive()) {
@@ -269,8 +329,12 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
             throw new BusinessException(ErrorCode.VOUCHER_EXPIRED.getMessage());
         }
+        
+        if (noApplicableItems) {
+            throw new BusinessException("Voucher không áp dụng cho các khóa học trong giỏ hàng");
+        }
 
-        if (voucher.getMinOrderValue() != null && cartTotal.compareTo(voucher.getMinOrderValue()) < 0) {
+        if (voucher.getMinOrderValue() != null && applicableTotal.compareTo(voucher.getMinOrderValue()) < 0) {
             throw new BusinessException(ErrorCode.VOUCHER_MIN_PURCHASE_NOT_MET.getMessage());
         }
 
@@ -287,6 +351,29 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         if (!hasUnusedVoucher) {
             throw new BusinessException(ErrorCode.VOUCHER_ALREADY_USED.getMessage());
         }
+    }
+    
+    private boolean isCourseApplicableForVoucher(Long courseId, VoucherEntity voucher) {
+        return switch (voucher.getApplicableTo()) {
+            case ALL -> true;
+            case SPECIFIC_COURSES -> voucher.getApplicableCourses().stream()
+                    .anyMatch(c -> c.getCourseId().equals(courseId));
+            case CATEGORY -> {
+                 CourseEntity course = courseRepository.findById(courseId).orElse(null);
+                 if (course == null || course.getCategory() == null) yield false;
+                 
+                 CategoryEntity category = course.getCategory();
+                 // Check category and its parents
+                 yield isCategoryInList(category, voucher.getApplicableCategoryIds());
+            }
+        };
+    }
+    
+    private boolean isCategoryInList(CategoryEntity category, List<Long> allowedIds) {
+        if (category == null) return false;
+        if (allowedIds.contains(category.getId())) return true;
+        // Recursively check parent
+        return isCategoryInList(category.getParent(), allowedIds);
     }
 
     private void markVoucherAsUsed(String code, Long userId, OrderEntity order) {
@@ -331,27 +418,5 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         }
     }
 
-    private ApplyDiscountRequest buildRequestFromOrder(OrderEntity order) {
-        ApplyDiscountRequest request = new ApplyDiscountRequest();
-        request.setUserId(order.getUser().getUserId());
 
-        // TODO: OrderEntity doesn't have getOrderItems() relationship
-        // Need to add @OneToMany relationship to OrderItemEntity first
-        // For now, return empty list
-        request.setCartItems(new ArrayList<>());
-        
-        /*
-        List<ApplyDiscountRequest.CartItemRequest> cartItems = order.getOrderItems().stream()
-                .map(item -> {
-                    ApplyDiscountRequest.CartItemRequest cartItem = new ApplyDiscountRequest.CartItemRequest();
-                    cartItem.setCourseId(item.getCourse().getCourseId());
-                    cartItem.setPrice(item.getPrice());
-                    return cartItem;
-                })
-                .collect(Collectors.toList());
-
-        request.setCartItems(cartItems);
-        */
-        return request;
-    }
 }

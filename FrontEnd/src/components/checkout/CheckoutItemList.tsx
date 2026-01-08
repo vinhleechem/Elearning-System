@@ -7,7 +7,8 @@ const CheckoutItemList = () => {
 
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch on mount
 
   return (
     <>

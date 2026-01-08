@@ -93,25 +93,6 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public void softDelete(Long id) {
-        RoleEntity role = findByIdToEntity(id);
-        role.setDeleted(true);
-        roleRepository.save(role);
-    }
-
-    @Override
-    public void restore(Long id) {
-        RoleEntity role = findByIdToEntity(id);
-        role.setDeleted(false);
-        roleRepository.save(role);
-    }
-
-    @Override
-    public RoleResponse findByIdToResponse(Long id) {
-        return roleMapper.toRoleResponse(findByIdToEntity(id));
-    }
-
-    @Override
     public RoleEntity findByIdToEntity(Long id) {
         return roleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND.getMessage()));
@@ -119,7 +100,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleEntity findByRoleName(String roleName) {
-        return roleRepository.findByRoleName(PredefinedRole.ROLE_STUDENT)
+        return roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND.getMessage()));
     }
 

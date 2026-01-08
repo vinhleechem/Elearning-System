@@ -17,6 +17,19 @@ spring:
       enabled: true
       max-file-size: 500MB
       max-request-size: 500MB
+
+  mail:
+    host: smtp.mailtrap.io
+    port: 2525
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   
   # Kafka configuration
   kafka:
@@ -74,22 +87,6 @@ file:
   upload:
     dir: uploads/videos
 
-# Logging configuration
-logging:
-  level:
-    org.springframework.messaging: DEBUG
-    org.springframework.web.socket: DEBUG
-  mail:
-    host: smtp.mailtrap.io
-    port: 2525
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
 # Frontend URL for email links
 app:

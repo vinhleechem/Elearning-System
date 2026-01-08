@@ -47,6 +47,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     
     implementation("org.springframework.kafka:spring-kafka")
+    
+    // Email support
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
     // Apache POI for Excel import
     implementation("org.apache.poi:poi:5.2.5")

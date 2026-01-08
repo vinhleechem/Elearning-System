@@ -1,7 +1,11 @@
 export const formatCurrency = (value: number): string => {
-  return value.toLocaleString("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    minimumFractionDigits: 0,
-  });
+  return (
+    new Intl.NumberFormat("vi-VN", {
+      style: "decimal",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+      .format(value)
+      .replace(/\s/g, ".") + " ₫"
+  );
 };

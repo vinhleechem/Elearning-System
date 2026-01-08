@@ -71,8 +71,12 @@ public class VoucherServiceImpl implements VoucherService {
                 && request.getApplicableCourseIds() != null && !request.getApplicableCourseIds().isEmpty()) {
             List<CourseEntity> courses = courseRepository.findAllById(request.getApplicableCourseIds());
             voucher.getApplicableCourses().addAll(courses);
-            voucher = voucherRepository.save(voucher);
+        } else if (request.getApplicableTo() == VoucherApplicability.CATEGORY
+                && request.getApplicableCategoryIds() != null && !request.getApplicableCategoryIds().isEmpty()) {
+             voucher.getApplicableCategoryIds().addAll(request.getApplicableCategoryIds());
         }
+        
+        voucher = voucherRepository.save(voucher);
 
         log.info("Voucher created successfully: {}", voucher.getCode());
         return voucherMapper.toResponse(voucher);
@@ -91,10 +95,15 @@ public class VoucherServiceImpl implements VoucherService {
 
         // Update applicable courses
         voucher.getApplicableCourses().clear();
+        voucher.getApplicableCategoryIds().clear();
+        
         if (request.getApplicableTo() == VoucherApplicability.SPECIFIC_COURSES
                 && request.getApplicableCourseIds() != null && !request.getApplicableCourseIds().isEmpty()) {
             List<CourseEntity> courses = courseRepository.findAllById(request.getApplicableCourseIds());
             voucher.getApplicableCourses().addAll(courses);
+        } else if (request.getApplicableTo() == VoucherApplicability.CATEGORY
+                && request.getApplicableCategoryIds() != null && !request.getApplicableCategoryIds().isEmpty()) {
+            voucher.getApplicableCategoryIds().addAll(request.getApplicableCategoryIds());
         }
 
         voucher = voucherRepository.save(voucher);

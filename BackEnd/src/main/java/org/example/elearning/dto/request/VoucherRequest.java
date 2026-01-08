@@ -59,4 +59,6 @@ public class VoucherRequest {
     private VoucherApplicability applicableTo;
 
     private List<Long> applicableCourseIds = new ArrayList<>(); // For SPECIFIC_COURSES
+    
+    private List<Long> applicableCategoryIds = new ArrayList<>(); // For CATEGORY
 }

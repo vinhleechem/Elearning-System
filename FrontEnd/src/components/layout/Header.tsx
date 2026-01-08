@@ -56,11 +56,12 @@ const Header: React.FC<HeaderProps> = ({
   const [megaMenuTopics, setMegaMenuTopics] = useState<MegaMenuTopic[]>([]);
 
   useEffect(() => {
-    if (user) {
+    if (user?.userId) {
       fetchCart();
       fetchWishlist();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.userId]); // Only re-fetch when userId changes (login/logout)
 
   const cartItems: CartItemProps[] = cartItemsResponse.map((item) => ({
     id: item.courseId,

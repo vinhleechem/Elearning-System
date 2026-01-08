@@ -8,6 +8,7 @@ import org.example.elearning.enums.VoucherType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -30,5 +31,7 @@ public class VoucherResponse {
     private Boolean isActive;
     private VoucherApplicability applicableTo;
     private Integer applicableCoursesCount;
+    private List<Long> applicableCourseIds;
+    private List<Long> applicableCategoryIds;
     private LocalDateTime createdAt;
 }

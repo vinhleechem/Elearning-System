@@ -7,10 +7,7 @@ export type VoucherType =
   | "FIRST_ORDER"
   | "LOYALTY";
 
-export type VoucherApplicability =
-  | "ALL"
-  | "SPECIFIC_COURSES"
-  | "INSTRUCTOR_COURSES";
+export type VoucherApplicability = "ALL" | "SPECIFIC_COURSES" | "CATEGORY";
 
 export type VoucherSource =
   | "ADMIN_GRANTED"
@@ -36,7 +33,7 @@ export const VoucherType = {
 export const VoucherApplicability = {
   ALL: "ALL",
   SPECIFIC_COURSES: "SPECIFIC_COURSES",
-  INSTRUCTOR_COURSES: "INSTRUCTOR_COURSES",
+  CATEGORY: "CATEGORY",
 } as const;
 
 export const VoucherSource = {
@@ -77,7 +74,8 @@ export interface Voucher {
   endDate: string;
   isActive: boolean;
   applicableTo: VoucherApplicability;
-  specificCourseIds?: number[];
+  applicableCourseIds?: number[];
+  applicableCategoryIds?: number[];
   instructorId?: number;
   createdBy?: number;
   createdAt: string;
@@ -117,7 +115,8 @@ export interface VoucherRequest {
   endDate: string;
   isActive: boolean;
   applicableTo: VoucherApplicability;
-  specificCourseIds?: number[];
+  applicableCourseIds?: number[];
+  applicableCategoryIds?: number[];
   instructorId?: number;
 }
 

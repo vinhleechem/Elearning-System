@@ -19,7 +19,8 @@ const CartPage = () => {
 
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch on mount
 
   useEffect(() => {
     setDiscountData(null);
@@ -57,8 +58,8 @@ const CartPage = () => {
   const total = discountData
     ? discountData.finalAmount
     : items.reduce((acc, item) => {
-        return acc + (item.discountPrice ?? item.price);
-      }, 0);
+      return acc + (item.discountPrice ?? item.price);
+    }, 0);
 
   const oldTotal = items.reduce((acc, item) => {
     return acc + item.price;

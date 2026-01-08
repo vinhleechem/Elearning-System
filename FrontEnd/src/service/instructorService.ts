@@ -1,19 +1,19 @@
 import { httpClient } from "./httpClient";
 
 export interface InstructorResponse {
-    instructorId: number;
-    userId: number;
-    fullName: string;
-    email: string;
-    avatarUrl?: string;
-    headline?: string;
-    biography?: string;
-    website?: string;
-    linkedin?: string;
-    twitter?: string;
-    youtube?: string;
-    totalStudents?: number;
-    totalCourses?: number;
+  instructorId: number;
+  userId: number;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+  headline?: string;
+  biography?: string;
+  website?: string;
+  linkedin?: string;
+  twitter?: string;
+  youtube?: string;
+  totalStudents?: number;
+  totalCourses?: number;
 }
 
 export interface UpdateInstructorProfileRequest {
@@ -26,7 +26,7 @@ export interface UpdateInstructorProfileRequest {
 }
 
 export const instructorService = {
-    // GET /api/v1/instructors/{instructorId}
+  // GET /api/v1/instructors/{instructorId}
   getInstructorById: async (
     accessToken: string,
     instructorId: number,
@@ -76,6 +76,30 @@ export const instructorService = {
       },
       body: JSON.stringify(payload),
     });
+
+    if (!response.data) {
+      throw new Error("Không cập nhật được thông tin giảng viên");
+    }
+
+    return response.data;
+  },
+
+  // PUT /api/v1/instructors/{userId} - Admin only
+  updateInstructorByUserId: async (
+    accessToken: string,
+    userId: number,
+    payload: UpdateInstructorProfileRequest,
+  ): Promise<InstructorResponse> => {
+    const response = await httpClient<InstructorResponse>(
+      `/instructors/${userId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.data) {
       throw new Error("Không cập nhật được thông tin giảng viên");

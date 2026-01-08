@@ -31,6 +31,7 @@ import {
   InputLabel,
   FormControl,
   InputAdornment,
+  Autocomplete,
 } from "@mui/material";
 import {
   Add,
@@ -46,6 +47,10 @@ import {
 } from "@mui/icons-material";
 import { useToast } from "../../hooks/useToast";
 import { promotionService } from "../../service/promotionService";
+import { categoryService } from "../../service/categoryService";
+import type { CategoryTreeResponse } from "../../service/categoryService";
+import { courseService } from "../../service/courseService";
+import type { PublicCourseResponse } from "../../service/courseService";
 import type {
   Promotion,
   PromotionDetail,
@@ -98,7 +103,36 @@ const PromotionManagement = () => {
 
   useEffect(() => {
     fetchPromotions();
+    fetchHelperData();
   }, [page]);
+
+  const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
+  const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
+
+  const fetchHelperData = async () => {
+    try {
+      const catTree = await categoryService.getCategoryTree();
+      setCategories(catTree);
+      const courseData = await courseService.getPublicCourses({ size: 100 });
+      setCourses(courseData.data);
+    } catch (e) {
+      console.error("Failed to fetch helper data", e);
+    }
+  };
+
+  const flattenCategories = (
+    cats: CategoryTreeResponse[],
+    depth = 0
+  ): (CategoryTreeResponse & { displayName: string })[] => {
+    return cats.reduce((acc, cat) => {
+      const prefix = depth > 0 ? "— ".repeat(depth) : "";
+      acc.push({ ...cat, displayName: prefix + cat.name });
+      if (cat.children?.length) {
+        acc.push(...flattenCategories(cat.children, depth + 1));
+      }
+      return acc;
+    }, [] as (CategoryTreeResponse & { displayName: string })[]);
+  };
 
   const fetchPromotions = async () => {
     setLoading(true);
@@ -178,6 +212,11 @@ const PromotionManagement = () => {
   };
 
   const handleSubmit = async () => {
+    if (formData.rules.length === 0) {
+      enqueueSnackbar("Vui lòng thêm ít nhất một quy tắc (rule)", { variant: "error" });
+      return;
+    }
+
     try {
       if (editingId) {
         await promotionService.updatePromotion(editingId, formData);
@@ -839,6 +878,7 @@ const PromotionManagement = () => {
                   Add New Rule
                 </Typography>
                 <Grid container spacing={2}>
+                  {/* Row 1: Rule Type & Discount Type */}
                   <Grid size={{ xs: 6 }}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Rule Type</InputLabel>
@@ -849,6 +889,7 @@ const PromotionManagement = () => {
                           setCurrentRule({
                             ...currentRule,
                             ruleType: e.target.value as any,
+                            targetId: undefined, // Reset target on type change
                           })
                         }
                       >
@@ -878,6 +919,8 @@ const PromotionManagement = () => {
                       </Select>
                     </FormControl>
                   </Grid>
+
+                  {/* Row 2: Discount Value & Max Discount (if percentage) */}
                   <Grid size={{ xs: 6 }}>
                     <TextField
                       label="Discount Value"
@@ -893,23 +936,143 @@ const PromotionManagement = () => {
                       }
                     />
                   </Grid>
-                  <Grid size={{ xs: 6 }}>
-                    <TextField
-                      label="Target ID (optional)"
-                      type="number"
-                      fullWidth
-                      size="small"
-                      value={currentRule.targetId || ""}
-                      onChange={(e) =>
-                        setCurrentRule({
-                          ...currentRule,
-                          targetId: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
-                    />
-                  </Grid>
+                  {currentRule.discountType === "PERCENTAGE" && (
+                    <Grid size={{ xs: 6 }}>
+                      <TextField
+                        label="Max Discount Amount"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={currentRule.maxDiscountAmount || ""}
+                        onChange={(e) =>
+                          setCurrentRule({
+                            ...currentRule,
+                            maxDiscountAmount: e.target.value
+                              ? parseFloat(e.target.value)
+                              : undefined,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {/* Row 3: Target Selector (Course or Category) */}
+                  {currentRule.ruleType === "COURSE" && (
+                    <Grid size={{ xs: 12 }}>
+                      <Autocomplete
+                        options={courses}
+                        getOptionLabel={(option) => option.title}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Select Course"
+                            size="small"
+                          />
+                        )}
+                        value={
+                          courses.find(
+                            (c) => c.courseId === currentRule.targetId
+                          ) || null
+                        }
+                        onChange={(_, newValue) =>
+                          setCurrentRule({
+                            ...currentRule,
+                            targetId: newValue?.courseId,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {currentRule.ruleType === "CATEGORY" && (
+                    <Grid size={{ xs: 12 }}>
+                      <Autocomplete
+                        options={flattenCategories(categories)}
+                        getOptionLabel={(option) => option.displayName}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Select Category"
+                            size="small"
+                          />
+                        )}
+                        value={
+                          flattenCategories(categories).find(
+                            (c) => c.id === currentRule.targetId
+                          ) || null
+                        }
+                        onChange={(_, newValue) =>
+                          setCurrentRule({
+                            ...currentRule,
+                            targetId: newValue?.id,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {/* Row 4: Min Purchase (Cart Total / General) */}
+                  {(currentRule.ruleType === "CART_TOTAL" ||
+                    currentRule.ruleType === "BUY_X_GET_Y") && (
+                      <Grid size={{ xs: 6 }}>
+                        <TextField
+                          label="Min Purchase Amount"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          value={currentRule.minPurchaseAmount || ""}
+                          onChange={(e) =>
+                            setCurrentRule({
+                              ...currentRule,
+                              minPurchaseAmount: e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        />
+                      </Grid>
+                    )}
+
+                  {/* Row 5: Buy X Get Y Specifics */}
+                  {currentRule.ruleType === "BUY_X_GET_Y" && (
+                    <>
+                      <Grid size={{ xs: 3 }}>
+                        <TextField
+                          label="Buy Quantity"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          value={currentRule.buyQuantity || ""}
+                          onChange={(e) =>
+                            setCurrentRule({
+                              ...currentRule,
+                              buyQuantity: e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 3 }}>
+                        <TextField
+                          label="Get Quantity"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          value={currentRule.getQuantity || ""}
+                          onChange={(e) =>
+                            setCurrentRule({
+                              ...currentRule,
+                              getQuantity: e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        />
+                      </Grid>
+                    </>
+                  )}
+
                   <Grid size={{ xs: 12 }}>
                     <Button
                       variant="outlined"

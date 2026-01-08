@@ -85,9 +85,17 @@ public class VoucherEntity extends BaseEntity {
     // Relationship với Course (Many-to-Many) - Chỉ khi applicableTo =
     // SPECIFIC_COURSES
     @ManyToMany
-    @JoinTable(name = "voucher_courses", joinColumns = @JoinColumn(name = "voucher_id"), inverseJoinColumns = @JoinColumn(name = "course_id"))
+    @JoinTable(name = "voucher_courses",
+            joinColumns = @JoinColumn(name = "voucher_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id"))
     @Builder.Default
     List<CourseEntity> applicableCourses = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "voucher_categories", joinColumns = @JoinColumn(name = "voucher_id"))
+    @Column(name = "category_id")
+    @Builder.Default
+    List<Long> applicableCategoryIds = new ArrayList<>(); // For CATEGORY applicability
 
     @OneToMany(mappedBy = "voucher", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

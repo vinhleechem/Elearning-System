@@ -11,6 +11,7 @@ public interface InstructorService {
     InstructorResponse getInstructorById(Long instructorId);
     InstructorResponse getMyInstructorProfile();
     InstructorResponse updateMyInstructorProfile(UpdateInstructorProfileRequest request);
+    InstructorResponse updateInstructorByUserId(Long userId, UpdateInstructorProfileRequest request);
     InstructorResponse becomeInstructor();
     
     // For internal service usage - returns entity instead of DTO

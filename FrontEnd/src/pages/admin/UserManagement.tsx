@@ -32,6 +32,7 @@ import {
   alpha,
   CircularProgress,
   Grid,
+  Alert,
 } from "@mui/material";
 import {
   Edit,
@@ -53,6 +54,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import { useAuthStore } from "../../store/authStore";
 import { adminUserService } from "../../service/adminUserService";
+import { instructorService } from "../../service/instructorService";
 
 interface User {
   id: number;
@@ -107,8 +109,7 @@ const UserManagement = () => {
 
         const mappedUsers: User[] = (pageResult.data || []).map((u) => {
           const normalizedRoles =
-            u.roles?.map((role) => role.replace(/^ROLE_/, "").toUpperCase()) ??
-            [];
+            u.roles?.map((role) => role.toUpperCase()) ?? [];
           const role: User["role"] = normalizedRoles.includes("ADMIN")
             ? "ADMIN"
             : normalizedRoles.includes("INSTRUCTOR")
@@ -121,23 +122,23 @@ const UserManagement = () => {
             email: u.email,
             // map roles từ backend sang 3 loại hiển thị chính
             role,
-            // hiện backend chưa trả status rõ ràng, tạm coi là ACTIVE
-            status: "ACTIVE",
+            // Map status từ backend: LOCKED -> BLOCKED, ACTIVE -> ACTIVE
+            status: u.status === "LOCKED" ? "BLOCKED" : "ACTIVE",
             createdAt: new Date().toISOString().split("T")[0],
             avatar: u.avatarUrl,
             instructor:
               role === "INSTRUCTOR"
                 ? {
-                  id: u.instructorId,
-                  headline: u.instructorHeadline,
-                  biography: u.instructorBiography,
-                  website: u.instructorWebsite,
-                  linkedin: u.instructorLinkedin,
-                  twitter: u.instructorTwitter,
-                  youtube: u.instructorYoutube,
-                  totalStudents: u.instructorTotalStudents,
-                  totalCourses: u.instructorTotalCourses,
-                }
+                    id: u.instructorId,
+                    headline: u.instructorHeadline,
+                    biography: u.instructorBiography,
+                    website: u.instructorWebsite,
+                    linkedin: u.instructorLinkedin,
+                    twitter: u.instructorTwitter,
+                    youtube: u.instructorYoutube,
+                    totalStudents: u.instructorTotalStudents,
+                    totalCourses: u.instructorTotalCourses,
+                  }
                 : undefined,
           };
         });
@@ -193,6 +194,66 @@ const UserManagement = () => {
     instructorYoutube: "",
   });
 
+  // Validation state
+  const [formErrors, setFormErrors] = useState({
+    name: "",
+    email: "",
+    instructorWebsite: "",
+    instructorLinkedin: "",
+    instructorTwitter: "",
+    instructorYoutube: "",
+  });
+
+  // Validation functions
+  const validateEmail = (email: string): string => {
+    if (!email.trim()) {
+      return "Email là bắt buộc";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Email không hợp lệ";
+    }
+    return "";
+  };
+
+  const validateName = (name: string): string => {
+    if (!name.trim()) {
+      return "Họ và tên là bắt buộc";
+    }
+    if (name.trim().length < 2) {
+      return "Họ và tên phải có ít nhất 2 ký tự";
+    }
+    return "";
+  };
+
+  const validateUrl = (url: string): string => {
+    if (!url.trim()) {
+      return ""; // URL is optional
+    }
+    try {
+      new URL(url);
+      return "";
+    } catch {
+      return "URL không hợp lệ";
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors = {
+      name: validateName(formData.name),
+      email: validateEmail(formData.email),
+      instructorWebsite: validateUrl(formData.instructorWebsite),
+      instructorLinkedin: validateUrl(formData.instructorLinkedin),
+      instructorTwitter: validateUrl(formData.instructorTwitter),
+      instructorYoutube: validateUrl(formData.instructorYoutube),
+    };
+
+    setFormErrors(errors);
+
+    // Check if any error exists
+    return !Object.values(errors).some((error) => error !== "");
+  };
+
   const handleOpenDialog = (user?: User) => {
     if (user) {
       setEditingUser(user);
@@ -239,6 +300,14 @@ const UserManagement = () => {
       status: "ACTIVE",
       instructorHeadline: "",
       instructorBiography: "",
+      instructorWebsite: "",
+      instructorLinkedin: "",
+      instructorTwitter: "",
+      instructorYoutube: "",
+    });
+    setFormErrors({
+      name: "",
+      email: "",
       instructorWebsite: "",
       instructorLinkedin: "",
       instructorTwitter: "",
@@ -319,14 +388,90 @@ const UserManagement = () => {
   const handleSaveUser = async () => {
     if (!tokens?.accessToken) return;
 
+    // Validate form before submitting
+    if (!validateForm()) {
+      enqueueSnackbar("Vui lòng kiểm tra lại thông tin", {
+        variant: "warning",
+      });
+      return;
+    }
+
     try {
       if (editingUser) {
-        // Update existing user
+        // Update existing user info
         await adminUserService.updateUser(tokens.accessToken, editingUser.id, {
           fullName: formData.name,
           email: formData.email,
           avatarUrl: editingUser.avatar,
         });
+
+        // Update user role if changed or set
+        if (formData.role) {
+          const updatedUser = await adminUserService.assignRoles(
+            tokens.accessToken,
+            editingUser.id,
+            [formData.role],
+          );
+
+          // Update the user in the local state immediately
+          const normalizedRoles =
+            updatedUser.roles?.map((role) => role.toUpperCase()) ?? [];
+          const role: User["role"] = normalizedRoles.includes("ADMIN")
+            ? "ADMIN"
+            : normalizedRoles.includes("INSTRUCTOR")
+              ? "INSTRUCTOR"
+              : "STUDENT";
+
+          setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+              user.id === editingUser.id
+                ? {
+                    ...user,
+                    name: formData.name,
+                    email: formData.email,
+                    role,
+                  }
+                : user,
+            ),
+          );
+        }
+
+        // Update instructor info if role is INSTRUCTOR
+        if (formData.role === "INSTRUCTOR") {
+          await instructorService.updateInstructorByUserId(
+            tokens.accessToken,
+            editingUser.id,
+            {
+              headline: formData.instructorHeadline || undefined,
+              biography: formData.instructorBiography || undefined,
+              website: formData.instructorWebsite || undefined,
+              linkedin: formData.instructorLinkedin || undefined,
+              twitter: formData.instructorTwitter || undefined,
+              youtube: formData.instructorYoutube || undefined,
+            },
+          );
+
+          // Update instructor info in local state
+          setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+              user.id === editingUser.id
+                ? {
+                    ...user,
+                    instructor: {
+                      ...user.instructor,
+                      headline: formData.instructorHeadline,
+                      biography: formData.instructorBiography,
+                      website: formData.instructorWebsite,
+                      linkedin: formData.instructorLinkedin,
+                      twitter: formData.instructorTwitter,
+                      youtube: formData.instructorYoutube,
+                    },
+                  }
+                : user,
+            ),
+          );
+        }
+
         enqueueSnackbar("Cập nhật người dùng thành công", {
           variant: "success",
         });
@@ -342,18 +487,31 @@ const UserManagement = () => {
           payload.passwordHash = formData.password;
         }
 
-        await adminUserService.createUser(tokens.accessToken, payload);
+        const newUser = await adminUserService.createUser(
+          tokens.accessToken,
+          payload,
+        );
+
+        // Assign role for new user
+        if (formData.role && newUser.userId) {
+          await adminUserService.assignRoles(
+            tokens.accessToken,
+            newUser.userId,
+            [formData.role],
+          );
+        }
+
         enqueueSnackbar("Tạo người dùng thành công", { variant: "success" });
+        // Refresh the user list for new users
+        setRefreshKey((prev) => prev + 1);
       }
-      // Refresh the user list
-      setRefreshKey((prev) => prev + 1);
       handleCloseDialog();
     } catch (error: any) {
       enqueueSnackbar(
         error.message ||
-        (editingUser
-          ? "Cập nhật người dùng thất bại"
-          : "Tạo người dùng thất bại"),
+          (editingUser
+            ? "Cập nhật người dùng thất bại"
+            : "Tạo người dùng thất bại"),
         { variant: "error" },
       );
       console.error("Save user error:", error);
@@ -911,22 +1069,22 @@ const UserManagement = () => {
                           <Box display="flex" flexWrap="wrap" gap={1}>
                             {typeof user.instructor?.totalCourses ===
                               "number" && (
-                                <Chip
-                                  size="small"
-                                  label={`${user.instructor.totalCourses} khóa học`}
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              )}
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalCourses} khóa học`}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            )}
                             {typeof user.instructor?.totalStudents ===
                               "number" && (
-                                <Chip
-                                  size="small"
-                                  label={`${user.instructor.totalStudents} học viên`}
-                                  color="success"
-                                  variant="outlined"
-                                />
-                              )}
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalStudents} học viên`}
+                                color="success"
+                                variant="outlined"
+                              />
+                            )}
                           </Box>
                           <Box display="flex" gap={0.5} mt={0.5}>
                             {user.instructor?.website && (
@@ -1170,10 +1328,17 @@ const UserManagement = () => {
             <TextField
               label="Họ và tên"
               fullWidth
+              required
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                setFormErrors({
+                  ...formErrors,
+                  name: validateName(e.target.value),
+                });
+              }}
+              error={!!formErrors.name}
+              helperText={formErrors.name}
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}
@@ -1181,33 +1346,22 @@ const UserManagement = () => {
             <TextField
               label="Email"
               fullWidth
+              required
+              type="email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                setFormErrors({
+                  ...formErrors,
+                  email: validateEmail(e.target.value),
+                });
+              }}
+              error={!!formErrors.email}
+              helperText={formErrors.email}
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}
             />
-
-            {/* Password field - only for creating new user */}
-            {!editingUser && (
-              <TextField
-                label="Mật khẩu"
-                type="password"
-                fullWidth
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
-                helperText="Để trống, backend sẽ tự động tạo mật khẩu mặc định"
-                InputProps={{
-                  sx: { borderRadius: "12px" },
-                }}
-              />
-            )}
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
@@ -1291,13 +1445,20 @@ const UserManagement = () => {
                     <TextField
                       label="Website"
                       fullWidth
+                      placeholder="https://example.com"
                       value={formData.instructorWebsite}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           instructorWebsite: e.target.value,
-                        })
-                      }
+                        });
+                        setFormErrors({
+                          ...formErrors,
+                          instructorWebsite: validateUrl(e.target.value),
+                        });
+                      }}
+                      error={!!formErrors.instructorWebsite}
+                      helperText={formErrors.instructorWebsite}
                       InputProps={{
                         sx: { borderRadius: "12px" },
                       }}
@@ -1307,13 +1468,20 @@ const UserManagement = () => {
                     <TextField
                       label="LinkedIn"
                       fullWidth
+                      placeholder="https://linkedin.com/in/..."
                       value={formData.instructorLinkedin}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           instructorLinkedin: e.target.value,
-                        })
-                      }
+                        });
+                        setFormErrors({
+                          ...formErrors,
+                          instructorLinkedin: validateUrl(e.target.value),
+                        });
+                      }}
+                      error={!!formErrors.instructorLinkedin}
+                      helperText={formErrors.instructorLinkedin}
                       InputProps={{
                         sx: { borderRadius: "12px" },
                       }}
@@ -1323,13 +1491,20 @@ const UserManagement = () => {
                     <TextField
                       label="Twitter"
                       fullWidth
+                      placeholder="https://twitter.com/..."
                       value={formData.instructorTwitter}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           instructorTwitter: e.target.value,
-                        })
-                      }
+                        });
+                        setFormErrors({
+                          ...formErrors,
+                          instructorTwitter: validateUrl(e.target.value),
+                        });
+                      }}
+                      error={!!formErrors.instructorTwitter}
+                      helperText={formErrors.instructorTwitter}
                       InputProps={{
                         sx: { borderRadius: "12px" },
                       }}
@@ -1339,13 +1514,20 @@ const UserManagement = () => {
                     <TextField
                       label="YouTube"
                       fullWidth
+                      placeholder="https://youtube.com/..."
                       value={formData.instructorYoutube}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           instructorYoutube: e.target.value,
-                        })
-                      }
+                        });
+                        setFormErrors({
+                          ...formErrors,
+                          instructorYoutube: validateUrl(e.target.value),
+                        });
+                      }}
+                      error={!!formErrors.instructorYoutube}
+                      helperText={formErrors.instructorYoutube}
                       InputProps={{
                         sx: { borderRadius: "12px" },
                       }}
@@ -1353,6 +1535,19 @@ const UserManagement = () => {
                   </Grid>
                 </Grid>
               </Box>
+            )}
+
+            {/* Activation Email Notice - only for creating new user */}
+            {!editingUser && (
+              <Alert severity="info" sx={{ borderRadius: "12px", mt: 2 }}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  📧 Kích hoạt tài khoản qua email
+                </Typography>
+                <Typography variant="body2">
+                  Người dùng sẽ nhận email kích hoạt tài khoản với link để tự
+                  đặt mật khẩu. Link có hiệu lực trong 24 giờ.
+                </Typography>
+              </Alert>
             )}
           </Box>
         </DialogContent>
