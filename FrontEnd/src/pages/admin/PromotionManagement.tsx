@@ -856,13 +856,25 @@ const PromotionManagement = () => {
                       {rule.ruleType} - {rule.discountType}:{" "}
                       {rule.discountValue}
                     </Typography>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => removeRule(index)}
-                    >
-                      <Delete />
-                    </IconButton>
+                    <Box>
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => {
+                          setCurrentRule({ ...rule, ruleId: 0 });
+                          removeRule(index);
+                        }}
+                      >
+                        <Edit />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => removeRule(index)}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Box>
                   </Stack>
                 </CardContent>
               </Card>

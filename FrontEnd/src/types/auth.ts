@@ -12,6 +12,13 @@ export type UserResponse = {
   provider?: string;
   roles?: string[];
   status?: "ACTIVE" | "LOCKED"; // User status from backend
+
+  // Thông tin cơ bản của User
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string; // ISO date string
+  bio?: string;
+
   // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
   instructorId?: number;
   instructorHeadline?: string;

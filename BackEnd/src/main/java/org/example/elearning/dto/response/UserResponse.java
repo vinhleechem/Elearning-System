@@ -1,5 +1,6 @@
 package org.example.elearning.dto.response;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.example.elearning.enums.Provider;
@@ -26,6 +27,11 @@ public class UserResponse{
     Provider provider = Provider.LOCAL;
     List<String> roles;
     UserStatus status;
+    String phone;
+    String address;
+    LocalDate dateOfBirth;
+    String bio;
+    
     // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
     Long instructorId;
     String instructorHeadline;

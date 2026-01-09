@@ -34,6 +34,36 @@ import { categoryService } from "../../service/categoryService";
 import type { CategoryTreeResponse } from "../../service/categoryService";
 import NotificationBell from "../common/NotificationBell";
 
+const Search = styled("div")(({ theme }) => ({
+  position: "relative",
+  borderRadius: "20px",
+  border: `1px solid #555454`,
+  marginLeft: 0,
+  marginRight: theme.spacing(2),
+  width: "100%",
+}));
+
+const SearchIconWrapper = styled("div")(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  height: "100%",
+  position: "absolute",
+  pointerEvents: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+}));
+
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
+  color: "inherit",
+  width: "100%",
+  "& .MuiInputBase-input": {
+    padding: theme.spacing(1, 1, 1, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    transition: theme.transitions.create("width"),
+    width: "100%",
+  },
+}));
+
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
   showLeftPages = true,
@@ -54,6 +84,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isMegaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [megaMenuTopics, setMegaMenuTopics] = useState<MegaMenuTopic[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (user?.userId) {
@@ -206,34 +237,6 @@ const Header: React.FC<HeaderProps> = ({
         };
       });
   };
-
-  const Search = styled("div")(({ theme }) => ({
-    position: "relative",
-    borderRadius: "20px",
-    border: `1px solid #555454`,
-    marginLeft: 0,
-    marginRight: theme.spacing(2),
-    width: "100%",
-  }));
-  const SearchIconWrapper = styled("div")(({ theme }) => ({
-    padding: theme.spacing(0, 2),
-    height: "100%",
-    position: "absolute",
-    pointerEvents: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }));
-  const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: "inherit",
-    width: "100%",
-    "& .MuiInputBase-input": {
-      padding: theme.spacing(1, 1, 1, 0),
-      paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-      transition: theme.transitions.create("width"),
-      width: "100%",
-    },
-  }));
   return (
     <AppBar
       position="static"
@@ -355,6 +358,13 @@ const Header: React.FC<HeaderProps> = ({
               <StyledInputBase
                 placeholder="Tìm kiếm nội dung bất kỳ"
                 inputProps={{ "aria-label": "search" }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
               />
             </Search>
           </Box>

@@ -129,16 +129,16 @@ const UserManagement = () => {
             instructor:
               role === "INSTRUCTOR"
                 ? {
-                    id: u.instructorId,
-                    headline: u.instructorHeadline,
-                    biography: u.instructorBiography,
-                    website: u.instructorWebsite,
-                    linkedin: u.instructorLinkedin,
-                    twitter: u.instructorTwitter,
-                    youtube: u.instructorYoutube,
-                    totalStudents: u.instructorTotalStudents,
-                    totalCourses: u.instructorTotalCourses,
-                  }
+                  id: u.instructorId,
+                  headline: u.instructorHeadline,
+                  biography: u.instructorBiography,
+                  website: u.instructorWebsite,
+                  linkedin: u.instructorLinkedin,
+                  twitter: u.instructorTwitter,
+                  youtube: u.instructorYoutube,
+                  totalStudents: u.instructorTotalStudents,
+                  totalCourses: u.instructorTotalCourses,
+                }
                 : undefined,
           };
         });
@@ -186,6 +186,10 @@ const UserManagement = () => {
     password: "",
     role: "STUDENT" as User["role"],
     status: "ACTIVE" as User["status"],
+    phone: "",
+    address: "",
+    dateOfBirth: "",
+    bio: "",
     instructorHeadline: "",
     instructorBiography: "",
     instructorWebsite: "",
@@ -263,6 +267,10 @@ const UserManagement = () => {
         password: "", // Password not editable when updating
         role: user.role,
         status: user.status,
+        phone: "",
+        address: "",
+        dateOfBirth: "",
+        bio: "",
         instructorHeadline: user.instructor?.headline ?? "",
         instructorBiography: user.instructor?.biography ?? "",
         instructorWebsite: user.instructor?.website ?? "",
@@ -278,6 +286,10 @@ const UserManagement = () => {
         password: "",
         role: "STUDENT",
         status: "ACTIVE",
+        phone: "",
+        address: "",
+        dateOfBirth: "",
+        bio: "",
         instructorHeadline: "",
         instructorBiography: "",
         instructorWebsite: "",
@@ -298,6 +310,10 @@ const UserManagement = () => {
       password: "",
       role: "STUDENT",
       status: "ACTIVE",
+      phone: "",
+      address: "",
+      dateOfBirth: "",
+      bio: "",
       instructorHeadline: "",
       instructorBiography: "",
       instructorWebsite: "",
@@ -426,11 +442,11 @@ const UserManagement = () => {
             prevUsers.map((user) =>
               user.id === editingUser.id
                 ? {
-                    ...user,
-                    name: formData.name,
-                    email: formData.email,
-                    role,
-                  }
+                  ...user,
+                  name: formData.name,
+                  email: formData.email,
+                  role,
+                }
                 : user,
             ),
           );
@@ -456,17 +472,17 @@ const UserManagement = () => {
             prevUsers.map((user) =>
               user.id === editingUser.id
                 ? {
-                    ...user,
-                    instructor: {
-                      ...user.instructor,
-                      headline: formData.instructorHeadline,
-                      biography: formData.instructorBiography,
-                      website: formData.instructorWebsite,
-                      linkedin: formData.instructorLinkedin,
-                      twitter: formData.instructorTwitter,
-                      youtube: formData.instructorYoutube,
-                    },
-                  }
+                  ...user,
+                  instructor: {
+                    ...user.instructor,
+                    headline: formData.instructorHeadline,
+                    biography: formData.instructorBiography,
+                    website: formData.instructorWebsite,
+                    linkedin: formData.instructorLinkedin,
+                    twitter: formData.instructorTwitter,
+                    youtube: formData.instructorYoutube,
+                  },
+                }
                 : user,
             ),
           );
@@ -480,6 +496,10 @@ const UserManagement = () => {
         const payload: any = {
           fullName: formData.name,
           email: formData.email,
+          phone: formData.phone || undefined,
+          address: formData.address || undefined,
+          dateOfBirth: formData.dateOfBirth || undefined,
+          bio: formData.bio || undefined,
         };
 
         // Only include password if user provided one
@@ -509,9 +529,9 @@ const UserManagement = () => {
     } catch (error: any) {
       enqueueSnackbar(
         error.message ||
-          (editingUser
-            ? "Cập nhật người dùng thất bại"
-            : "Tạo người dùng thất bại"),
+        (editingUser
+          ? "Cập nhật người dùng thất bại"
+          : "Tạo người dùng thất bại"),
         { variant: "error" },
       );
       console.error("Save user error:", error);
@@ -1069,22 +1089,22 @@ const UserManagement = () => {
                           <Box display="flex" flexWrap="wrap" gap={1}>
                             {typeof user.instructor?.totalCourses ===
                               "number" && (
-                              <Chip
-                                size="small"
-                                label={`${user.instructor.totalCourses} khóa học`}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            )}
+                                <Chip
+                                  size="small"
+                                  label={`${user.instructor.totalCourses} khóa học`}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              )}
                             {typeof user.instructor?.totalStudents ===
                               "number" && (
-                              <Chip
-                                size="small"
-                                label={`${user.instructor.totalStudents} học viên`}
-                                color="success"
-                                variant="outlined"
-                              />
-                            )}
+                                <Chip
+                                  size="small"
+                                  label={`${user.instructor.totalStudents} học viên`}
+                                  color="success"
+                                  variant="outlined"
+                                />
+                              )}
                           </Box>
                           <Box display="flex" gap={0.5} mt={0.5}>
                             {user.instructor?.website && (
@@ -1361,6 +1381,52 @@ const UserManagement = () => {
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}
+            />
+
+            {/* User Entity Fields */}
+            <TextField
+              label="Số điện thoại"
+              fullWidth
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
+              inputProps={{ maxLength: 20 }}
+            />
+            <TextField
+              label="Địa chỉ"
+              fullWidth
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
+              inputProps={{ maxLength: 255 }}
+            />
+            <TextField
+              label="Ngày sinh"
+              fullWidth
+              type="date"
+              value={formData.dateOfBirth}
+              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
+            />
+            <TextField
+              label="Giới thiệu bản thân"
+              fullWidth
+              multiline
+              rows={3}
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              InputProps={{
+                sx: { borderRadius: "12px" },
+              }}
+              inputProps={{ maxLength: 500 }}
+              helperText={`${formData.bio.length}/500 ký tự`}
             />
 
             <Grid container spacing={2}>

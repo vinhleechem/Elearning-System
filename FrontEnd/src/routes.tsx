@@ -36,6 +36,7 @@ import RevenueDashboard from "./pages/admin/RevenueDashboard";
 import ReviewManagement from "./pages/admin/ReviewManagement";
 import SetPasswordPage from "./pages/SetPasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: "cart",
         element: <CartPage />,
+      },
+      {
+        path: "courses",
+        element: <SearchResultsPage />,
       },
       {
         path: "course/:slug",
