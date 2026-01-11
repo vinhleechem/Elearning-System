@@ -3,6 +3,9 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import Course from "./Course";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 import {
   courseService,
   type PublicCourseResponse,
@@ -97,7 +100,7 @@ const CourseList = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Các khóa học thịnh hành</h1>
+      {/* Title removed - controlled by parent HomePage */}
 
       {loading && (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 3 }}>

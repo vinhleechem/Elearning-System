@@ -17,6 +17,7 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.entity.SectionEntity;
 import org.example.elearning.entity.LessonEntity;
 import org.example.elearning.enums.CourseStatus;
+import org.example.elearning.enums.CourseLevel;
 import org.example.elearning.enums.ContentType;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BadRequestException;
@@ -77,7 +78,6 @@ public class CourseServiceImpl implements CourseService {
     ObjectMapper objectMapper;
     SectionRepository sectionRepository;
     LessonRepository lessonRepository;
-    
     /**
      * Helper method to publish Kafka events
      */
@@ -105,12 +105,44 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId,
-            String level) {
+    public PaginatedResponse<CourseResponse> getPublicCourses(
+            Pageable pageable, 
+            String search, 
+            Long categoryId,
+            CourseLevel level,
+            Double minPrice,
+            Double maxPrice,
+            Double minRating) {
+        
+        // Start with published courses
         var spec = CourseSpecification.publishedCourses();
 
+        // Apply search filter
         if (search != null && !search.trim().isEmpty()) {
             spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
+        }
+
+        // Apply category filter
+        if (categoryId != null) {
+            spec = spec.and(CourseSpecification.filterByCategoryId(categoryId));
+        }
+
+        // Apply level filter
+        if (level != null) {
+            spec = spec.and(CourseSpecification.filterByLevel(level));
+        }
+
+        // Apply price range filters
+        if (minPrice != null) {
+            spec = spec.and(CourseSpecification.filterByMinPrice(minPrice));
+        }
+        if (maxPrice != null) {
+            spec = spec.and(CourseSpecification.filterByMaxPrice(maxPrice));
+        }
+
+        // Apply rating filter
+        if (minRating != null) {
+            spec = spec.and(CourseSpecification.filterByMinRating(minRating));
         }
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
@@ -541,8 +573,16 @@ public class CourseServiceImpl implements CourseService {
                 course.setDescription(getCellValueAsString(row.getCell(3)));
                 course.setShortDescription(getCellValueAsString(row.getCell(3)));
                 
-                String level = getCellValueAsString(row.getCell(4));
-                course.setLevel(level != null && !level.isEmpty() ? level : "Beginner");
+                String levelStr = getCellValueAsString(row.getCell(4));
+                CourseLevel level = CourseLevel.BEGINNER; // Default
+                if (levelStr != null && !levelStr.isEmpty()) {
+                    try {
+                        level = CourseLevel.valueOf(levelStr.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Invalid level '{}', using BEGINNER as default", levelStr);
+                    }
+                }
+                course.setLevel(level);
                 
                 String language = getCellValueAsString(row.getCell(5));
                 course.setLanguage(language != null && !language.isEmpty() ? language : "Tiếng Việt");
@@ -692,7 +732,7 @@ public class CourseServiceImpl implements CourseService {
                 row.createCell(1).setCellValue(course.getPrice() != null ? course.getPrice().doubleValue() : 0.0);
                 row.createCell(2).setCellValue(course.getCategory() != null ? course.getCategory().getId() : 0L);
                 row.createCell(3).setCellValue(course.getDescription());
-                row.createCell(4).setCellValue(course.getLevel());
+                row.createCell(4).setCellValue(course.getLevel() != null ? course.getLevel().name() : "BEGINNER");
                 row.createCell(5).setCellValue(course.getLanguage());
                 row.createCell(6).setCellValue(course.getInstructor() != null ? course.getInstructor().getInstructorId() : 0L);
                 row.createCell(7).setCellValue(course.getCourseId());

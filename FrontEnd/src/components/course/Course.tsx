@@ -107,107 +107,154 @@ const Course: React.FC<CourseProps> = ({
             height: "100%",
             display: "flex",
             flexDirection: "column",
+            borderRadius: 2,
+            overflow: "hidden",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            border: "1px solid",
+            borderColor: "divider",
+            "&:hover": {
+              transform: "translateY(-8px)",
+              boxShadow: "0 12px 24px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05)",
+              borderColor: "primary.main",
+            },
           }}
         >
-          <CardMedia
-            sx={{ height: 150, objectFit: "cover" }}
-            image={image}
-            title="green iguana"
-          />
+          {/* Image Container with Overlay */}
+          <Box sx={{ position: "relative", overflow: "hidden" }}>
+            <CardMedia
+              sx={{
+                height: 180,
+                objectFit: "cover",
+                transition: "transform 0.3s ease",
+                "&:hover": {
+                  transform: "scale(1.05)",
+                },
+              }}
+              image={image}
+              title={title}
+            />
+            {/* Tag Overlay */}
+            {tag && (
+              <Chip
+                size="small"
+                label={tag}
+                sx={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  backgroundColor: style?.bg,
+                  color: style?.text,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                }}
+              />
+            )}
+          </Box>
+
           <CardContent
             sx={{
-              padding: 1,
+              padding: 2.5,
               flexGrow: 1,
               display: "flex",
               flexDirection: "column",
+              gap: 1,
             }}
           >
+            {/* Title */}
             <Typography
-              gutterBottom
-              variant="h5"
+              variant="h6"
               component="div"
-              fontSize={16}
-              fontWeight={700}
               sx={{
-                minHeight: 48,
+                fontSize: "1rem",
+                fontWeight: 700,
                 lineHeight: 1.4,
+                minHeight: 44,
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
+                color: "text.primary",
+                mb: 0.5,
               }}
             >
               {title}
             </Typography>
+
+            {/* Teacher */}
             <Typography
               variant="body2"
-              fontSize={13}
-              sx={{ color: "text.secondary" }}
+              sx={{
+                fontSize: "0.875rem",
+                color: "text.secondary",
+                fontWeight: 500,
+              }}
             >
               {teacher}
             </Typography>
-            <Box display={"flex"} alignItems={"center"} mt={1} gap={0.2}>
+
+            {/* Rating */}
+            <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
               <Typography
-                fontSize={13}
-                component="legend"
-                className="text-dark-200"
-                fontWeight={700}
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  color: "warning.main",
+                }}
               >
-                {rating} stars
+                {rating}
               </Typography>
               <Rating
                 size="small"
-                name="simple-controlled"
+                name="course-rating"
                 value={ratingValue}
                 readOnly
+                precision={0.1}
+                sx={{
+                  "& .MuiRating-iconFilled": {
+                    color: "warning.main",
+                  },
+                }}
               />
               <Typography
-                fontSize={13}
-                component="legend"
-                sx={{ color: "text.secondary" }}
+                sx={{
+                  fontSize: "0.8125rem",
+                  color: "text.secondary",
+                  ml: 0.5,
+                }}
               >
-                {`(${reviews})`}
+                ({reviews})
               </Typography>
             </Box>
+
+            {/* Price */}
             <Box
-              display={"flex"}
-              alignItems={"center"}
-              gap={0.2}
-              sx={{ mt: "auto", pt: 1 }}
+              display="flex"
+              alignItems="center"
+              gap={1}
+              sx={{ mt: "auto", pt: 1.5 }}
             >
-              <Typography fontSize={18} fontWeight={700}>
+              <Typography
+                sx={{
+                  fontSize: "1.375rem",
+                  fontWeight: 800,
+                  color: "primary.main",
+                }}
+              >
                 {formatCurrency(price)}
-                <Typography
-                  component="span"
-                  fontSize={14}
-                  sx={{ verticalAlign: "super" }}
-                ></Typography>
               </Typography>
               {oldPrice && (
                 <Typography
-                  fontSize={14}
                   sx={{
+                    fontSize: "0.9375rem",
                     textDecoration: "line-through",
-                    color: "text.secondary",
+                    color: "text.disabled",
                   }}
                 >
                   {formatCurrency(oldPrice)}
                 </Typography>
               )}
             </Box>
-            {tag && (
-              <Chip
-                size="small"
-                label={tag}
-                className="mt-2 px-3 py-1 text-sm font-semibold"
-                sx={{
-                  alignSelf: "flex-start",
-                  width: "fit-content",
-                  backgroundColor: style?.bg,
-                  color: style?.text,
-                }}
-              />
-            )}
           </CardContent>
         </Card>
       </Link>

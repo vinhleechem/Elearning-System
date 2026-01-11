@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { cartService, type CartItemResponse } from "../service/cartService";
 
 interface CartState {
@@ -14,60 +15,70 @@ interface CartState {
   setVoucherCode: (code: string | null) => void;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  loading: false,
-  error: null,
-  voucherCode: null,
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      loading: false,
+      error: null,
+      voucherCode: null,
 
-  setVoucherCode: (code) => set({ voucherCode: code }),
+      setVoucherCode: (code) => set({ voucherCode: code }),
 
-  fetchCart: async () => {
-    set({ loading: true, error: null });
-    try {
-      const res = await cartService.getMyCart();
-      set({ items: res.data?.items || [], loading: false });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
+      fetchCart: async () => {
+        set({ loading: true, error: null });
+        try {
+          const res = await cartService.getMyCart();
+          set({ items: res.data?.items || [], loading: false });
+        } catch (error: any) {
+          set({ error: error.message, loading: false });
+        }
+      },
+
+      addToCart: async (courseId: number) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await cartService.addToCart(courseId);
+          set({ items: res.data?.items || [], loading: false });
+        } catch (error: any) {
+          set({ error: error.message, loading: false });
+          throw error; // Re-throw to handle in UI if needed
+        }
+      },
+
+      removeFromCart: async (courseId: number) => {
+        set({ loading: true, error: null });
+        try {
+          await cartService.removeFromCart(courseId);
+          // Optimistic update or re-fetch
+          set((state) => ({
+            items: state.items.filter((item) => item.courseId !== courseId),
+            loading: false,
+          }));
+        } catch (error: any) {
+          set({ error: error.message, loading: false });
+        }
+      },
+
+      clearCart: async () => {
+        set({ loading: true, error: null });
+        try {
+          await cartService.clearCart();
+          set({ items: [], loading: false });
+        } catch (error: any) {
+          set({ error: error.message, loading: false });
+        }
+      },
+
+      isInCart: (courseId: number) => {
+        return get().items.some((item) => item.courseId === courseId);
+      },
+    }),
+    {
+      name: "cart-storage", // localStorage key
+      storage: createJSONStorage(() => localStorage),
+      // Only persist items, not loading/error states
+      partialize: (state) => ({ items: state.items }),
     }
-  },
-
-  addToCart: async (courseId: number) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await cartService.addToCart(courseId);
-      set({ items: res.data?.items || [], loading: false });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error; // Re-throw to handle in UI if needed
-    }
-  },
-
-  removeFromCart: async (courseId: number) => {
-    set({ loading: true, error: null });
-    try {
-      await cartService.removeFromCart(courseId);
-      // Optimistic update or re-fetch
-      set((state) => ({
-        items: state.items.filter((item) => item.courseId !== courseId),
-        loading: false,
-      }));
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
-    }
-  },
-
-  clearCart: async () => {
-    set({ loading: true, error: null });
-    try {
-      await cartService.clearCart();
-      set({ items: [], loading: false });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
-    }
-  },
-
-  isInCart: (courseId: number) => {
-    return get().items.some((item) => item.courseId === courseId);
-  },
-}));
+  )
+);

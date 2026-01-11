@@ -77,6 +77,7 @@ const PromotionManagement = () => {
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [formData, setFormData] = useState<PromotionRequest>({
     name: "",
@@ -153,16 +154,41 @@ const PromotionManagement = () => {
     }
   };
 
+  // Format ISO date to dd/MM/yyyy HH:mm for display
+  const formatDateForDisplay = (isoDate: string): string => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  // Parse dd/MM/yyyy HH:mm to ISO format for backend
+  const parseDisplayDate = (displayDate: string): string => {
+    if (!displayDate) return "";
+    // Match format: dd/MM/yyyy HH:mm
+    const match = displayDate.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+    if (!match) return displayDate; // Return as-is if invalid format
+
+    const [, day, month, year, hours, minutes] = match;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+    return date.toISOString();
+  };
+
   const handleOpenDialog = (promotion?: Promotion) => {
     if (promotion) {
       // Edit mode
       setEditingId(promotion.promotionId);
+
       setFormData({
         name: promotion.name,
         description: promotion.description || "",
-        promotionType: promotion.promotionType,
-        startDate: promotion.startDate,
-        endDate: promotion.endDate,
+        promotionType: promotion.promotionType || "SEASONAL",
+        startDate: promotion.startDate, // Store as ISO
+        endDate: promotion.endDate, // Store as ISO
         isActive: promotion.isActive,
         priority: promotion.priority,
         rules: [], // Will be loaded when fetching detail
@@ -354,6 +380,22 @@ const PromotionManagement = () => {
     }
   };
 
+  const handleSyncPrices = async () => {
+    try {
+      setIsSyncing(true);
+      await promotionService.syncCoursePrices();
+      enqueueSnackbar("Đồng bộ giá khóa học thành công", {
+        variant: "success",
+      });
+    } catch (error: any) {
+      enqueueSnackbar(error.message || "Đồng bộ giá thất bại", {
+        variant: "error",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Section */}
@@ -403,6 +445,29 @@ const PromotionManagement = () => {
             }}
           >
             {isExporting ? "Đang xuất..." : "Xuất Excel"}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={
+              isSyncing ? <CircularProgress size={20} /> : <CheckCircle />
+            }
+            disabled={isSyncing}
+            onClick={handleSyncPrices}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#f59e0b",
+              color: "#f59e0b",
+              "&:hover": {
+                borderColor: "#d97706",
+                bgcolor: alpha("#f59e0b", 0.04),
+              },
+            }}
+          >
+            {isSyncing ? "Đang đồng bộ..." : "Đồng bộ giá"}
           </Button>
           <Button
             component="label"
@@ -787,34 +852,37 @@ const PromotionManagement = () => {
               >
                 <MenuItem value="SEASONAL">Seasonal</MenuItem>
                 <MenuItem value="FLASH_SALE">Flash Sale</MenuItem>
-                <MenuItem value="CATEGORY_DISCOUNT">Category Discount</MenuItem>
-                <MenuItem value="BUNDLE">Bundle</MenuItem>
-                <MenuItem value="FIRST_PURCHASE">First Purchase</MenuItem>
+                <MenuItem value="SPECIAL_EVENT">Special Event</MenuItem>
+                <MenuItem value="CLEARANCE">Clearance</MenuItem>
+                <MenuItem value="NEW_USER">New User</MenuItem>
+                <MenuItem value="LOYALTY">Loyalty</MenuItem>
               </Select>
             </FormControl>
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Start Date"
-                  type="datetime-local"
+                  type="text"
                   fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
+                  placeholder="dd/MM/yyyy HH:mm"
+                  value={formData.startDate ? formatDateForDisplay(formData.startDate) : ""}
+                  onChange={(e) => {
+                    const formatted = parseDisplayDate(e.target.value);
+                    setFormData({ ...formData, startDate: formatted });
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <TextField
                   label="End Date"
-                  type="datetime-local"
+                  type="text"
                   fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
+                  placeholder="dd/MM/yyyy HH:mm"
+                  value={formData.endDate ? formatDateForDisplay(formData.endDate) : ""}
+                  onChange={(e) => {
+                    const formatted = parseDisplayDate(e.target.value);
+                    setFormData({ ...formData, endDate: formatted });
+                  }}
                 />
               </Grid>
             </Grid>

@@ -654,6 +654,7 @@ const CourseManagement = () => {
                   <TableCell sx={{ fontWeight: 700 }}>Giảng viên</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Giá</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Giá hiện tại</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Học viên</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Đánh giá</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Thao tác</TableCell>
@@ -786,6 +787,21 @@ const CourseManagement = () => {
                         <Typography variant="body2" fontWeight={600}>
                           {formatPrice(course.price)}
                         </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" fontWeight={700} color={course.discountPrice && course.discountPrice < (course.price || 0) ? "error.main" : "text.primary"}>
+                            {formatPrice(course.discountPrice || course.price)}
+                          </Typography>
+                          {course.discountPrice && course.discountPrice < (course.price || 0) && (
+                            <Chip
+                              label={`-${Math.round(((course.price! - course.discountPrice) / course.price!) * 100)}%`}
+                              size="small"
+                              color="error"
+                              sx={{ height: 18, fontSize: 10, mt: 0.5 }}
+                            />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">

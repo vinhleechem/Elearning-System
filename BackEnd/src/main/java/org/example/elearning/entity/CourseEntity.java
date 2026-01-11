@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.example.elearning.enums.CourseStatus;
+import org.example.elearning.enums.CourseLevel;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.Basic;
@@ -80,9 +81,9 @@ public class CourseEntity extends BaseEntity {
     @Column(name = "thumbnail_url")
     String thumbnailUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "level", length = 50)
-
-    String level; // beginner, intermediate, advanced
+    CourseLevel level; // BEGINNER, INTERMEDIATE, ADVANCED
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
@@ -91,6 +92,14 @@ public class CourseEntity extends BaseEntity {
 
     @Column(name = "price", precision = 10, scale = 2)
     BigDecimal price;
+
+    /**
+     * Current effective price (cached from promotions)
+     * This is the actual price shown to users, updated when promotions change
+     * If null, defaults to 'price'
+     */
+    @Column(name = "current_price", precision = 10, scale = 2)
+    BigDecimal currentPrice;
 
     @Column(name = "language", length = 50)
     String language;

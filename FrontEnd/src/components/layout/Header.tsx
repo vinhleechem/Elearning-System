@@ -36,11 +36,23 @@ import NotificationBell from "../common/NotificationBell";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
-  borderRadius: "20px",
-  border: `1px solid #555454`,
+  borderRadius: "24px",
+  backgroundColor: "#f8f9fa",
+  border: "2px solid transparent",
   marginLeft: 0,
   marginRight: theme.spacing(2),
   width: "100%",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    backgroundColor: "#fff",
+    border: "2px solid #e0e0e0",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  },
+  "&:focus-within": {
+    backgroundColor: "#fff",
+    border: "2px solid #2563eb",
+    boxShadow: "0 4px 16px rgba(37,99,235,0.15)",
+  },
 }));
 
 const SearchIconWrapper = styled("div")(({ theme }) => ({
@@ -237,12 +249,31 @@ const Header: React.FC<HeaderProps> = ({
         };
       });
   };
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <AppBar
-      position="static"
+      position="sticky"
       color="secondary"
       elevation={0}
-      sx={{ px: { xs: 2, md: 5 }, borderBottom: "1px solid #e5e5e5" }}
+      sx={{
+        px: { xs: 2, md: 5 },
+        borderBottom: "1px solid #e5e5e5",
+        transition: "all 0.3s ease",
+        boxShadow: isScrolled
+          ? "0 4px 20px rgba(0,0,0,0.08)"
+          : "none",
+        backdropFilter: isScrolled ? "blur(10px)" : "none",
+        backgroundColor: isScrolled ? "rgba(255,255,255,0.95)" : "white",
+      }}
     >
       <Toolbar disableGutters>
         <Typography
@@ -309,6 +340,13 @@ const Header: React.FC<HeaderProps> = ({
                   display: "block",
                   textTransform: "none",
                   fontWeight: 700,
+                  px: 2,
+                  borderRadius: "8px",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    transform: "translateY(-1px)",
+                  },
                 }}
                 className="!text-dark-100 hover:!text-primary-main"
               >
@@ -341,6 +379,14 @@ const Header: React.FC<HeaderProps> = ({
                   my: 2,
                   display: "block",
                   textTransform: "none",
+                  fontWeight: 600,
+                  px: 2,
+                  borderRadius: "8px",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    transform: "translateY(-1px)",
+                  },
                 }}
                 className="!text-dark-100 hover:!text-primary-main"
               >
@@ -385,7 +431,7 @@ const Header: React.FC<HeaderProps> = ({
               }}
               className="!text-dark-100 hover:!text-primary-main"
             >
-              Udemy Business
+              Vidi Business
             </Button>
 
             <Button
@@ -428,7 +474,15 @@ const Header: React.FC<HeaderProps> = ({
               component={Link}
               to="/my-courses/wishlist"
               color="inherit"
-              sx={{ mx: 0.5 }}
+              sx={{
+                mx: 0.5,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(239, 68, 68, 0.08)",
+                  transform: "scale(1.1)",
+                  color: "#ef4444",
+                },
+              }}
               aria-label="Wishlist"
             >
               <FavoriteBorder />
@@ -436,7 +490,15 @@ const Header: React.FC<HeaderProps> = ({
 
             <IconButton
               color="inherit"
-              sx={{ mx: 0.5 }}
+              sx={{
+                mx: 0.5,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(37, 99, 235, 0.08)",
+                  transform: "scale(1.1)",
+                  color: "#2563eb",
+                },
+              }}
               aria-label="Giỏ hàng"
               onMouseEnter={handleCartMouseEnter}
               onMouseLeave={handleCartMouseLeave}
@@ -447,6 +509,13 @@ const Header: React.FC<HeaderProps> = ({
                 overlap="circular"
                 badgeContent={cartItems.length}
                 showZero
+                sx={{
+                  "& .MuiBadge-badge": {
+                    backgroundColor: "#2563eb",
+                    color: "white",
+                    fontWeight: 600,
+                  },
+                }}
               >
                 <ShoppingCartOutlined />
               </Badge>
@@ -464,13 +533,30 @@ const Header: React.FC<HeaderProps> = ({
 
             <IconButton
               onClick={handleUserMenuOpen}
-              sx={{ ml: 1 }}
+              sx={{
+                ml: 1,
+                p: 0.5,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  transform: "scale(1.05)",
+                },
+              }}
               aria-label="User menu"
             >
               <Avatar
                 src={user.avatarUrl}
                 alt={user.fullName}
-                sx={{ width: 32, height: 32 }}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: "2px solid",
+                  borderColor: "transparent",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: "#2563eb",
+                    boxShadow: "0 0 0 3px rgba(37, 99, 235, 0.1)",
+                  },
+                }}
               >
                 {user.fullName.charAt(0).toUpperCase()}
               </Avatar>
@@ -520,6 +606,13 @@ const Header: React.FC<HeaderProps> = ({
                 display: "block",
                 textTransform: "none",
                 fontWeight: 700,
+                borderRadius: "12px",
+                px: 3,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
               }}
               variant="outlined"
               className="!ml-2"
@@ -534,6 +627,14 @@ const Header: React.FC<HeaderProps> = ({
                 display: "block",
                 textTransform: "none",
                 fontWeight: 700,
+                borderRadius: "12px",
+                px: 3,
+                background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 6px 20px rgba(37, 99, 235, 0.4)",
+                },
               }}
               variant="contained"
               className="!ml-2"

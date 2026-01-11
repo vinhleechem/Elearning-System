@@ -57,6 +57,9 @@ export const courseService = {
     search?: string;
     categoryId?: number;
     level?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
   }): Promise<PaginatedResponse<PublicCourseResponse>> => {
     const query = new URLSearchParams();
     query.set("page", (params.page ?? 0).toString());
@@ -65,6 +68,9 @@ export const courseService = {
     if (params.categoryId)
       query.set("categoryId", params.categoryId.toString());
     if (params.level) query.set("level", params.level);
+    if (params.minPrice !== undefined) query.set("minPrice", params.minPrice.toString());
+    if (params.maxPrice !== undefined) query.set("maxPrice", params.maxPrice.toString());
+    if (params.minRating !== undefined) query.set("minRating", params.minRating.toString());
 
     const response = await httpClient<PaginatedResponse<PublicCourseResponse>>(
       `/courses?${query.toString()}`,

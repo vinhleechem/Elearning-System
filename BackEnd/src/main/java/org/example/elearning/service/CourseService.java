@@ -5,6 +5,7 @@ import org.example.elearning.dto.request.CourseUpdateRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CourseEntity;
+import org.example.elearning.enums.CourseLevel;
 import org.example.elearning.enums.CourseStatus;
 import org.springframework.data.domain.Pageable;
 
@@ -14,7 +15,14 @@ import java.io.IOException;
 
 public interface CourseService {
 
-    PaginatedResponse<CourseResponse> getPublicCourses(Pageable pageable, String search, Long categoryId, String level);
+    PaginatedResponse<CourseResponse> getPublicCourses(
+        Pageable pageable, 
+        String search, 
+        Long categoryId, 
+        CourseLevel level,
+        Double minPrice,
+        Double maxPrice,
+        Double minRating);
 
     PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search, CourseStatus status);
 

@@ -74,5 +74,16 @@ public interface PromotionService {
     void applyBestPromotionToCartItem(org.example.elearning.dto.response.CartItemResponse response, 
                                        org.example.elearning.entity.CourseEntity course);
 
+    /**
+     * Sync currentPrice for all courses based on active promotions
+     * This should be called when promotions are activated/deactivated
+     */
+    void syncCoursePrices();
+
+    /**
+     * Sync currentPrice for a specific course
+     */
+    void syncCoursePrice(Long courseId);
+
     void importPromotions(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 }

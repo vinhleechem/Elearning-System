@@ -147,6 +147,13 @@ export const promotionService = {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   },
+
+  // Admin - Sync course prices with active promotions
+  syncCoursePrices: async (): Promise<void> => {
+    await httpClient(`${PROMOTION_BASE_URL}/sync-prices`, {
+      method: "POST",
+    });
+  },
 };
 
 export default promotionService;

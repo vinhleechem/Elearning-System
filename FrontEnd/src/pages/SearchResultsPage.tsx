@@ -22,13 +22,19 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import { useAuthStore } from "../store/authStore";
+import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
+import toast from "react-hot-toast";
 import { courseService } from "../service/courseService";
 import type { PublicCourseResponse } from "../service/courseService";
 
 const SearchResultsPage = () => {
     const [searchParams] = useSearchParams();
+    const { user } = useAuthStore();
+    const { addToCart } = useCartStore();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
     const navigate = useNavigate();
     const searchQuery = searchParams.get("search") || "";
 
@@ -44,17 +50,53 @@ const SearchResultsPage = () => {
 
     useEffect(() => {
         fetchSearchResults();
-    }, [searchQuery, sortBy, selectedRatings, selectedLevels]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, sortBy, priceRange, selectedLevels, selectedRatings]);
 
     const fetchSearchResults = async () => {
         setLoading(true);
         try {
-            // In real app, pass sort/filter params here
-            const result = await courseService.getPublicCourses({
+            // Build filter params
+            const params: any = {
                 page: 0,
                 size: 20,
-                search: searchQuery,
-            });
+            };
+
+            if (searchQuery.trim()) {
+                params.search = searchQuery.trim();
+            }
+
+            // Price range filter
+            console.log("Current priceRange:", priceRange);
+            if (priceRange[0] > 0) {
+                params.minPrice = priceRange[0];
+            }
+            if (priceRange[1] < 5000000) {
+                params.maxPrice = priceRange[1];
+            }
+            console.log("Params being sent:", params);
+
+            // Level filter
+            if (selectedLevels.length > 0 && !selectedLevels.includes("Tất cả")) {
+                // Map Vietnamese level names to English for backend
+                const levelMap: Record<string, string> = {
+                    "Sơ cấp": "BEGINNER",
+                    "Trung cấp": "INTERMEDIATE",
+                    "Chuyên gia": "ADVANCED"
+                };
+                // For now, send first selected level (or modify backend to accept multiple)
+                const mappedLevel = levelMap[selectedLevels[0]];
+                if (mappedLevel) {
+                    params.level = mappedLevel;
+                }
+            }
+
+            // Rating filter (get minimum rating from selected ratings)
+            if (selectedRatings.length > 0) {
+                params.minRating = Math.min(...selectedRatings);
+            }
+
+            const result = await courseService.getPublicCourses(params);
             setCourses(result.data || []);
             setTotalResults(result.pagination?.totalElements || 0);
         } catch (error) {
@@ -65,7 +107,39 @@ const SearchResultsPage = () => {
     };
 
     const handleCourseClick = (courseId: number) => {
+        console.log("Navigating to course:", courseId);
         navigate(`/course/${courseId}`);
+    };
+
+    const handleToggleWishlist = (courseId: number) => {
+        if (!user) {
+            toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+            navigate("/login");
+            return;
+        }
+
+        if (isInWishlist(courseId)) {
+            removeFromWishlist(courseId)
+                .then(() => toast.success("Đã xóa khỏi danh sách yêu thích"))
+                .catch((err) => toast.error(err?.response?.data?.message || err.message));
+        } else {
+            addToWishlist(courseId)
+                .then(() => toast.success("Đã thêm vào danh sách yêu thích!"))
+                .catch((err) => toast.error(err?.response?.data?.message || err.message));
+        }
+    };
+
+    const handleAddToCart = (course: PublicCourseResponse) => {
+        if (!user) {
+            toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
+            navigate("/login");
+            return;
+        }
+
+        // cartStore.addToCart only requires courseId
+        addToCart(course.courseId)
+            .then(() => toast.success("Đã thêm vào giỏ hàng!"))
+            .catch((err) => toast.error((err?.response?.data?.message || err.message)));
     };
 
     const formatPrice = (price: number) => {
@@ -130,20 +204,57 @@ const SearchResultsPage = () => {
                                 Mức giá
                             </Typography>
                             <FormGroup>
-                                {["Dưới 500k", "Từ 500k - 1 triệu", "Trên 1 triệu"].map(
-                                    (label, idx) => (
-                                        <FormControlLabel
-                                            key={idx}
-                                            control={<Checkbox size="small" />}
-                                            label={
-                                                <Typography variant="body2" fontSize="0.875rem">
-                                                    {label}
-                                                </Typography>
-                                            }
-                                            sx={{ mb: 0.5 }}
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            size="small"
+                                            checked={priceRange[0] === 0 && priceRange[1] === 500000}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setPriceRange([0, 500000]);
+                                                } else {
+                                                    setPriceRange([0, 5000000]);
+                                                }
+                                            }}
                                         />
-                                    )
-                                )}
+                                    }
+                                    label={<Typography variant="body2" fontSize="0.875rem">Dưới 500k</Typography>}
+                                    sx={{ mb: 0.5 }}
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            size="small"
+                                            checked={priceRange[0] === 500000 && priceRange[1] === 1000000}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setPriceRange([500000, 1000000]);
+                                                } else {
+                                                    setPriceRange([0, 5000000]);
+                                                }
+                                            }}
+                                        />
+                                    }
+                                    label={<Typography variant="body2" fontSize="0.875rem">Từ 500k - 1 triệu</Typography>}
+                                    sx={{ mb: 0.5 }}
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            size="small"
+                                            checked={priceRange[0] === 1000000 && priceRange[1] === 5000000}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setPriceRange([1000000, 5000000]);
+                                                } else {
+                                                    setPriceRange([0, 5000000]);
+                                                }
+                                            }}
+                                        />
+                                    }
+                                    label={<Typography variant="body2" fontSize="0.875rem">Trên 1 triệu</Typography>}
+                                    sx={{ mb: 0.5 }}
+                                />
                             </FormGroup>
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="caption" color="text.secondary">
@@ -160,15 +271,25 @@ const SearchResultsPage = () => {
                                 <Box display="flex" justifyContent="space-between" mt={1}>
                                     <TextField
                                         size="small"
+                                        type="number"
                                         value={priceRange[0]}
-                                        inputProps={{ style: { fontSize: 12, padding: 4 } }}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 0;
+                                            setPriceRange([Math.max(0, val), priceRange[1]]);
+                                        }}
+                                        inputProps={{ style: { fontSize: 12, padding: 4 }, min: 0, max: priceRange[1] }}
                                         sx={{ width: 80 }}
                                     />
                                     <Typography>-</Typography>
                                     <TextField
                                         size="small"
+                                        type="number"
                                         value={priceRange[1]}
-                                        inputProps={{ style: { fontSize: 12, padding: 4 } }}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 5000000;
+                                            setPriceRange([priceRange[0], Math.min(5000000, val)]);
+                                        }}
+                                        inputProps={{ style: { fontSize: 12, padding: 4 }, min: priceRange[0], max: 5000000 }}
                                         sx={{ width: 80 }}
                                     />
                                 </Box>
@@ -220,7 +341,19 @@ const SearchResultsPage = () => {
                             {[5, 4, 3].map((star) => (
                                 <FormControlLabel
                                     key={star}
-                                    control={<Checkbox size="small" />}
+                                    control={
+                                        <Checkbox
+                                            size="small"
+                                            checked={selectedRatings.includes(star)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedRatings([...selectedRatings, star]);
+                                                } else {
+                                                    setSelectedRatings(selectedRatings.filter(r => r !== star));
+                                                }
+                                            }}
+                                        />
+                                    }
                                     label={
                                         <Box display="flex" alignItems="center">
                                             <Rating value={star} readOnly size="small" />
@@ -277,7 +410,7 @@ const SearchResultsPage = () => {
                                     xs: "1fr",              // 1 column on mobile
                                     sm: "repeat(2, 1fr)",   // 2 columns on tablet
                                     md: "repeat(3, 1fr)",   // 3 columns on small desktop
-                                    lg: "repeat(4, 1fr)",   // 4 columns on large desktop
+                                    lg: "repeat(3, 1fr)",   // 3 columns on large desktop
                                 },
                                 gap: 2
                             }}
@@ -341,90 +474,148 @@ const SearchResultsPage = () => {
                                         {/* Wishlist Icon */}
                                         <IconButton
                                             size="small"
-                                            sx={{ position: 'absolute', top: 5, right: 5, zIndex: 1, bgcolor: 'rgba(255,255,255,0.8)' }}
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 5,
+                                                right: 5,
+                                                zIndex: 2,
+                                                bgcolor: 'rgba(255,255,255,0.9)',
+                                                '&:hover': { bgcolor: 'rgba(255,255,255,1)' }
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleToggleWishlist(course.courseId);
+                                            }}
                                         >
-                                            <FavoriteBorderIcon fontSize="small" />
+                                            {isInWishlist(course.courseId) ? (
+                                                <FavoriteIcon fontSize="small" sx={{ color: '#e91e63' }} />
+                                            ) : (
+                                                <FavoriteBorderIcon fontSize="small" />
+                                            )}
                                         </IconButton>
 
-                                        <CardMedia
-                                            component="img"
-                                            height="180"
-                                            image={course.thumbnailUrl || "/images/course-placeholder.jpg"}
-                                            alt={course.title}
-                                            sx={{ p: 2, objectFit: "contain", bgcolor: "#f9f9f9" }}
-                                        />
+                                        <Box sx={{ position: "relative", paddingTop: "56.25%", bgcolor: "#f0f0f0" }}>
+                                            <CardMedia
+                                                component="img"
+                                                image={course.thumbnailUrl || "/images/course-placeholder.jpg"}
+                                                alt={course.title}
+                                                sx={{
+                                                    position: "absolute",
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: "100%",
+                                                    height: "100%",
+                                                    objectFit: "cover",
+                                                }}
+                                            />
+                                        </Box>
 
-                                        <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                                            {/* Name */}
+                                        <CardContent sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                                            {/* Title */}
                                             <Typography
-                                                variant="subtitle1"
-                                                fontWeight={600}
+                                                variant="h6"
+                                                fontWeight={700}
                                                 title={course.title}
                                                 sx={{
-                                                    fontSize: "0.95rem",
+                                                    fontSize: "1rem",
                                                     lineHeight: 1.4,
                                                     height: "2.8em",
                                                     overflow: "hidden",
                                                     display: "-webkit-box",
                                                     WebkitLineClamp: 2,
                                                     WebkitBoxOrient: "vertical",
-                                                    mb: 1,
-                                                    color: "#333"
+                                                    color: "#2d2f31"
                                                 }}
                                             >
                                                 {course.title}
                                             </Typography>
 
-                                            {/* Price */}
-                                            <Box sx={{ mb: 1 }}>
-                                                {course.discountPrice ? (
-                                                    <>
-                                                        <Typography variant="h6" fontWeight={700} color="#1976d2" lineHeight={1.2}>
-                                                            {formatPrice(course.discountPrice)}
-                                                        </Typography>
-                                                        <Box display="flex" alignItems="center" gap={1}>
-                                                            <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999' }}>
-                                                                {formatPrice(course.price)}
-                                                            </Typography>
-                                                        </Box>
-                                                    </>
-                                                ) : (
-                                                    <Typography variant="h6" fontWeight={700} color="#1976d2" lineHeight={1.2}>
-                                                        {formatPrice(course.price)}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-
-                                            {/* Specs/Info */}
-                                            <Box
+                                            {/* Short Description */}
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
                                                 sx={{
-                                                    bgcolor: '#f3f4f6',
-                                                    borderRadius: '4px',
-                                                    p: 1,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1.5,
-                                                    mb: 1.5
+                                                    fontSize: "0.85rem",
+                                                    overflow: "hidden",
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2, // Allow 2 lines for better info
+                                                    WebkitBoxOrient: "vertical",
+                                                    minHeight: "2.5em"
                                                 }}
                                             >
-                                                <Box display="flex" alignItems="center" gap={0.5} color="text.secondary">
-                                                    <AccessTimeIcon sx={{ fontSize: 16 }} />
-                                                    <Typography variant="caption">20h</Typography>
+                                                {course.shortDescription || (course.description ? course.description.substring(0, 100) + "..." : "Mô tả khóa học đang cập nhật")}
+                                            </Typography>
+
+                                            {/* Author */}
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+                                                {course.instructorName || "Giảng viên Vidi"}
+                                            </Typography>
+
+                                            {/* Info Tags */}
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
+                                                {/* Rating */}
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                                    <Typography fontWeight={700} color="#b4690e" fontSize="0.85rem">
+                                                        {course.averageRating?.toFixed(1) || 4.5}
+                                                    </Typography>
+                                                    <Rating value={course.averageRating || 4.5} readOnly size="small" sx={{ fontSize: "0.9rem" }} />
                                                 </Box>
-                                                <Box display="flex" alignItems="center" gap={0.5} color="text.secondary">
-                                                    <PlayCircleOutlineIcon sx={{ fontSize: 16 }} />
-                                                    <Typography variant="caption">120 bài</Typography>
-                                                </Box>
+
+                                                {/* Reviews Count */}
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
+                                                    ({course.totalReviews?.toLocaleString() || 10})
+                                                </Typography>
                                             </Box>
 
-                                            {/* Rating & Action */}
-                                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                <Box display="flex" alignItems="center">
-                                                    <Rating value={course.averageRating || 4.5} readOnly size="small" sx={{ fontSize: "0.9rem" }} />
-                                                    <Typography variant="caption" color="text.secondary" ml={0.5}>
-                                                        ({course.totalReviews || 10})
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Tổng số {course.duration ? Math.round(course.duration / 3600) : 20} giờ
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">•</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {course.totalLectures || 50} bài giảng
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">•</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {course.level || "Tất cả trình độ"}
+                                                </Typography>
+                                            </Box>
+
+                                            {/* Footer: Price & Add Cart */}
+                                            <Box sx={{ mt: "auto", pt: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                                <Box>
+                                                    <Typography variant="h6" fontWeight={700} color="#2d2f31" sx={{ fontSize: "1.1rem" }}>
+                                                        {formatPrice(course.discountPrice || course.price || 0)}
                                                     </Typography>
+                                                    {course.discountPrice && course.discountPrice < (course.price || 0) && (
+                                                        <Typography variant="caption" sx={{ textDecoration: "line-through", color: "#6a6f73" }}>
+                                                            {formatPrice(course.price || 0)}
+                                                        </Typography>
+                                                    )}
                                                 </Box>
+
+                                                <Button
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    size="small"
+                                                    sx={{
+                                                        textTransform: "none",
+                                                        fontWeight: 600,
+                                                        whiteSpace: "nowrap",
+                                                        borderColor: "#a435f0",
+                                                        color: "#2d2f31",
+                                                        "&:hover": {
+                                                            borderColor: "#3e4143",
+                                                            bgcolor: "#e5e7eb"
+                                                        }
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAddToCart(course);
+                                                    }}
+                                                >
+                                                    Thêm giỏ hàng
+                                                </Button>
                                             </Box>
 
                                         </CardContent>

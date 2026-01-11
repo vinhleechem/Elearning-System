@@ -32,12 +32,12 @@ export interface PromotionRule {
 }
 
 export type PromotionType =
-  | "SEASONAL"
   | "FLASH_SALE"
+  | "SEASONAL"
+  | "SPECIAL_EVENT"
   | "CLEARANCE"
-  | "NEW_YEAR"
-  | "BLACK_FRIDAY"
-  | "SPECIAL_EVENT";
+  | "NEW_USER"
+  | "LOYALTY";
 
 export type PromotionRuleType =
   | "ALL"

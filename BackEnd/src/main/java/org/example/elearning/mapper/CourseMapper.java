@@ -20,6 +20,7 @@ public interface CourseMapper {
     @Mapping(target = "instructorName", source = "instructor.user.fullName")
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "discountPrice", source = "currentPrice")
     CourseResponse toResponse(CourseEntity entity);
 
     List<CourseResponse> toResponseList(List<CourseEntity> entities);

@@ -38,6 +38,7 @@ public class CourseResponse {
 
     CourseStatus status;
     BigDecimal price;
+    BigDecimal discountPrice; // Effective price after promotions (from currentPrice)
     String language;
     Boolean hasCertificate;
     BigDecimal averageRating;

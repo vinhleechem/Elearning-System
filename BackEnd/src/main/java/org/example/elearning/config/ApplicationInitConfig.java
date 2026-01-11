@@ -22,6 +22,7 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.entity.UserVoucherEntity;
 import org.example.elearning.entity.VoucherEntity;
 import org.example.elearning.enums.CourseStatus;
+import org.example.elearning.enums.CourseLevel;
 import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.PromotionRuleType;
 import org.example.elearning.enums.PromotionType;
@@ -610,7 +611,7 @@ public class ApplicationInitConfig {
                                                         .requirements("• Kiến thức cơ bản về Java\n• Hiểu biết về OOP\n• Có máy tính cài đặt JDK và IDE")
                                                         .targetAudience("• Lập trình viên Java muốn học Spring Boot\n• Developer muốn xây dựng Backend API\n• Sinh viên IT muốn nâng cao kỹ năng")
                                                         .thumbnailUrl("https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800")
-                                                        .level("intermediate")
+                                                        .level(CourseLevel.INTERMEDIATE)
                                                         .status(CourseStatus.PUBLISHED)
                                                         .price(new BigDecimal("599000"))
                                                         .language("Tiếng Việt")
@@ -630,7 +631,7 @@ public class ApplicationInitConfig {
                                                         .requirements("• Kiến thức cơ bản về JavaScript\n• Hiểu biết về HTML/CSS\n• Có máy tính cài đặt Node.js")
                                                         .targetAudience("• Frontend Developer muốn học React\n• Web Developer muốn nâng cao kỹ năng\n• Sinh viên muốn xây dựng ứng dụng web")
                                                         .thumbnailUrl("https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800")
-                                                        .level("beginner")
+                                                        .level(CourseLevel.BEGINNER)
                                                         .status(CourseStatus.PUBLISHED)
                                                         .price(new BigDecimal("499000"))
                                                         .language("Tiếng Việt")
@@ -650,7 +651,7 @@ public class ApplicationInitConfig {
                                                         .requirements("• Kiến thức cơ bản về Linux\n• Hiểu biết về hệ thống và mạng\n• Có máy tính cài đặt Docker Desktop")
                                                         .targetAudience("• DevOps Engineer\n• Backend Developer muốn học DevOps\n• System Administrator")
                                                         .thumbnailUrl("https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800")
-                                                        .level("intermediate")
+                                                        .level(CourseLevel.INTERMEDIATE)
                                                         .status(CourseStatus.PUBLISHED)
                                                         .price(new BigDecimal("699000"))
                                                         .language("Tiếng Việt")
@@ -670,7 +671,7 @@ public class ApplicationInitConfig {
                                                         .requirements("• Kiến thức cơ bản về Python\n• Hiểu biết về Toán học (Đại số, Giải tích)\n• Có máy tính cài đặt Python và Jupyter Notebook")
                                                         .targetAudience("• Data Scientist\n• AI Engineer\n• Developer muốn học Machine Learning")
                                                         .thumbnailUrl("https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800")
-                                                        .level("advanced")
+                                                        .level(CourseLevel.ADVANCED)
                                                         .status(CourseStatus.PUBLISHED)
                                                         .price(new BigDecimal("799000"))
                                                         .language("Tiếng Việt")
@@ -690,7 +691,7 @@ public class ApplicationInitConfig {
                                                         .requirements("• Kiến thức cơ bản về Dart hoặc OOP\n• Hiểu biết về Mobile App Development\n• Có máy tính cài đặt Flutter SDK")
                                                         .targetAudience("• Mobile Developer\n• Web Developer muốn học Mobile\n• Sinh viên muốn xây dựng ứng dụng di động")
                                                         .thumbnailUrl("https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800")
-                                                        .level("beginner")
+                                                        .level(CourseLevel.BEGINNER)
                                                         .status(CourseStatus.DRAFT)
                                                         .price(new BigDecimal("549000"))
                                                         .language("Tiếng Việt")

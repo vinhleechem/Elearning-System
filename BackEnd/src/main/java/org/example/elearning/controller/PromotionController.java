@@ -117,4 +117,12 @@ public class PromotionController {
              return ResponseEntity.badRequest().body(StandardResponse.error("Error importing file: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/sync-prices")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Sync course prices", description = "Sync all course prices with active promotions (Admin only)")
+    public ResponseEntity<StandardResponse<String>> syncCoursePrices() {
+        promotionService.syncCoursePrices();
+        return ResponseEntity.ok(StandardResponse.success("Course prices synced successfully"));
+    }
 }

@@ -19,10 +19,10 @@ import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.PromotionMapper;
+import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.PromotionRepository;
 import org.example.elearning.service.PromotionService;
 import org.example.elearning.service.CourseService;
-import org.example.elearning.service.CategoryService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +47,8 @@ public class PromotionServiceImpl implements PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final PromotionMapper promotionMapper;
+    private final CourseRepository courseRepository;
+
 
     @Override
     @Transactional
@@ -182,7 +184,10 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setIsActive(true);
         promotionRepository.save(promotion);
 
-        log.info("Promotion activated successfully");
+        // Sync course prices after activation
+        syncCoursePrices();
+
+        log.info("Promotion activated successfully and prices synced");
     }
 
     @Override
@@ -196,7 +201,10 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setIsActive(false);
         promotionRepository.save(promotion);
 
-        log.info("Promotion deactivated successfully");
+        // Sync course prices after deactivation
+        syncCoursePrices();
+
+        log.info("Promotion deactivated successfully and prices synced");
     }
 
     @Override
@@ -416,6 +424,76 @@ public class PromotionServiceImpl implements PromotionService {
                 case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
                 default -> "";
             };
-        } catch (Exception e) { return ""; }
+            } catch (Exception e) { return ""; }
+    }
+
+    @Override
+    @Transactional
+    public void syncCoursePrices() {
+        log.info("Starting to sync current prices for all courses");
+        List<CourseEntity> allCourses = courseRepository.findAll();
+        List<PromotionEntity> activePromotions = getActivePromotionEntities();
+        
+        int updated = 0;
+        for (CourseEntity course : allCourses) {
+            if (updateCourseCurrentPrice(course, activePromotions)) {
+                updated++;
+            }
+        }
+        
+        courseRepository.saveAll(allCourses);
+        log.info("Synced current prices for {} courses", updated);
+    }
+
+    @Override
+    @Transactional
+    public void syncCoursePrice(Long courseId) {
+        CourseEntity course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        List<PromotionEntity> activePromotions = getActivePromotionEntities();
+        
+        if (updateCourseCurrentPrice(course, activePromotions)) {
+            courseRepository.save(course);
+            log.info("Synced current price for course ID: {}", courseId);
+        }
+    }
+
+    /**
+     * Helper method to update currentPrice for a course based on active promotions
+     * Returns true if price was updated
+     */
+    private boolean updateCourseCurrentPrice(CourseEntity course, List<PromotionEntity> activePromotions) {
+        if (course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+            return false;
+        }
+
+        BigDecimal bestDiscountAmount = BigDecimal.ZERO;
+        
+        for (PromotionEntity promotion : activePromotions) {
+            for (PromotionRuleEntity rule : promotion.getRules()) {
+                if (isRuleApplicable(rule, course)) {
+                    BigDecimal discountAmount = calculateDiscountAmount(rule, course.getPrice());
+                    if (discountAmount.compareTo(bestDiscountAmount) > 0) {
+                        bestDiscountAmount = discountAmount;
+                    }
+                }
+            }
+        }
+
+        BigDecimal newCurrentPrice;
+        if (bestDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            newCurrentPrice = course.getPrice().subtract(bestDiscountAmount);
+        } else {
+            newCurrentPrice = course.getPrice();
+        }
+
+        // Only update if price changed
+        if (course.getCurrentPrice() == null || course.getCurrentPrice().compareTo(newCurrentPrice) != 0) {
+            course.setCurrentPrice(newCurrentPrice);
+            return true;
+        }
+        
+        return false;
     }
 }

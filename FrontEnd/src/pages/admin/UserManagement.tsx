@@ -64,6 +64,10 @@ interface User {
   status: "ACTIVE" | "BLOCKED";
   createdAt: string;
   avatar?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  bio?: string;
   instructor?: {
     id?: number;
     headline?: string;
@@ -126,6 +130,10 @@ const UserManagement = () => {
             status: u.status === "LOCKED" ? "BLOCKED" : "ACTIVE",
             createdAt: new Date().toISOString().split("T")[0],
             avatar: u.avatarUrl,
+            phone: u.phone,
+            address: u.address,
+            dateOfBirth: u.dateOfBirth,
+            bio: u.bio,
             instructor:
               role === "INSTRUCTOR"
                 ? {
@@ -267,10 +275,10 @@ const UserManagement = () => {
         password: "", // Password not editable when updating
         role: user.role,
         status: user.status,
-        phone: "",
-        address: "",
-        dateOfBirth: "",
-        bio: "",
+        phone: user.phone || "",
+        address: user.address || "",
+        dateOfBirth: user.dateOfBirth || "",
+        bio: user.bio || "",
         instructorHeadline: user.instructor?.headline ?? "",
         instructorBiography: user.instructor?.biography ?? "",
         instructorWebsite: user.instructor?.website ?? "",
