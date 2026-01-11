@@ -71,10 +71,31 @@ const CheckoutPage = () => {
     calculateDiscount();
   }, [calculateDiscount]);
 
-  const handleVoucherApply = (code: string) => {
-    setAppliedVoucherCode(code);
-    setVoucherCode(code);
-    enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
+  const handleVoucherApply = async (code: string) => {
+    if (!code.trim()) {
+      enqueueSnackbar("Vui lòng nhập mã voucher", { variant: "warning" });
+      return;
+    }
+
+    try {
+      // Validate voucher code first
+      const isValid = await voucherService.validateVoucherCode(code.trim());
+      if (!isValid) {
+        enqueueSnackbar("Mã voucher không hợp lệ hoặc không tồn tại", {
+          variant: "error",
+        });
+        return;
+      }
+
+      setAppliedVoucherCode(code.trim());
+      setVoucherCode(code.trim());
+      enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
+    } catch (error: any) {
+      console.error("Failed to validate voucher:", error);
+      enqueueSnackbar(error?.message || "Không thể áp dụng mã voucher", {
+        variant: "error",
+      });
+    }
   };
 
   const handleVoucherRemove = () => {
@@ -181,6 +202,13 @@ const CheckoutPage = () => {
                 appliedVoucherCode={appliedVoucherCode}
                 onVoucherApply={handleVoucherApply}
                 onVoucherRemove={handleVoucherRemove}
+                orderTotal={
+                  discountCalculation?.finalAmount ||
+                  items.reduce(
+                    (sum, item) => sum + (item.discountPrice ?? item.price),
+                    0,
+                  )
+                }
               />
             </Paper>
           </Box>

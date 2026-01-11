@@ -63,4 +63,9 @@ public interface VoucherService {
     void importVouchers(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 
     byte[] exportVouchers() throws java.io.IOException;
+
+    /**
+     * Get all available vouchers for a user to use in booking (Public + User's wallet)
+     */
+    List<VoucherResponse> getAvailableVouchersForBooking(Long userId);
 }

@@ -1,24 +1,23 @@
 import React, { useState } from "react";
-import { Box, Button, Grid } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import VoucherInput from "./VoucherInput";
-import MyVouchersDialog from "./MyVouchersDialog";
-import PublicVouchersDialog from "./PublicVouchersDialog";
+import VoucherSelectionDialog from "../common/VoucherSelectionDialog";
 
 interface VoucherSectionProps {
   appliedVoucherCode?: string;
   onVoucherApply: (code: string) => void;
   onVoucherRemove: () => void;
+  orderTotal?: number;
 }
 
 export const VoucherSection: React.FC<VoucherSectionProps> = ({
   appliedVoucherCode,
   onVoucherApply,
   onVoucherRemove,
+  orderTotal,
 }) => {
-  const [myVouchersOpen, setMyVouchersOpen] = useState(false);
-  const [publicVouchersOpen, setPublicVouchersOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <Box>
@@ -29,41 +28,42 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({
         onVoucherRemove={onVoucherRemove}
       />
 
-      {/* Quick Actions */}
-      <Grid container spacing={2} mt={2}>
-        <Grid size={{ xs: 6 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<LocalOfferIcon />}
-            onClick={() => setMyVouchersOpen(true)}
-          >
-            Voucher của tôi
-          </Button>
-        </Grid>
-        <Grid size={{ xs: 6 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<CardGiftcardIcon />}
-            onClick={() => setPublicVouchersOpen(true)}
-          >
-            Nhận voucher
-          </Button>
-        </Grid>
-      </Grid>
+      {/* Select Voucher Button */}
+      <Box mt={2}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<LocalOfferIcon />}
+          onClick={() => setDialogOpen(true)}
+          sx={{
+            justifyContent: "space-between",
+            py: 1.5,
+            borderStyle: "dashed",
+            textTransform: "none",
+            borderColor: "primary.main",
+            bgcolor: "rgba(37, 99, 235, 0.04)",
+            "&:hover": {
+              bgcolor: "rgba(37, 99, 235, 0.08)",
+              borderStyle: "dashed",
+            }
+          }}
+        >
+          <Typography variant="body2" fontWeight={600}>
+            Chọn Voucher khả dụng
+          </Typography>
+          <Typography variant="caption" color="primary" fontWeight="bold">
+            Xem thêm &gt;
+          </Typography>
+        </Button>
+      </Box>
 
-      {/* Dialogs */}
-      <MyVouchersDialog
-        open={myVouchersOpen}
-        onClose={() => setMyVouchersOpen(false)}
-        onSelectVoucher={onVoucherApply}
-        selectedVoucherCode={appliedVoucherCode}
-      />
-
-      <PublicVouchersDialog
-        open={publicVouchersOpen}
-        onClose={() => setPublicVouchersOpen(false)}
+      {/* Dialog */}
+      <VoucherSelectionDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSelect={onVoucherApply}
+        currentCode={appliedVoucherCode}
+        orderTotal={orderTotal}
       />
     </Box>
   );

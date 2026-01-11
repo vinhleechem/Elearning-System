@@ -2,7 +2,9 @@ package org.example.elearning.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
+import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.VoucherSource;
+import org.example.elearning.enums.VoucherType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +17,8 @@ public class UserVoucherResponse {
     private String code;
     private String name;
     private String description;
+    private VoucherType voucherType;
+    private DiscountType discountType;
     private BigDecimal discountValue;
     private BigDecimal maxDiscountAmount;
     private BigDecimal minOrderValue;

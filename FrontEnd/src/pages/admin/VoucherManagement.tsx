@@ -42,6 +42,7 @@ import {
   Cancel,
   CloudUpload,
   Send,
+  PersonAdd,
 } from "@mui/icons-material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useToast } from "../../hooks/useToast";
@@ -83,6 +84,8 @@ const VoucherManagement = () => {
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [grantVoucherId, setGrantVoucherId] = useState<number | null>(null);
   const [grantUserIds, setGrantUserIds] = useState<string>("");
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<VoucherRequest>({
     code: "",
@@ -140,11 +143,31 @@ const VoucherManagement = () => {
     }
   }, []);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      // TODO: Replace with actual API call when user service is available
+      // const response = await userService.getAllUsers();
+      // setUsers(response);
+
+      // Mock data for now
+      setUsers([
+        { userId: 1, fullName: "Nguyễn Văn A", email: "nguyenvana@example.com" },
+        { userId: 2, fullName: "Trần Thị B", email: "tranthib@example.com" },
+        { userId: 3, fullName: "Lê Văn C", email: "levanc@example.com" },
+        { userId: 4, fullName: "Phạm Thị D", email: "phamthid@example.com" },
+        { userId: 5, fullName: "Hoàng Văn E", email: "hoangvane@example.com" },
+      ]);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchVouchers();
     fetchCourses();
     fetchCategories();
-  }, [fetchVouchers, fetchCourses, fetchCategories]);
+    fetchUsers();
+  }, [fetchVouchers, fetchCourses, fetchCategories, fetchUsers]);
 
   const handleOpenDialog = (voucher?: Voucher) => {
     if (voucher) {
@@ -160,14 +183,15 @@ const VoucherManagement = () => {
         minOrderValue: voucher.minOrderValue,
         totalUsageLimit: voucher.totalUsageLimit || 100,
         perUserLimit: voucher.perUserLimit,
-        startDate: voucher.startDate,
-        endDate: voucher.endDate,
+        startDate: voucher.startDate ? voucher.startDate.slice(0, 16) : "",
+        endDate: voucher.endDate ? voucher.endDate.slice(0, 16) : "",
         isActive: voucher.isActive,
         applicableTo: voucher.applicableTo,
         applicableCourseIds: voucher.applicableCourseIds || [],
         applicableCategoryIds: voucher.applicableCategoryIds || [],
         instructorId: voucher.instructorId,
       });
+      setSelectedUsers([]); // Reset selected users when editing
     } else {
       setEditingId(null);
       setFormData({
@@ -189,6 +213,7 @@ const VoucherManagement = () => {
         applicableCategoryIds: [],
         instructorId: undefined,
       });
+      setSelectedUsers([]); // Reset selected users for new voucher
     }
     setOpenDialog(true);
   };
@@ -196,6 +221,7 @@ const VoucherManagement = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingId(null);
+    setSelectedUsers([]);
   };
 
   const handleSubmit = async () => {
@@ -234,8 +260,26 @@ const VoucherManagement = () => {
         await voucherService.updateVoucher(editingId, formData);
         enqueueSnackbar("Voucher updated successfully", { variant: "success" });
       } else {
-        await voucherService.createVoucher(formData);
+        const createdVoucher = await voucherService.createVoucher(formData);
         enqueueSnackbar("Voucher created successfully", { variant: "success" });
+
+        // Auto-grant voucher to selected users if PERSONAL type
+        if (formData.voucherType === "PERSONAL" && selectedUsers.length > 0) {
+          try {
+            await voucherService.grantVoucherToUsers(
+              createdVoucher.voucherId,
+              selectedUsers
+            );
+            enqueueSnackbar(
+              `Voucher đã được grant cho ${selectedUsers.length} users`,
+              { variant: "success" }
+            );
+          } catch (error) {
+            enqueueSnackbar("Không thể grant voucher cho users", {
+              variant: "error",
+            });
+          }
+        }
       }
       handleCloseDialog();
       fetchVouchers();
@@ -850,12 +894,17 @@ const VoucherManagement = () => {
                 <Select
                   value={formData.voucherType}
                   label="Voucher Type"
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const newType = e.target.value as VoucherType;
                     setFormData({
                       ...formData,
-                      voucherType: e.target.value as VoucherType,
-                    })
-                  }
+                      voucherType: newType,
+                    });
+                    // Reset selected users if changing away from PERSONAL
+                    if (newType !== "PERSONAL") {
+                      setSelectedUsers([]);
+                    }
+                  }}
                   sx={{ borderRadius: "12px" }}
                 >
                   <MenuItem value="PUBLIC">Public</MenuItem>
@@ -884,6 +933,57 @@ const VoucherManagement = () => {
                 </Select>
               </FormControl>
             </Box>
+
+            {/* User selector for PERSONAL voucher */}
+            {formData.voucherType === "PERSONAL" && (
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: "12px",
+                  backgroundColor: alpha(theme.palette.warning.main, 0.04),
+                  border: `1px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 1.5,
+                    fontWeight: 600,
+                    color: theme.palette.warning.main,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <PersonAdd fontSize="small" />
+                  Chọn users nhận voucher PERSONAL
+                </Typography>
+                <Autocomplete
+                  multiple
+                  options={users}
+                  getOptionLabel={(option) => `${option.fullName} (${option.email})`}
+                  value={users.filter((user) =>
+                    selectedUsers.includes(user.userId)
+                  )}
+                  onChange={(_, newValue) => {
+                    setSelectedUsers(newValue.map((user) => user.userId));
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Users"
+                      placeholder="Chọn users cụ thể..."
+                      helperText={`Đã chọn ${selectedUsers.length} users. Voucher sẽ tự động được grant cho các users này.`}
+                      InputProps={{
+                        ...params.InputProps,
+                        sx: { borderRadius: "12px", bgcolor: "white" },
+                      }}
+                    />
+                  )}
+                  sx={{ width: "100%" }}
+                />
+              </Box>
+            )}
 
             <Box
               sx={{

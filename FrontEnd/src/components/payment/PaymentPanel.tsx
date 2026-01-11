@@ -51,7 +51,6 @@ const PaymentPanel = ({ selected, onSelect }: PaymentPanelProps) => {
 
   return (
     <div className="flex-[2] rounded-lg">
-      <h1 className="mb-4 text-xl font-bold">Thanh toán</h1>
       <div className="mb-6">
         <label className="block py-2 text-lg font-bold text-gray-700">
           Địa chỉ thanh toán

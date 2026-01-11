@@ -1,65 +1,20 @@
 import { Container, Box, Typography, Button } from "@mui/material";
 import { useCartStore } from "../store/cartStore";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import CartItemList from "../components/cart/CartItemList";
 import CartSummary from "../components/cart/CartSummary";
 import type { CartItemProps } from "../types/cartItem";
-import { voucherService } from "../service/voucherService";
-import type { DiscountCalculationResponse } from "../types/voucher";
-import { useAuthStore } from "../store/authStore";
-
 const CartPage = () => {
-  const { items, fetchCart, removeFromCart, setVoucherCode } = useCartStore();
-  const { user } = useAuthStore();
-
-  const [discountData, setDiscountData] =
-    useState<DiscountCalculationResponse | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { items, fetchCart, removeFromCart } = useCartStore();
 
   useEffect(() => {
     fetchCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only fetch on mount
 
-  useEffect(() => {
-    setDiscountData(null);
-    setSuccessMessage(null);
-    setCouponError(null);
-  }, [items]);
-
-  const handleApplyCoupon = async (code: string) => {
-    if (!user) {
-      setCouponError("Vui lòng đăng nhập để sử dụng mã giảm giá");
-      return;
-    }
-    setCouponError(null);
-    setSuccessMessage(null);
-    try {
-      const request = {
-        userId: user.userId,
-        cartItems: items.map((item) => ({
-          courseId: item.courseId,
-          price: item.price,
-        })),
-        voucherCode: code,
-      };
-      const response = await voucherService.calculateDiscount(request);
-      setDiscountData(response);
-      setSuccessMessage("Áp dụng mã giảm giá thành công!");
-      setVoucherCode(code);
-    } catch (error: any) {
-      setCouponError(error.message || "Mã giảm giá không hợp lệ");
-      setDiscountData(null);
-      setVoucherCode(null);
-    }
-  };
-
-  const total = discountData
-    ? discountData.finalAmount
-    : items.reduce((acc, item) => {
-      return acc + (item.discountPrice ?? item.price);
-    }, 0);
+  const total = items.reduce((acc, item) => {
+    return acc + (item.discountPrice ?? item.price);
+  }, 0);
 
   const oldTotal = items.reduce((acc, item) => {
     return acc + item.price;
@@ -67,10 +22,6 @@ const CartPage = () => {
 
   const discountPercent =
     oldTotal > 0 ? Math.ceil(((oldTotal - total) / oldTotal) * 100) : 0;
-
-  const voucherDiscountAmount = discountData?.discounts
-    .filter((d) => d.type === "VOUCHER")
-    .reduce((acc, d) => acc + d.amount, 0);
 
   const cartItems: CartItemProps[] = items.map((item) => ({
     id: item.courseId,
@@ -87,7 +38,7 @@ const CartPage = () => {
 
   if (items.length === 0) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4, minHeight: "calc(100vh - 200px)" }}>
         <Box
           sx={{
             bgcolor: "white",
@@ -137,7 +88,7 @@ const CartPage = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4, minHeight: "calc(100vh - 200px)" }}>
       <Typography variant="h4" fontWeight={700} gutterBottom sx={{ mb: 4 }}>
         Giỏ hàng
       </Typography>
@@ -148,10 +99,6 @@ const CartPage = () => {
             total={total}
             oldTotal={oldTotal}
             discountPercent={discountPercent}
-            onApplyCoupon={handleApplyCoupon}
-            couponError={couponError}
-            successMessage={successMessage}
-            voucherDiscountAmount={voucherDiscountAmount}
           />
         </Box>
       </Box>

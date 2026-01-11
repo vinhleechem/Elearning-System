@@ -301,6 +301,8 @@ public class VoucherServiceImpl implements VoucherService {
                 .code(voucher.getCode())
                 .name(voucher.getName())
                 .description(voucher.getDescription())
+                .voucherType(voucher.getVoucherType())
+                .discountType(voucher.getDiscountType())
                 .discountValue(voucher.getDiscountValue())
                 .maxDiscountAmount(voucher.getMaxDiscountAmount())
                 .minOrderValue(voucher.getMinOrderValue())
@@ -472,5 +474,30 @@ public class VoucherServiceImpl implements VoucherService {
             workbook.write(out);
             return out.toByteArray();
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VoucherResponse> getAvailableVouchersForBooking(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Get PUBLIC active vouchers (available to everyone)
+        List<VoucherEntity> publicVouchers = voucherRepository.findAvailablePublicVouchers(now);
+
+        // 2. Get PRIVATE/GRANT vouchers that user has in wallet (unused and valid)
+        List<UserVoucherEntity> userWallet = userVoucherRepository.findAvailableVouchers(userId, now);
+        
+        // 3. Merge lists using a Map to ensure uniqueness by Voucher ID
+        java.util.Map<Long, VoucherEntity> uniqueVouchers = new java.util.HashMap<>();
+        
+        // Add all public vouchers
+        publicVouchers.forEach(v -> uniqueVouchers.put(v.getVoucherId(), v));
+        
+        // Add user wallet vouchers (will overwrite duplicates, which is fine as they are the same voucher)
+        userWallet.forEach(uv -> uniqueVouchers.put(uv.getVoucher().getVoucherId(), uv.getVoucher()));
+
+        return uniqueVouchers.values().stream()
+                .map(voucherMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }

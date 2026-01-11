@@ -11,8 +11,11 @@ import org.example.elearning.dto.response.DiscountCalculationResponse;
 import org.example.elearning.dto.response.StandardResponse;
 import org.example.elearning.dto.response.UserVoucherResponse;
 import org.example.elearning.dto.response.VoucherResponse;
+import org.example.elearning.entity.UserEntity;
 import org.example.elearning.service.DiscountCalculationService;
+import org.example.elearning.service.UserService;
 import org.example.elearning.service.VoucherService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -32,6 +36,7 @@ public class VoucherController {
 
     private final VoucherService voucherService;
     private final DiscountCalculationService discountCalculationService;
+    private final UserService userService;
 
     // ========== ADMIN APIs ==========
 
@@ -121,6 +126,16 @@ public class VoucherController {
         return ResponseEntity.ok(StandardResponse.success(response));
     }
 
+    @GetMapping("/booking/available")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get available vouchers for booking", description = "Get list of vouchers available (User's wallet + Public) for booking")
+    public ResponseEntity<StandardResponse<List<VoucherResponse>>> getAvailableVouchersForBooking() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        List<VoucherResponse> response = voucherService.getAvailableVouchersForBooking(user.getUserId());
+        return ResponseEntity.ok(StandardResponse.success(response));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get voucher by ID", description = "Get detailed information about a voucher")
     public ResponseEntity<StandardResponse<VoucherResponse>> getVoucherById(@PathVariable Long id) {
@@ -132,11 +147,10 @@ public class VoucherController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Claim voucher", description = "Claim a voucher by code")
     public ResponseEntity<StandardResponse<UserVoucherResponse>> claimVoucher(
-            @Valid @RequestBody ClaimVoucherRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Get user ID from userDetails
-        Long userId = 1L; // TODO: Get from userDetails
-        UserVoucherResponse response = voucherService.claimVoucher(request.getCode(), userId);
+            @Valid @RequestBody ClaimVoucherRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        UserVoucherResponse response = voucherService.claimVoucher(request.getCode(), user.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(StandardResponse.success(response));
     }
 
@@ -144,11 +158,10 @@ public class VoucherController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my vouchers", description = "Get list of vouchers owned by current user")
     public ResponseEntity<StandardResponse<List<UserVoucherResponse>>> getMyVouchers(
-            @RequestParam(required = false, defaultValue = "false") Boolean onlyAvailable,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Get user ID from userDetails
-        Long userId = 1L; // TODO: Get from userDetails
-        List<UserVoucherResponse> response = voucherService.getUserVouchers(userId, onlyAvailable);
+            @RequestParam(required = false, defaultValue = "false") Boolean onlyAvailable) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        List<UserVoucherResponse> response = voucherService.getUserVouchers(user.getUserId(), onlyAvailable);
         return ResponseEntity.ok(StandardResponse.success(response));
     }
 
@@ -156,11 +169,10 @@ public class VoucherController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Validate voucher", description = "Check if a voucher code is valid for current user")
     public ResponseEntity<StandardResponse<Boolean>> validateVoucherCode(
-            @RequestBody ClaimVoucherRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Get user ID from userDetails
-        Long userId = 1L; // TODO: Get from userDetails
-        boolean isValid = voucherService.validateVoucherCode(request.getCode(), userId);
+            @RequestBody ClaimVoucherRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        boolean isValid = voucherService.validateVoucherCode(request.getCode(), user.getUserId());
         return ResponseEntity.ok(StandardResponse.success(isValid));
     }
 
@@ -178,11 +190,10 @@ public class VoucherController {
     @GetMapping("/available-discounts")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get available discounts", description = "Get list of all available discounts for current user")
-    public ResponseEntity<StandardResponse<List<String>>> getAvailableDiscounts(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Get user ID from userDetails
-        Long userId = 1L; // TODO: Get from userDetails
-        List<String> discounts = discountCalculationService.getAvailableDiscounts(userId);
+    public ResponseEntity<StandardResponse<List<String>>> getAvailableDiscounts() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        List<String> discounts = discountCalculationService.getAvailableDiscounts(user.getUserId());
         return ResponseEntity.ok(StandardResponse.success(discounts));
     }
 
@@ -192,12 +203,11 @@ public class VoucherController {
     @PreAuthorize("hasRole('INSTRUCTOR')")
     @Operation(summary = "Create instructor voucher", description = "Create a voucher for own courses (Instructor only)")
     public ResponseEntity<StandardResponse<VoucherResponse>> createInstructorVoucher(
-            @Valid @RequestBody VoucherRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Get instructor ID from userDetails
-        Long instructorId = 1L; // TODO: Get from userDetails
-        request.setInstructorId(instructorId);
-        VoucherResponse response = voucherService.createVoucher(request, instructorId);
+            @Valid @RequestBody VoucherRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        VoucherResponse response = voucherService.createVoucher(request, user.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(StandardResponse.success(response));
     }
+
 }

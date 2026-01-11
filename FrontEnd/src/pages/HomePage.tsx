@@ -347,7 +347,6 @@ const HomePage: React.FC = () => {
                     </div>
                 </Container>
             </section>
-
             {/* CTA Section */}
             <section className="py-24 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
                 <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>

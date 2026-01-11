@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -23,6 +24,6 @@ public class ApplyDiscountRequest {
         private Long courseId;
 
         @NotNull(message = "Price is required")
-        private java.math.BigDecimal price;
+        private BigDecimal price;
     }
 }

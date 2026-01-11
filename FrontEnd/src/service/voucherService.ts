@@ -160,6 +160,20 @@ export const voucherService = {
     return response.data;
   },
 
+  // Get available vouchers for booking (User's + Public)
+  getAvailableVouchersForBooking: async (): Promise<Voucher[]> => {
+    const response = await httpClient<Voucher[]>(
+      `${VOUCHER_BASE_URL}/booking/available`,
+      {
+        method: "GET",
+      },
+    );
+    if (!response.data) {
+      throw new Error("Failed to get available vouchers");
+    }
+    return response.data;
+  },
+
   // ========== DISCOUNT CALCULATION APIs ==========
 
   // Calculate discount for cart

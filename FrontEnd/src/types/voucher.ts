@@ -88,6 +88,8 @@ export interface UserVoucher {
   code: string;
   name: string;
   description: string;
+  voucherType: VoucherType;
+  discountType: DiscountType;
   discountValue: number;
   maxDiscountAmount?: number;
   minOrderValue: number;
