@@ -14,6 +14,9 @@ public interface OrderDiscountRepository extends JpaRepository<OrderDiscountEnti
 
     // Tìm all discounts của order
     List<OrderDiscountEntity> findByOrder_OrderIdAndIsDeletedFalse(Long orderId);
+    
+    // Tìm all discounts của order (by entity)
+    List<OrderDiscountEntity> findByOrder(org.example.elearning.entity.OrderEntity order);
 
     // Tính tổng discount của order
     @Query("SELECT COALESCE(SUM(od.discountAmount), 0) " +

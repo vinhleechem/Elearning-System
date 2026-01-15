@@ -4,7 +4,6 @@ import PaymentPanel, {
 } from "../components/payment/PaymentPanel";
 import OrderSummaryPanel from "../components/order/OrderSummaryPanel";
 import CheckoutItemList from "../components/checkout/CheckoutItemList";
-import { VoucherSection } from "../components/voucher";
 import { useState, useEffect, useCallback } from "react";
 import { httpClient } from "../service/httpClient";
 import { useCartStore } from "../store/cartStore";
@@ -16,6 +15,7 @@ import type {
   DiscountCalculationRequest,
   DiscountCalculationResponse,
 } from "../types/voucher";
+import VoucherSection from "../components/voucher/VoucherSection";
 
 const CheckoutPage = () => {
   const { items, voucherCode, setVoucherCode } = useCartStore();
@@ -78,13 +78,21 @@ const CheckoutPage = () => {
     }
 
     try {
-      // Validate voucher code first
-      const isValid = await voucherService.validateVoucherCode(code.trim());
-      if (!isValid) {
-        enqueueSnackbar("Mã voucher không hợp lệ hoặc không tồn tại", {
-          variant: "error",
-        });
-        return;
+      // Validate voucher with current cart items
+      const cartItems = items.map((item) => ({
+        courseId: item.courseId,
+        price: item.price,
+      }));
+
+      const validationResult = await voucherService.validateVoucher(
+        code.trim(),
+        cartItems,
+      );
+
+      if (!validationResult.valid) {
+        const errorMsg = validationResult.message || "Mã voucher không hợp lệ";
+        enqueueSnackbar(errorMsg, { variant: "error" });
+        throw new Error(errorMsg); // Throw to prevent dialog from closing
       }
 
       setAppliedVoucherCode(code.trim());
@@ -92,9 +100,8 @@ const CheckoutPage = () => {
       enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
     } catch (error: any) {
       console.error("Failed to validate voucher:", error);
-      enqueueSnackbar(error?.message || "Không thể áp dụng mã voucher", {
-        variant: "error",
-      });
+      // Re-throw to prevent dialog from closing
+      throw error;
     }
   };
 

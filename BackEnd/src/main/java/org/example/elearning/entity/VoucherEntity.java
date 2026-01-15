@@ -82,8 +82,7 @@ public class VoucherEntity extends BaseEntity {
     @Builder.Default
     VoucherApplicability applicableTo = VoucherApplicability.ALL;
 
-    // Relationship với Course (Many-to-Many) - Chỉ khi applicableTo =
-    // SPECIFIC_COURSES
+
     @ManyToMany
     @JoinTable(name = "voucher_courses",
             joinColumns = @JoinColumn(name = "voucher_id"),
@@ -95,7 +94,7 @@ public class VoucherEntity extends BaseEntity {
     @CollectionTable(name = "voucher_categories", joinColumns = @JoinColumn(name = "voucher_id"))
     @Column(name = "category_id")
     @Builder.Default
-    List<Long> applicableCategoryIds = new ArrayList<>(); // For CATEGORY applicability
+    List<Long> applicableCategoryIds = new ArrayList<>();
 
     @OneToMany(mappedBy = "voucher", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -103,7 +102,7 @@ public class VoucherEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instructor_id")
-    InstructorEntity instructor; // Instructor tạo voucher (null = system voucher)
+    InstructorEntity instructor;
 
     // Helper methods for mapping
     public String getInstructorName() {

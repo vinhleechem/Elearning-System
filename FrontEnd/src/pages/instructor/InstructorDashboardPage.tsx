@@ -165,7 +165,8 @@ const InstructorDashboardPage = () => {
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [activeSection, searchTerm, tokens?.accessToken, enqueueSnackbar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, searchTerm, tokens?.accessToken]);
 
   useEffect(() => {
     const fetchProfile = async () => {

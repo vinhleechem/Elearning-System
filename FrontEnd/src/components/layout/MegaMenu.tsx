@@ -58,7 +58,6 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
             py: 2,
             color: "#1c1d1f",
             fontSize: "14px",
-            textTransform: "uppercase",
             letterSpacing: "0.5px"
           }}
         >
@@ -151,7 +150,6 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
                       color: active ? "#3b82f6" : "#1c1d1f",
                       fontWeight: active ? 700 : 400,
                       fontSize: "14px",
-                      transition: "all 0.2s ease",
                       "&:hover": {
                         bgcolor: "#f7f9fa",
                         color: "#3b82f6",
@@ -195,7 +193,7 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
                   fontSize: "14px",
                 }}
               >
-                {activeColumn.title}
+                Popular topics
               </Typography>
               <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
                 {activeColumn.items.map((item) => (

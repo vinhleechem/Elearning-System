@@ -20,6 +20,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         position="top-right"
         reverseOrder={false}
         gutter={8}
+        containerStyle={{
+          top: 100,
+          right: 20,
+        }}
         toastOptions={{
           duration: 3000,
           style: {

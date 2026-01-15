@@ -160,3 +160,35 @@ export interface ItemPrice {
   finalPrice: number;
   savings: number;
 }
+
+// Voucher Validation Types
+export type ValidationStatus =
+  | "VALID"
+  | "EXPIRED"
+  | "NOT_STARTED"
+  | "USAGE_LIMIT_REACHED"
+  | "MIN_ORDER_NOT_MET"
+  | "NOT_APPLICABLE"
+  | "ALREADY_USED"
+  | "NOT_FOUND"
+  | "INACTIVE";
+
+export interface VoucherValidationRequest {
+  voucherCode: string;
+  cartItems: {
+    courseId: number;
+    price: number;
+  }[];
+}
+
+export interface VoucherValidationResponse {
+  valid: boolean;
+  message: string;
+  voucherCode: string;
+  voucherName?: string;
+  discountAmount?: number;
+  minOrderValue?: number;
+  maxDiscountAmount?: number;
+  reasons?: string[];
+  status: ValidationStatus;
+}

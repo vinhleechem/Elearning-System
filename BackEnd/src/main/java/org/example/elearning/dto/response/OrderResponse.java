@@ -24,4 +24,5 @@ public class OrderResponse {
     private BigDecimal finalAmount;
     private OrderStatus status;
     private LocalDateTime createdAt;
+    private List<OrderDiscountResponse> discountsApplied;
 }

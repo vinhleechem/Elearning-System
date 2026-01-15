@@ -1,7 +1,9 @@
 package org.example.elearning.mapper;
 
+import org.example.elearning.dto.response.OrderDiscountResponse;
 import org.example.elearning.dto.response.OrderItemResponse;
 import org.example.elearning.dto.response.OrderResponse;
+import org.example.elearning.entity.OrderDiscountEntity;
 import org.example.elearning.entity.OrderEntity;
 import org.example.elearning.entity.OrderItemEntity;
 import org.mapstruct.Mapper;
@@ -21,7 +23,8 @@ public interface OrderMapper {
     @Mapping(source = "order.finalAmount", target = "finalAmount")
     @Mapping(source = "order.status", target = "status")
     @Mapping(source = "order.createdAt", target = "createdAt")
-    OrderResponse toOrderResponse(OrderEntity order, List<OrderItemEntity> items);
+    @Mapping(source = "discounts", target = "discountsApplied")
+    OrderResponse toOrderResponse(OrderEntity order, List<OrderItemEntity> items, List<OrderDiscountEntity> discounts);
     
     @Mapping(source = "orderItemId", target = "orderItemId")
     @Mapping(source = "course.courseId", target = "courseId")
@@ -31,4 +34,14 @@ public interface OrderMapper {
     @Mapping(source = "discountPrice", target = "discountPrice")
     @Mapping(source = "finalPrice", target = "finalPrice")
     OrderItemResponse toOrderItemResponse(OrderItemEntity orderItem);
+    
+    @Mapping(source = "orderDiscountId", target = "orderDiscountId")
+    @Mapping(source = "discountType", target = "type")
+    @Mapping(source = "referenceId", target = "referenceId")
+    @Mapping(source = "discountAmount", target = "amount")
+    @Mapping(source = "description", target = "description")
+    @Mapping(source = "appliedAt", target = "appliedAt")
+    OrderDiscountResponse toOrderDiscountResponse(OrderDiscountEntity discount);
+    
+    List<OrderDiscountResponse> toOrderDiscountResponseList(List<OrderDiscountEntity> discounts);
 }

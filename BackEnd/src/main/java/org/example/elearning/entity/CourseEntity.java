@@ -93,11 +93,6 @@ public class CourseEntity extends BaseEntity {
     @Column(name = "price", precision = 10, scale = 2)
     BigDecimal price;
 
-    /**
-     * Current effective price (cached from promotions)
-     * This is the actual price shown to users, updated when promotions change
-     * If null, defaults to 'price'
-     */
     @Column(name = "current_price", precision = 10, scale = 2)
     BigDecimal currentPrice;
 

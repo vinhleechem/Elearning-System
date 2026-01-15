@@ -56,6 +56,7 @@ import {
   type CategoryTreeResponse,
 } from "../../service/categoryService";
 import { formatCurrency } from "../../libs/utils";
+import { formatDate } from "../../libs/dateUtils";
 import type {
   Voucher,
   VoucherRequest,
@@ -63,10 +64,14 @@ import type {
   DiscountType,
   VoucherApplicability,
 } from "../../types/voucher";
+import { adminUserService } from "../../service/adminUserService";
+import { useAuthStore } from "../../store/authStore";
+import type { UserResponse } from "../../types/auth";
 
 const VoucherManagement = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useToast();
+  const { tokens } = useAuthStore();
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
@@ -85,7 +90,7 @@ const VoucherManagement = () => {
   const [grantVoucherId, setGrantVoucherId] = useState<number | null>(null);
   const [grantUserIds, setGrantUserIds] = useState<string>("");
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
 
   const [formData, setFormData] = useState<VoucherRequest>({
     code: "",
@@ -144,23 +149,18 @@ const VoucherManagement = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
-    try {
-      // TODO: Replace with actual API call when user service is available
-      // const response = await userService.getAllUsers();
-      // setUsers(response);
+    if (!tokens?.accessToken) return;
 
-      // Mock data for now
-      setUsers([
-        { userId: 1, fullName: "Nguyễn Văn A", email: "nguyenvana@example.com" },
-        { userId: 2, fullName: "Trần Thị B", email: "tranthib@example.com" },
-        { userId: 3, fullName: "Lê Văn C", email: "levanc@example.com" },
-        { userId: 4, fullName: "Phạm Thị D", email: "phamthid@example.com" },
-        { userId: 5, fullName: "Hoàng Văn E", email: "hoangvane@example.com" },
-      ]);
+    try {
+      const response = await adminUserService.getUsers(tokens.accessToken, {
+        page: 0,
+        size: 1000,
+      });
+      setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
-  }, []);
+  }, [tokens]);
 
   useEffect(() => {
     fetchVouchers();
@@ -246,6 +246,12 @@ const VoucherManagement = () => {
     }
     if (!formData.endDate) {
       enqueueSnackbar("End date is required", { variant: "warning" });
+      return;
+    }
+    if (formData.voucherType === "PERSONAL" && selectedUsers.length === 0) {
+      enqueueSnackbar("Vui lòng chọn ít nhất 1 user cho voucher PERSONAL", {
+        variant: "warning",
+      });
       return;
     }
     if (new Date(formData.startDate) >= new Date(formData.endDate)) {
@@ -590,6 +596,7 @@ const VoucherManagement = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Mã Voucher</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
@@ -605,13 +612,13 @@ const VoucherManagement = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                     <CircularProgress size={24} />
                   </TableCell>
                 </TableRow>
               ) : filteredVouchers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       Không có voucher nào
                     </Typography>
@@ -627,6 +634,11 @@ const VoucherManagement = () => {
                       },
                     }}
                   >
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        #{voucher.voucherId}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={voucher.code}
@@ -694,14 +706,14 @@ const VoucherManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption" display="block">
-                        {new Date(voucher.startDate).toLocaleDateString()}
+                        {formatDate(voucher.startDate)}
                       </Typography>
                       <Typography
                         variant="caption"
                         display="block"
                         color="text.secondary"
                       >
-                        {new Date(voucher.endDate).toLocaleDateString()}
+                        {formatDate(voucher.endDate)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -961,7 +973,7 @@ const VoucherManagement = () => {
                 <Autocomplete
                   multiple
                   options={users}
-                  getOptionLabel={(option) => `${option.fullName} (${option.email})`}
+                  getOptionLabel={(option) => `${option.fullName || option.email} (${option.email})`}
                   value={users.filter((user) =>
                     selectedUsers.includes(user.userId)
                   )}

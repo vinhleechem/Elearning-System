@@ -28,6 +28,7 @@ import {
   HourglassEmpty,
   Payment,
 } from "@mui/icons-material";
+import { formatDate } from "../../libs/dateUtils";
 
 export const InstructorPayoutManagement = () => {
   const [payouts, setPayouts] = useState<InstructorPayout[]>([]);
@@ -196,11 +197,10 @@ export const InstructorPayoutManagement = () => {
                         <TableCell>{payout.instructorName}</TableCell>
                         <TableCell>
                           <Typography variant="caption" display="block">
-                            {new Date(payout.periodStart).toLocaleDateString()}{" "}
-                            -
+                            {formatDate(payout.periodStart)} -
                           </Typography>
                           <Typography variant="caption" display="block">
-                            {new Date(payout.periodEnd).toLocaleDateString()}
+                            {formatDate(payout.periodEnd)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Alert } from "@mui/material";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import { Box, TextField, Button, Typography, Chip } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import { voucherService } from "../../service/voucherService";
 
 interface VoucherInputProps {
@@ -34,7 +34,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
         onVoucherApply(voucherCode);
         setVoucherCode("");
       } else {
-        setError("Mã voucher không hợp lệ hoặc đã hết hạn");
+        setError("Mã voucher không hợp lệ");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể áp dụng voucher");
@@ -51,38 +51,45 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
 
   return (
     <Box>
-      <Typography variant="subtitle1" fontWeight={600} mb={1}>
-        <LocalOfferIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-        Mã giảm giá
-      </Typography>
-
       {appliedVoucherCode ? (
         <Box
           sx={{
             p: 2,
-            border: "1px solid",
+            border: "2px solid",
             borderColor: "success.main",
             borderRadius: 2,
-            backgroundColor: "success.50",
+            backgroundColor: "rgba(76, 175, 80, 0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-            <Typography color="success.main" fontWeight={600}>
-              Đã áp dụng: {appliedVoucherCode}
-            </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: 24 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                Đã áp dụng
+              </Typography>
+              <Typography color="success.main" fontWeight={700} sx={{ fontSize: "1rem" }}>
+                {appliedVoucherCode}
+              </Typography>
+            </Box>
           </Box>
-          <Button
+          <Chip
+            label="Xóa"
             size="small"
-            variant="outlined"
             color="error"
+            variant="outlined"
+            deleteIcon={<CloseIcon />}
+            onDelete={handleRemoveVoucher}
             onClick={handleRemoveVoucher}
-          >
-            Xóa
-          </Button>
+            sx={{
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: "rgba(211, 47, 47, 0.08)",
+              }
+            }}
+          />
         </Box>
       ) : (
         <>
@@ -99,21 +106,27 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
                 }
               }}
               disabled={loading}
+              error={!!error}
+              helperText={error}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "white",
+                }
+              }}
             />
             <Button
               variant="contained"
               onClick={handleApplyVoucher}
               disabled={loading || !voucherCode.trim()}
-              sx={{ minWidth: "100px" }}
+              sx={{
+                minWidth: "100px",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
             >
               {loading ? "Đang kiểm tra..." : "Áp dụng"}
             </Button>
           </Box>
-          {error && (
-            <Alert severity="error" sx={{ mt: 1 }}>
-              {error}
-            </Alert>
-          )}
         </>
       )}
     </Box>

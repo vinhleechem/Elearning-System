@@ -48,6 +48,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import { promotionService } from "../../service/promotionService";
 import { categoryService } from "../../service/categoryService";
+import { formatDate } from "../../libs/dateUtils";
 import type { CategoryTreeResponse } from "../../service/categoryService";
 import { courseService } from "../../service/courseService";
 import type { PublicCourseResponse } from "../../service/courseService";
@@ -123,16 +124,19 @@ const PromotionManagement = () => {
 
   const flattenCategories = (
     cats: CategoryTreeResponse[],
-    depth = 0
+    depth = 0,
   ): (CategoryTreeResponse & { displayName: string })[] => {
-    return cats.reduce((acc, cat) => {
-      const prefix = depth > 0 ? "— ".repeat(depth) : "";
-      acc.push({ ...cat, displayName: prefix + cat.name });
-      if (cat.children?.length) {
-        acc.push(...flattenCategories(cat.children, depth + 1));
-      }
-      return acc;
-    }, [] as (CategoryTreeResponse & { displayName: string })[]);
+    return cats.reduce(
+      (acc, cat) => {
+        const prefix = depth > 0 ? "— ".repeat(depth) : "";
+        acc.push({ ...cat, displayName: prefix + cat.name });
+        if (cat.children?.length) {
+          acc.push(...flattenCategories(cat.children, depth + 1));
+        }
+        return acc;
+      },
+      [] as (CategoryTreeResponse & { displayName: string })[],
+    );
   };
 
   const fetchPromotions = async () => {
@@ -170,11 +174,19 @@ const PromotionManagement = () => {
   const parseDisplayDate = (displayDate: string): string => {
     if (!displayDate) return "";
     // Match format: dd/MM/yyyy HH:mm
-    const match = displayDate.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+    const match = displayDate.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/,
+    );
     if (!match) return displayDate; // Return as-is if invalid format
 
     const [, day, month, year, hours, minutes] = match;
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+    const date = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+    );
     return date.toISOString();
   };
 
@@ -239,7 +251,9 @@ const PromotionManagement = () => {
 
   const handleSubmit = async () => {
     if (formData.rules.length === 0) {
-      enqueueSnackbar("Vui lòng thêm ít nhất một quy tắc (rule)", { variant: "error" });
+      enqueueSnackbar("Vui lòng thêm ít nhất một quy tắc (rule)", {
+        variant: "error",
+      });
       return;
     }
 
@@ -629,6 +643,7 @@ const PromotionManagement = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Tên khuyến mãi</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
@@ -643,13 +658,13 @@ const PromotionManagement = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : filteredPromotions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       Không tìm thấy khuyến mãi nào
                     </Typography>
@@ -665,6 +680,11 @@ const PromotionManagement = () => {
                       },
                     }}
                   >
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        #{promotion.promotionId}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         {promotion.name}
@@ -699,14 +719,14 @@ const PromotionManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption" display="block">
-                        {new Date(promotion.startDate).toLocaleDateString()}
+                        {formatDate(promotion.startDate)}
                       </Typography>
                       <Typography
                         variant="caption"
                         display="block"
                         color="text.secondary"
                       >
-                        {new Date(promotion.endDate).toLocaleDateString()}
+                        {formatDate(promotion.endDate)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -865,7 +885,11 @@ const PromotionManagement = () => {
                   type="text"
                   fullWidth
                   placeholder="dd/MM/yyyy HH:mm"
-                  value={formData.startDate ? formatDateForDisplay(formData.startDate) : ""}
+                  value={
+                    formData.startDate
+                      ? formatDateForDisplay(formData.startDate)
+                      : ""
+                  }
                   onChange={(e) => {
                     const formatted = parseDisplayDate(e.target.value);
                     setFormData({ ...formData, startDate: formatted });
@@ -878,7 +902,11 @@ const PromotionManagement = () => {
                   type="text"
                   fullWidth
                   placeholder="dd/MM/yyyy HH:mm"
-                  value={formData.endDate ? formatDateForDisplay(formData.endDate) : ""}
+                  value={
+                    formData.endDate
+                      ? formatDateForDisplay(formData.endDate)
+                      : ""
+                  }
                   onChange={(e) => {
                     const formatted = parseDisplayDate(e.target.value);
                     setFormData({ ...formData, endDate: formatted });
@@ -1051,7 +1079,7 @@ const PromotionManagement = () => {
                         )}
                         value={
                           courses.find(
-                            (c) => c.courseId === currentRule.targetId
+                            (c) => c.courseId === currentRule.targetId,
                           ) || null
                         }
                         onChange={(_, newValue) =>
@@ -1078,7 +1106,7 @@ const PromotionManagement = () => {
                         )}
                         value={
                           flattenCategories(categories).find(
-                            (c) => c.id === currentRule.targetId
+                            (c) => c.id === currentRule.targetId,
                           ) || null
                         }
                         onChange={(_, newValue) =>
@@ -1094,24 +1122,24 @@ const PromotionManagement = () => {
                   {/* Row 4: Min Purchase (Cart Total / General) */}
                   {(currentRule.ruleType === "CART_TOTAL" ||
                     currentRule.ruleType === "BUY_X_GET_Y") && (
-                      <Grid size={{ xs: 6 }}>
-                        <TextField
-                          label="Min Purchase Amount"
-                          type="number"
-                          fullWidth
-                          size="small"
-                          value={currentRule.minPurchaseAmount || ""}
-                          onChange={(e) =>
-                            setCurrentRule({
-                              ...currentRule,
-                              minPurchaseAmount: e.target.value
-                                ? parseFloat(e.target.value)
-                                : undefined,
-                            })
-                          }
-                        />
-                      </Grid>
-                    )}
+                    <Grid size={{ xs: 6 }}>
+                      <TextField
+                        label="Min Purchase Amount"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={currentRule.minPurchaseAmount || ""}
+                        onChange={(e) =>
+                          setCurrentRule({
+                            ...currentRule,
+                            minPurchaseAmount: e.target.value
+                              ? parseFloat(e.target.value)
+                              : undefined,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
 
                   {/* Row 5: Buy X Get Y Specifics */}
                   {currentRule.ruleType === "BUY_X_GET_Y" && (

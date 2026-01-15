@@ -469,7 +469,8 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         clearTimeout(inactivityTimerRef.current);
       }
     };
-  }, [lastActivityTime, messages.length, currentConversationId, isOpen, enqueueSnackbar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastActivityTime, messages.length, currentConversationId, isOpen]);
 
   // Update activity time when user interacts
   useEffect(() => {

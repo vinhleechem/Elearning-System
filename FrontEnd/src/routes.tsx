@@ -11,8 +11,6 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import LoginWithQrPage from "./pages/auth/LoginWithQrPage";
 import FacebookCallbackPage from "./pages/auth/FacebookCallbackPage";
 import CourseDetailPage from "./pages/course/CourseDetailPage";
-// import InstructorDetailPage from './pages/instructor/InstructorDetailPage';
-// import InstructorListPage from './pages/instructor/InstructorListPage';
 import DashboardHome from "./pages/dashboard/Home";
 import UserProfiles from "./pages/dashboard/UserProfiles";
 import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
@@ -37,6 +35,11 @@ import ReviewManagement from "./pages/admin/ReviewManagement";
 import SetPasswordPage from "./pages/SetPasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
+
+import CommunicationLayout from "./pages/instructor/communication/CommunicationLayout";
+import InstructorQnAPage from "./pages/instructor/communication/InstructorQnAPage";
+import InstructorMessagesPage from "./pages/instructor/communication/InstructorMessagesPage";
+import { Typography } from "@mui/material";
 
 export const router = createBrowserRouter([
   {
@@ -97,8 +100,27 @@ export const router = createBrowserRouter([
             path: "courses/:courseId/content",
             element: <CourseContentManagementPage />,
           },
-          // Placeholder routes for other sidebar items to prevent 404 if clicked
-          { path: "communication", element: <InstructorDashboardPage /> },
+          {
+            path: "communication",
+            element: <CommunicationLayout />,
+            children: [
+              { index: true, element: <Navigate to="qa" replace /> },
+              { path: "qa", element: <InstructorQnAPage /> },
+              { path: "messages", element: <InstructorMessagesPage /> },
+              {
+                path: "assignments",
+                element: <Typography sx={{ m: 4 }}>Bài tập (Đang phát triển)</Typography>,
+              },
+              {
+                path: "announcements",
+                element: <Typography sx={{ m: 4 }}>Thông báo (Đang phát triển)</Typography>,
+              },
+              {
+                path: "ai-assistant",
+                element: <Typography sx={{ m: 4 }}>Chi tiết trợ lý AI (Đang phát triển)</Typography>,
+              },
+            ],
+          },
           { path: "performance", element: <InstructorDashboardPage /> },
           { path: "tools", element: <InstructorDashboardPage /> },
           { path: "resources", element: <InstructorDashboardPage /> },

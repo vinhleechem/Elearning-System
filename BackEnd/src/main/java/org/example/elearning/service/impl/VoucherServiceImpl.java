@@ -475,7 +475,118 @@ public class VoucherServiceImpl implements VoucherService {
             return out.toByteArray();
         }
     }
+    @Override
+    @Transactional(readOnly = true)
+    public org.example.elearning.dto.response.VoucherValidationResponse validateVoucher(
+            String voucherCode, Long userId,
+            List<org.example.elearning.dto.request.VoucherValidationRequest.CartItem> cartItems) {
 
+        var voucherOpt = voucherRepository.findByCodeAndIsDeletedFalse(voucherCode);
+        if (voucherOpt.isEmpty()) {
+            return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                    voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.NOT_FOUND,
+                    "Voucher not found", List.of("Code does not exist"));
+        }
+
+        VoucherEntity voucher = voucherOpt.get();
+        if (!voucher.getIsActive()) {
+            return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                    voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.INACTIVE,
+                    "Voucher inactive", List.of("Deactivated"));
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(voucher.getStartDate())) {
+            return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                    voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.NOT_STARTED,
+                    "Not yet valid", List.of("Starts: " + voucher.getStartDate()));
+        }
+
+        if (now.isAfter(voucher.getEndDate())) {
+            return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                    voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.EXPIRED,
+                    "Expired", List.of("Ended: " + voucher.getEndDate()));
+        }
+
+        // Check if PERSONAL voucher - user must have it in wallet
+        if (voucher.getVoucherType() == VoucherType.PERSONAL) {
+            boolean hasVoucher = userVoucherRepository.existsByUser_UserIdAndVoucher_VoucherIdAndIsUsedFalseAndIsDeletedFalse(userId, voucher.getVoucherId());
+            if (!hasVoucher) {
+                return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                        voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.NOT_APPLICABLE,
+                        "You don't have this voucher", List.of("PERSONAL voucher not in your wallet"));
+            }
+        }
+
+        // Check applicability (ALL, SPECIFIC_COURSES, CATEGORY)
+        if (voucher.getApplicableTo() == org.example.elearning.enums.VoucherApplicability.SPECIFIC_COURSES) {
+            // Check if all cart items are in applicable courses
+            List<Long> applicableCourseIds = voucher.getApplicableCourses().stream()
+                    .map(CourseEntity::getCourseId)
+                    .toList();
+            
+            List<Long> cartCourseIds = cartItems.stream()
+                    .map(org.example.elearning.dto.request.VoucherValidationRequest.CartItem::getCourseId)
+                    .toList();
+            
+            boolean allCoursesApplicable = applicableCourseIds.containsAll(cartCourseIds);
+            
+            if (!allCoursesApplicable) {
+                return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                        voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.NOT_APPLICABLE,
+                        "Voucher not applicable to these courses",
+                        List.of("This voucher is only valid for specific courses"));
+            }
+        } else if (voucher.getApplicableTo() == org.example.elearning.enums.VoucherApplicability.CATEGORY) {
+            // Check if all cart items belong to applicable categories
+            List<Long> applicableCategoryIds = voucher.getApplicableCategoryIds();
+            
+            for (var cartItem : cartItems) {
+                CourseEntity course = courseRepository.findById(cartItem.getCourseId())
+                        .orElse(null);
+                if (course == null || !applicableCategoryIds.contains(course.getCategory().getId()  )) {
+                    return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                            voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.NOT_APPLICABLE,
+                            "Voucher not applicable to these categories",
+                            List.of("This voucher is only valid for specific categories"));
+                }
+            }
+        }
+
+        java.math.BigDecimal cartTotal = cartItems.stream()
+                .map(org.example.elearning.dto.request.VoucherValidationRequest.CartItem::getPrice)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        if (voucher.getMinOrderValue() != null && cartTotal.compareTo(voucher.getMinOrderValue()) < 0) {
+            return org.example.elearning.dto.response.VoucherValidationResponse.invalid(
+                    voucherCode, org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.MIN_ORDER_NOT_MET,
+                    "Min order not met", List.of("Need: " + voucher.getMinOrderValue()));
+        }
+
+        java.math.BigDecimal discount;
+        if (voucher.getDiscountType() == org.example.elearning.enums.DiscountType.PERCENTAGE) {
+            discount = cartTotal.multiply(voucher.getDiscountValue())
+                    .divide(java.math.BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            if (voucher.getMaxDiscountAmount() != null && discount.compareTo(voucher.getMaxDiscountAmount()) > 0) {
+                discount = voucher.getMaxDiscountAmount();
+            }
+        } else {
+            discount = voucher.getDiscountValue();
+        }
+
+        if (discount.compareTo(cartTotal) > 0) discount = cartTotal;
+
+        return org.example.elearning.dto.response.VoucherValidationResponse.builder()
+                .valid(true)
+                .status(org.example.elearning.dto.response.VoucherValidationResponse.ValidationStatus.VALID)
+                .voucherCode(voucherCode)
+                .voucherName(voucher.getName())
+                .discountAmount(discount)
+                .minOrderValue(voucher.getMinOrderValue())
+                .maxDiscountAmount(voucher.getMaxDiscountAmount())
+                .message("Valid!")
+                .build();
+    }
     @Override
     @Transactional(readOnly = true)
     public List<VoucherResponse> getAvailableVouchersForBooking(Long userId) {

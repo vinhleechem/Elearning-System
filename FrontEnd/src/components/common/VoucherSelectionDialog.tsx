@@ -28,6 +28,7 @@ import type {
   UserVoucher,
   VoucherApplicability,
 } from "../../types/voucher";
+import { formatDate } from "../../libs/dateUtils";
 import { useToast } from "../../hooks/useToast";
 import { formatCurrency } from "../../libs/utils";
 import { useAuthStore } from "../../store/authStore";
@@ -85,11 +86,9 @@ const VoucherSelectionDialog = ({
   const loadVouchers = async () => {
     setLoading(true);
     try {
-      // Load public vouchers first to get full voucher details
       const publicData = await voucherService.getPublicVouchers();
       setPublicVouchers(publicData);
 
-      // Load my vouchers
       if (user) {
         const myData = await voucherService.getMyVouchers(true);
         setMyVouchers(myData);
@@ -102,10 +101,16 @@ const VoucherSelectionDialog = ({
     }
   };
 
-  const handleApplyInput = () => {
+  const handleApplyInput = async () => {
     if (inputCode.trim()) {
-      onSelect(inputCode.trim());
-      onClose();
+      try {
+        await onSelect(inputCode.trim()); // MUST await
+        // Only close if onSelect succeeds (no error thrown)
+        onClose();
+      } catch (error) {
+        // Don't close dialog if voucher is invalid
+        console.error("Invalid voucher:", error);
+      }
     }
   };
 
@@ -128,10 +133,9 @@ const VoucherSelectionDialog = ({
       // Switch to "My Vouchers" tab
       setTabValue(0);
     } catch (err: any) {
-      enqueueSnackbar(
-        err.response?.data?.message || "Không thể nhận voucher",
-        { variant: "error" }
-      );
+      enqueueSnackbar(err.response?.data?.message || "Không thể nhận voucher", {
+        variant: "error",
+      });
     } finally {
       setClaimingId(null);
     }
@@ -154,10 +158,15 @@ const VoucherSelectionDialog = ({
     return true;
   };
 
-  const handleSelectVoucher = (code: string, eligible: boolean) => {
+  const handleSelectVoucher = async (code: string, eligible: boolean) => {
     if (eligible) {
-      onSelect(code);
-      onClose();
+      try {
+        await onSelect(code);
+        onClose();
+      } catch (error) {
+        // Don't close dialog if voucher is invalid
+        console.error("Invalid voucher:", error);
+      }
     }
   };
 
@@ -197,7 +206,9 @@ const VoucherSelectionDialog = ({
 
       <DialogContent sx={{ p: 0 }}>
         {/* Input Code Section */}
-        <Box sx={{ p: 2, bgcolor: "#f8f9fa", borderBottom: "1px solid #e5e7eb" }}>
+        <Box
+          sx={{ p: 2, bgcolor: "#f8f9fa", borderBottom: "1px solid #e5e7eb" }}
+        >
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               fullWidth
@@ -271,7 +282,7 @@ const VoucherSelectionDialog = ({
                     {myVouchers.map((userVoucher) => {
                       // Try to find matching voucher from public list to get full details
                       const matchedVoucher = publicVouchers.find(
-                        (v) => v.voucherId === userVoucher.voucherId
+                        (v) => v.voucherId === userVoucher.voucherId,
                       );
 
                       // Use matched voucher if found, otherwise create from UserVoucher
@@ -297,7 +308,8 @@ const VoucherSelectionDialog = ({
                         updatedAt: userVoucher.receivedAt,
                       };
 
-                      const eligible = isVoucherEligible(voucher) && !userVoucher.isUsed;
+                      const eligible =
+                        isVoucherEligible(voucher) && !userVoucher.isUsed;
                       const selected = currentCode === voucher.code;
 
                       return (
@@ -333,10 +345,11 @@ const VoucherSelectionDialog = ({
 
                       // Check if user already claimed this voucher
                       const alreadyClaimed = myVouchers.some(
-                        (uv) => uv.voucherId === voucher.voucherId
+                        (uv) => uv.voucherId === voucher.voucherId,
                       );
 
-                      const canClaim = !isExpired && !isOutOfStock && !alreadyClaimed;
+                      const canClaim =
+                        !isExpired && !isOutOfStock && !alreadyClaimed;
 
                       return (
                         <VoucherListItem
@@ -411,15 +424,29 @@ const VoucherListItem = ({
         boxShadow: selected
           ? "0 4px 12px rgba(37, 99, 235, 0.15)"
           : "0 1px 3px rgba(0,0,0,0.05)",
-        cursor: showClaimButton ? "default" : eligible ? "pointer" : "not-allowed",
-        "&:hover": !showClaimButton && eligible
-          ? {
-            borderColor: "#2563eb",
-            boxShadow: "0 2px 8px rgba(37, 99, 235, 0.1)",
-          }
-          : {},
+        cursor: showClaimButton
+          ? "default"
+          : eligible
+            ? "pointer"
+            : "not-allowed",
+        "&:hover":
+          !showClaimButton && eligible
+            ? {
+              borderColor: "#2563eb",
+              boxShadow: "0 2px 8px rgba(37, 99, 235, 0.1)",
+            }
+            : {},
       }}
-      onClick={!showClaimButton ? onSelect : undefined}
+      onClick={
+        !showClaimButton && eligible
+          ? onSelect
+          : !showClaimButton && !eligible
+            ? (e) => {
+              e.stopPropagation();
+              // Don't close dialog for ineligible vouchers
+            }
+            : undefined
+      }
     >
       {/* Left Border Decoration */}
       <Box
@@ -552,7 +579,7 @@ const VoucherListItem = ({
               color="text.secondary"
               sx={{ fontSize: "0.7rem" }}
             >
-              HSD: {new Date(voucher.endDate).toLocaleDateString("vi-VN")}
+              HSD: {formatDate(voucher.endDate)}
             </Typography>
           </Box>
 
@@ -585,7 +612,11 @@ const VoucherListItem = ({
                 py: 0.5,
               }}
             >
-              {claiming ? "Đang nhận..." : alreadyClaimed ? "Đã nhận" : "Nhận ngay"}
+              {claiming
+                ? "Đang nhận..."
+                : alreadyClaimed
+                  ? "Đã nhận"
+                  : "Nhận ngay"}
             </Button>
           ) : selected ? (
             <CheckCircle color="primary" sx={{ fontSize: 24 }} />

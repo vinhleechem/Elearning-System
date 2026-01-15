@@ -109,14 +109,14 @@ const Header: React.FC<HeaderProps> = ({
   const cartItems: CartItemProps[] = cartItemsResponse.map((item) => ({
     id: item.courseId,
     title: item.courseTitle,
-    author: "Giảng viên", // Placeholder
-    reviews: 0, // Placeholder
-    rating: 0, // Placeholder
+    author: "Giảng viên",
+    reviews: 0,
+    rating: 0,
     price: item.discountPrice ?? item.price,
     oldPrice: item.discountPrice ? item.price : null,
     image: item.courseImage,
-    duration: 0, // Placeholder
-    lesson: 0, // Placeholder
+    duration: 0,
+    lesson: 0,
   }));
 
   const handleCartMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
@@ -188,15 +188,6 @@ const Header: React.FC<HeaderProps> = ({
   const transformCategoriesToMegaMenu = (
     categories: CategoryTreeResponse[],
   ): MegaMenuTopic[] => {
-    // Helper: chunk an array into smaller arrays of size n
-    const chunk = <T,>(arr: T[], size: number): T[][] => {
-      const res: T[][] = [];
-      for (let i = 0; i < arr.length; i += size) {
-        res.push(arr.slice(i, i + size));
-      }
-      return res;
-    };
-
     return categories
       .filter((cat) => cat.level === 1 && cat.isActive)
       .map((level1) => {
@@ -231,21 +222,9 @@ const Header: React.FC<HeaderProps> = ({
           };
         }
 
-        // Udemy style: split too-long columns into multiple columns of ~8 items
-        const normalizedColumns: typeof columns = [];
-        columns.forEach((col) => {
-          const chunks = chunk(col.items, 8);
-          chunks.forEach((items, idx) => {
-            normalizedColumns.push({
-              title: idx === 0 ? col.title : `${col.title} (${idx + 1})`,
-              items,
-            });
-          });
-        });
-
         return {
           label: level1.name,
-          columns: normalizedColumns,
+          columns: columns,
         };
       });
   };

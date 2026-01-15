@@ -11,15 +11,22 @@ import {
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import VideoPlayer, { type VideoPlayerRef } from "../../components/learning/VideoPlayer";
+import VideoPlayer, {
+  type VideoPlayerRef,
+} from "../../components/learning/VideoPlayer";
 import CourseSidebar from "../../components/learning/CourseSidebar";
 import CourseQA from "../../components/learning/CourseQA";
 import CourseNotes from "../../components/learning/CourseNotes";
-import type { CourseLearning, Section as SectionType, Lecture } from "../../types/lecture";
+import type {
+  CourseLearning,
+  Section as SectionType,
+  Lecture,
+} from "../../types/lecture";
 import { ArrowBack, Share, Bookmark } from "@mui/icons-material";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
 import { lessonService } from "../../service/lessonService";
+import { formatDate } from "../../libs/dateUtils";
 
 const CourseLearningPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -37,18 +44,20 @@ const CourseLearningPage = () => {
       setLoading(true);
       try {
         // 1. Fetch Course Detail
-        const courseDetail = await courseService.getCourseById(Number(courseId));
+        const courseDetail = await courseService.getCourseById(
+          Number(courseId),
+        );
 
         // 2. Fetch Sections
         const sectionsRes = await sectionService.getSectionsByCourse(
-          Number(courseId)
+          Number(courseId),
         );
 
         // 3. Fetch Lessons for each section
         const sectionsMapped: SectionType[] = await Promise.all(
           sectionsRes.map(async (sec) => {
             const lessons = await lessonService.getLessonsBySection(
-              sec.sectionId
+              sec.sectionId,
             );
 
             const lectures: Lecture[] = lessons.map((l) => ({
@@ -66,11 +75,11 @@ const CourseLearningPage = () => {
               lectures: lectures,
               totalDuration: lectures.reduce(
                 (acc, curr) => acc + curr.duration,
-                0
+                0,
               ),
               completedLectures: 0,
             };
-          })
+          }),
         );
 
         // Sắp xếp sections theo sortOrder hoặc position nếu có (backend thường trả về đúng thứ tự)
@@ -83,7 +92,7 @@ const CourseLearningPage = () => {
           rating: courseDetail.averageRating || 4.5,
           totalStudents: courseDetail.totalStudents || 0,
           lastUpdated: courseDetail.publishedAt
-            ? new Date(courseDetail.publishedAt).toLocaleDateString("vi-VN")
+            ? formatDate(courseDetail.publishedAt)
             : "Mới cập nhật",
           sections: sectionsMapped,
           currentLectureId: undefined,
@@ -130,8 +139,8 @@ const CourseLearningPage = () => {
     }
   };
 
-  const allLectures = courseData?.sections.flatMap(s => s.lectures) || [];
-  const currentIndex = allLectures.findIndex(l => l.id === currentLectureId);
+  const allLectures = courseData?.sections.flatMap((s) => s.lectures) || [];
+  const currentIndex = allLectures.findIndex((l) => l.id === currentLectureId);
   const currentLecture = allLectures[currentIndex];
 
   const handleNext = () => {
@@ -173,9 +182,14 @@ const CourseLearningPage = () => {
 
   if (!courseData) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h5" gutterBottom>Không tìm thấy khóa học</Typography>
-        <Button variant="contained" onClick={() => navigate('/my-courses/learning')}>
+      <Box sx={{ p: 4, textAlign: "center" }}>
+        <Typography variant="h5" gutterBottom>
+          Không tìm thấy khóa học
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/my-courses/learning")}
+        >
           Quay lại trang học tập
         </Button>
       </Box>
@@ -183,7 +197,14 @@ const CourseLearningPage = () => {
   }
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", flexDirection: "column", width: "100%" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        flexDirection: "column",
+        width: "100%",
+      }}
+    >
       {/* Header */}
       <Box
         sx={{
@@ -352,10 +373,21 @@ const CourseLearningPage = () => {
                 </Box>
               )}
               {activeTab === 1 && <CourseQA />}
-              {activeTab === 2 && <CourseNotes currentTime={playerCurrentTime} onSeek={handleSeek} />}
-              {activeTab === 3 && <Typography sx={{ p: 2 }}>Chưa có thông báo</Typography>}
-              {activeTab === 4 && <Typography sx={{ p: 2 }}>Chức năng đánh giá</Typography>}
-              {activeTab === 5 && <Typography sx={{ p: 2 }}>Công cụ học tập</Typography>}
+              {activeTab === 2 && (
+                <CourseNotes
+                  currentTime={playerCurrentTime}
+                  onSeek={handleSeek}
+                />
+              )}
+              {activeTab === 3 && (
+                <Typography sx={{ p: 2 }}>Chưa có thông báo</Typography>
+              )}
+              {activeTab === 4 && (
+                <Typography sx={{ p: 2 }}>Chức năng đánh giá</Typography>
+              )}
+              {activeTab === 5 && (
+                <Typography sx={{ p: 2 }}>Công cụ học tập</Typography>
+              )}
             </Container>
           </Box>
         </Box>

@@ -55,6 +55,7 @@ import { useToast } from "../../hooks/useToast";
 import { useAuthStore } from "../../store/authStore";
 import { adminUserService } from "../../service/adminUserService";
 import { instructorService } from "../../service/instructorService";
+import { formatDate } from "../../libs/dateUtils";
 
 interface User {
   id: number;
@@ -940,6 +941,11 @@ const UserManagement = () => {
                 <TableCell
                   sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
                 >
+                  ID
+                </TableCell>
+                <TableCell
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
                   Người dùng
                 </TableCell>
                 {activeTab === "USERS" && (
@@ -986,6 +992,11 @@ const UserManagement = () => {
                       "&:hover": { bgcolor: "primary.50" },
                     }}
                   >
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        #{user.id}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Box display="flex" alignItems="center" gap={2}>
                         <Avatar
@@ -1079,7 +1090,7 @@ const UserManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                        {formatDate(user.createdAt)}
                       </Typography>
                     </TableCell>
                     {activeTab === "INSTRUCTORS" && (

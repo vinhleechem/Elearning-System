@@ -14,6 +14,7 @@ import RelatedCourses from "../../components/courseDetail/RelatedCourses";
 import PurchaseSidebar from "../../components/courseDetail/PurchaseSidebar";
 import CourseRequirements from "../../components/courseDetail/CourseRequirements";
 import type { CourseDetail } from "../../types/courseDetail";
+import { formatDate } from "../../libs/dateUtils";
 
 const mockData: CourseDetail = {
   id: 0,
@@ -168,17 +169,22 @@ const CourseDetailPage = () => {
         // Fetch sections with lessons
         let sections = mockData.sections; // Default to mock
         try {
-          const sectionsData = await sectionService.getSectionsByCourse(course.courseId);
+          const sectionsData = await sectionService.getSectionsByCourse(
+            course.courseId,
+          );
           console.log("Sections data received:", sectionsData);
 
           // Map sections to CourseDetail format
-          sections = sectionsData.map(section => ({
+          sections = sectionsData.map((section) => ({
             id: section.sectionId,
             title: section.title,
             lectures: [], // TODO: Fetch lessons for each section when API is available
           }));
         } catch (sectionError) {
-          console.warn("Failed to fetch sections, using mock data:", sectionError);
+          console.warn(
+            "Failed to fetch sections, using mock data:",
+            sectionError,
+          );
         }
 
         // Map API response to CourseDetail
@@ -194,9 +200,7 @@ const CourseDetailPage = () => {
           categoryPath: ["Phát triển", "Lập trình Web", "Frontend"], // Mock breadcrumb path
           rating: course.averageRating || 0,
           students: course.totalStudents || 0,
-          lastUpdated: course.publishedAt
-            ? new Date(course.publishedAt).toLocaleDateString()
-            : "",
+          lastUpdated: course.publishedAt ? formatDate(course.publishedAt) : "",
           language: course.language || "Tiếng Việt",
           captions: [],
           whatYouWillLearn: course.whatYouLearn
@@ -236,7 +240,9 @@ const CourseDetailPage = () => {
         setLoading(false);
       } catch (error) {
         console.error("Failed to fetch course", error);
-        setError(error instanceof Error ? error.message : "Failed to load course");
+        setError(
+          error instanceof Error ? error.message : "Failed to load course",
+        );
         setLoading(false);
       }
     };
@@ -244,16 +250,32 @@ const CourseDetailPage = () => {
     fetchCourse();
   }, [slug]);
 
-  if (loading) return <Container maxWidth="xl" sx={{ py: 4 }}>Đang tải khóa học...</Container>;
-  if (error) return <Container maxWidth="xl" sx={{ py: 4 }}>Lỗi: {error}</Container>;
-  if (!data) return <Container maxWidth="xl" sx={{ py: 4 }}>Không tìm thấy khóa học</Container>;
+  if (loading)
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        Đang tải khóa học...
+      </Container>
+    );
+  if (error)
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        Lỗi: {error}
+      </Container>
+    );
+  if (!data)
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        Không tìm thấy khóa học
+      </Container>
+    );
 
   return (
     <>
       {/* Hero Section với gradient background */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          background:
+            "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
           color: "#fff",
           position: "relative",
           "&::before": {
@@ -263,7 +285,8 @@ const CourseDetailPage = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+            background:
+              "radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
             pointerEvents: "none",
           },
         }}
@@ -318,7 +341,11 @@ const CourseDetailPage = () => {
       </Box>
 
       {/* Main Content với gradient background */}
-      <Box sx={{ background: "linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)" }}>
+      <Box
+        sx={{
+          background: "linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)",
+        }}
+      >
         <Container maxWidth="xl" sx={{ py: 6 }}>
           <Box sx={{ maxWidth: { xs: "100%", md: "60%" } }}>
             <WhatYouWillLearn items={data.whatYouWillLearn} />

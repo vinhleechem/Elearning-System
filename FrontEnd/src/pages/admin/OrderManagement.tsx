@@ -277,6 +277,7 @@ const OrderManagement: React.FC = () => {
             <Table sx={{ minWidth: 650 }} aria-label="order table">
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Mã Đơn</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Ngày Tạo</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Trạng Thái</TableCell>
@@ -298,6 +299,11 @@ const OrderManagement: React.FC = () => {
                       },
                     }}
                   >
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        #{order.orderId}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         #{order.orderId}
@@ -354,7 +360,7 @@ const OrderManagement: React.FC = () => {
                 ))}
                 {orders.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                       <Typography variant="body1" color="text.secondary">
                         Không có đơn hàng nào
                       </Typography>

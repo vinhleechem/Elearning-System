@@ -7,10 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.elearning.dto.request.ApplyDiscountRequest;
 import org.example.elearning.dto.request.ClaimVoucherRequest;
 import org.example.elearning.dto.request.VoucherRequest;
+import org.example.elearning.dto.request.VoucherValidationRequest;
 import org.example.elearning.dto.response.DiscountCalculationResponse;
 import org.example.elearning.dto.response.StandardResponse;
 import org.example.elearning.dto.response.UserVoucherResponse;
 import org.example.elearning.dto.response.VoucherResponse;
+import org.example.elearning.dto.response.VoucherValidationResponse;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.service.DiscountCalculationService;
 import org.example.elearning.service.UserService;
@@ -195,6 +197,25 @@ public class VoucherController {
         UserEntity user = userService.getUserByEmail(email);
         List<String> discounts = discountCalculationService.getAvailableDiscounts(user.getUserId());
         return ResponseEntity.ok(StandardResponse.success(discounts));
+    }
+
+    @PostMapping("/validate-with-cart")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Validate voucher", description = "Check if voucher code is valid for current cart (real-time validation)")
+    public ResponseEntity<StandardResponse<VoucherValidationResponse>> validateVoucher(
+            @Valid @RequestBody VoucherValidationRequest request) {
+        
+        // Get user from SecurityContext
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        
+        VoucherValidationResponse response = voucherService.validateVoucher(
+                request.getVoucherCode(), 
+                user.getUserId(), 
+                request.getCartItems()
+        );
+        
+        return ResponseEntity.ok(StandardResponse.success(response));
     }
 
     // ========== INSTRUCTOR APIs ==========

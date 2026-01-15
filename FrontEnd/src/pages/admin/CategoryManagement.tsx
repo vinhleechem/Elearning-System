@@ -78,7 +78,9 @@ const CategoryManagement = () => {
   // Search & Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevel, setFilterLevel] = useState<number | "ALL">("ALL");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [filterStatus, setFilterStatus] = useState<
+    "ALL" | "ACTIVE" | "INACTIVE"
+  >("ALL");
 
   // State for Form
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -96,7 +98,7 @@ const CategoryManagement = () => {
     nodes: CategoryResponse[],
     depth = 0,
     result: FlatCategory[] = [],
-    forceExpand = false // Nếu true, sẽ flatten toàn bộ tree
+    forceExpand = false, // Nếu true, sẽ flatten toàn bộ tree
   ): FlatCategory[] => {
     nodes.forEach((node) => {
       const hasChildren = node.children && node.children.length > 0;
@@ -121,7 +123,7 @@ const CategoryManagement = () => {
   const flattenAllForDropdown = (
     cats: CategoryResponse[],
     result: { id: number; name: string; depth: number }[] = [],
-    depth = 0
+    depth = 0,
   ) => {
     cats.forEach((cat) => {
       result.push({ id: cat.id, name: cat.name, depth });
@@ -139,7 +141,7 @@ const CategoryManagement = () => {
     setLoading(true);
     try {
       const data = await adminCategoryService.getCategoryTree(
-        tokens.accessToken
+        tokens.accessToken,
       );
       setRawCategories(data);
       // Mặc định expand tất cả level 0
@@ -154,7 +156,6 @@ const CategoryManagement = () => {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchCategories();
@@ -183,7 +184,7 @@ const CategoryManagement = () => {
       filtered = filtered.filter(
         (cat) =>
           cat.name.toLowerCase().includes(searchLower) ||
-          cat.slug.toLowerCase().includes(searchLower)
+          cat.slug.toLowerCase().includes(searchLower),
       );
     }
 
@@ -210,9 +211,16 @@ const CategoryManagement = () => {
       // Cần expand các nodes từ level 1 đến (filterLevel - 1)
       const nodesToExpand = new Set<number>();
 
-      const collectParentIds = (nodes: CategoryResponse[], targetLevel: number) => {
+      const collectParentIds = (
+        nodes: CategoryResponse[],
+        targetLevel: number,
+      ) => {
         nodes.forEach((node) => {
-          if (node.level < targetLevel && node.children && node.children.length > 0) {
+          if (
+            node.level < targetLevel &&
+            node.children &&
+            node.children.length > 0
+          ) {
             nodesToExpand.add(node.id);
             collectParentIds(node.children, targetLevel);
           }
@@ -301,7 +309,7 @@ const CategoryManagement = () => {
         await adminCategoryService.updateCategory(
           tokens.accessToken,
           editingId,
-          submitData
+          submitData,
         );
         enqueueSnackbar("Cập nhật danh mục thành công", {
           variant: "success",
@@ -309,7 +317,7 @@ const CategoryManagement = () => {
       } else {
         await adminCategoryService.createCategory(
           tokens.accessToken,
-          submitData
+          submitData,
         );
         enqueueSnackbar("Thêm danh mục thành công", {
           variant: "success",
@@ -319,12 +327,10 @@ const CategoryManagement = () => {
       fetchCategories();
     } catch (error) {
       enqueueSnackbar(
-        editingId
-          ? "Không thể cập nhật danh mục"
-          : "Không thể thêm danh mục",
+        editingId ? "Không thể cập nhật danh mục" : "Không thể thêm danh mục",
         {
           variant: "error",
-        }
+        },
       );
       console.error("Save failed", error);
     }
@@ -340,7 +346,7 @@ const CategoryManagement = () => {
     try {
       await adminCategoryService.deleteCategory(
         tokens.accessToken,
-        itemToDelete
+        itemToDelete,
       );
       enqueueSnackbar("Xóa danh mục thành công", {
         variant: "success",
@@ -352,14 +358,14 @@ const CategoryManagement = () => {
         "Không thể xóa danh mục (có thể còn danh mục con hoặc khóa học)",
         {
           variant: "error",
-        }
+        },
       );
       console.error("Delete failed", error);
     }
   };
 
   const handleImportExcel = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (!file || !tokens?.accessToken) return;
@@ -599,7 +605,9 @@ const CategoryManagement = () => {
               <FormControl fullWidth>
                 <Select
                   value={filterLevel}
-                  onChange={(e) => setFilterLevel(e.target.value as number | "ALL")}
+                  onChange={(e) =>
+                    setFilterLevel(e.target.value as number | "ALL")
+                  }
                   displayEmpty
                   sx={{
                     borderRadius: "12px",
@@ -624,7 +632,11 @@ const CategoryManagement = () => {
               <FormControl fullWidth>
                 <Select
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as "ALL" | "ACTIVE" | "INACTIVE")}
+                  onChange={(e) =>
+                    setFilterStatus(
+                      e.target.value as "ALL" | "ACTIVE" | "INACTIVE",
+                    )
+                  }
                   displayEmpty
                   sx={{
                     borderRadius: "12px",
@@ -650,7 +662,13 @@ const CategoryManagement = () => {
                   <Button
                     variant="outlined"
                     onClick={expandAll}
-                    sx={{ borderRadius: "10px", minWidth: 48, p: 1, borderColor: "grey.300", color: "text.secondary" }}
+                    sx={{
+                      borderRadius: "10px",
+                      minWidth: 48,
+                      p: 1,
+                      borderColor: "grey.300",
+                      color: "text.secondary",
+                    }}
                   >
                     <UnfoldMore />
                   </Button>
@@ -659,7 +677,13 @@ const CategoryManagement = () => {
                   <Button
                     variant="outlined"
                     onClick={collapseAll}
-                    sx={{ borderRadius: "10px", minWidth: 48, p: 1, borderColor: "grey.300", color: "text.secondary" }}
+                    sx={{
+                      borderRadius: "10px",
+                      minWidth: 48,
+                      p: 1,
+                      borderColor: "grey.300",
+                      color: "text.secondary",
+                    }}
                   >
                     <ExpandMore />
                   </Button>
@@ -675,7 +699,13 @@ const CategoryManagement = () => {
             <TableHead>
               <TableRow sx={{ bgcolor: "grey.50" }}>
                 <TableCell
-                  width="45%"
+                  width="10%"
+                  sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
+                >
+                  ID
+                </TableCell>
+                <TableCell
+                  width="40%"
                   sx={{ py: 2, fontWeight: 600, color: "text.secondary" }}
                 >
                   Tên danh mục
@@ -712,16 +742,20 @@ const CategoryManagement = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : filteredList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <Stack alignItems="center" spacing={2}>
-                      <Box sx={{ p: 2, borderRadius: "50%", bgcolor: "grey.100" }}>
-                        <CategoryIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+                      <Box
+                        sx={{ p: 2, borderRadius: "50%", bgcolor: "grey.100" }}
+                      >
+                        <CategoryIcon
+                          sx={{ fontSize: 40, color: "text.disabled" }}
+                        />
                       </Box>
                       <Typography color="text.secondary">
                         {flatList.length === 0
@@ -745,6 +779,11 @@ const CategoryManagement = () => {
                       bgcolor: "inherit",
                     }}
                   >
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        #{category.id}
+                      </Typography>
+                    </TableCell>
                     {/* Tên danh mục với indent */}
                     <TableCell>
                       <Box
@@ -756,7 +795,15 @@ const CategoryManagement = () => {
                       >
                         {/* Connecting Lines for Tree Structure (Optional polish) */}
                         {category.depth > 0 && (
-                          <Box sx={{ width: 12, height: 1, bgcolor: "grey.300", mr: 1, display: "none" }} /> // Hidden for cleaner look, relying on indent
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 1,
+                              bgcolor: "grey.300",
+                              mr: 1,
+                              display: "none",
+                            }}
+                          /> // Hidden for cleaner look, relying on indent
                         )}
 
                         {/* Icon expand/collapse */}
@@ -778,16 +825,28 @@ const CategoryManagement = () => {
 
                         {/* Folder/Item Icon based on depth */}
                         {category.depth === 0 ? (
-                          <CategoryIcon sx={{ fontSize: 20, color: "primary.main", mr: 1.5 }} />
+                          <CategoryIcon
+                            sx={{
+                              fontSize: 20,
+                              color: "primary.main",
+                              mr: 1.5,
+                            }}
+                          />
                         ) : (
-                          <FiberManualRecord sx={{ fontSize: 8, color: "text.disabled", mr: 1.5 }} />
+                          <FiberManualRecord
+                            sx={{
+                              fontSize: 8,
+                              color: "text.disabled",
+                              mr: 1.5,
+                            }}
+                          />
                         )}
 
                         <Typography
                           variant="body2"
                           sx={{
                             fontWeight: category.depth === 0 ? 600 : 500,
-                            color: "text.primary"
+                            color: "text.primary",
                           }}
                         >
                           {category.name}
@@ -797,12 +856,33 @@ const CategoryManagement = () => {
 
                     {/* Slug */}
                     <TableCell>
-                      <Chip label={category.slug} size="small" sx={{ borderRadius: "6px", bgcolor: "grey.100", height: 24, fontSize: 12, fontFamily: "monospace" }} />
+                      <Chip
+                        label={category.slug}
+                        size="small"
+                        sx={{
+                          borderRadius: "6px",
+                          bgcolor: "grey.100",
+                          height: 24,
+                          fontSize: 12,
+                          fontFamily: "monospace",
+                        }}
+                      />
                     </TableCell>
 
                     {/* Level */}
                     <TableCell align="center">
-                      <Box sx={{ display: "inline-block", px: 1, py: 0.5, borderRadius: "6px", bgcolor: "action.hover", fontSize: 12, fontWeight: 600, color: "text.secondary" }}>
+                      <Box
+                        sx={{
+                          display: "inline-block",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: "6px",
+                          bgcolor: "action.hover",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "text.secondary",
+                        }}
+                      >
                         LVL {category.level}
                       </Box>
                     </TableCell>
@@ -817,14 +897,12 @@ const CategoryManagement = () => {
                           px: 1.5,
                           py: 0.5,
                           borderRadius: "20px",
-                          bgcolor:
-                            category.isActive
-                              ? alpha(theme.palette.success.main, 0.1)
-                              : alpha(theme.palette.error.main, 0.1),
-                          color:
-                            category.isActive
-                              ? "success.main"
-                              : "error.main",
+                          bgcolor: category.isActive
+                            ? alpha(theme.palette.success.main, 0.1)
+                            : alpha(theme.palette.error.main, 0.1),
+                          color: category.isActive
+                            ? "success.main"
+                            : "error.main",
                         }}
                       >
                         <Box
@@ -945,7 +1023,9 @@ const CategoryManagement = () => {
               {editingId ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {editingId ? "Cập nhật thông tin chi tiết danh mục" : "Tạo danh mục mới cho hệ thống"}
+              {editingId
+                ? "Cập nhật thông tin chi tiết danh mục"
+                : "Tạo danh mục mới cho hệ thống"}
             </Typography>
           </Box>
         </DialogTitle>
@@ -984,7 +1064,8 @@ const CategoryManagement = () => {
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  parentId: e.target.value === "" ? null : Number(e.target.value),
+                  parentId:
+                    e.target.value === "" ? null : Number(e.target.value),
                 })
               }
               helperText="Chọn 'None' để làm danh mục gốc"
@@ -999,26 +1080,43 @@ const CategoryManagement = () => {
                 .filter((c) => c.id !== editingId)
                 .map((option) => (
                   <MenuItem key={option.id} value={option.id}>
-                    <Box sx={{ pl: option.depth * 2, display: "flex", alignItems: "center", gap: 1 }}>
-                      {option.depth > 0 && <Box sx={{ width: 8, height: 1, bgcolor: "grey.400" }} />}
+                    <Box
+                      sx={{
+                        pl: option.depth * 2,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      {option.depth > 0 && (
+                        <Box
+                          sx={{ width: 8, height: 1, bgcolor: "grey.400" }}
+                        />
+                      )}
                       {option.name}
                     </Box>
                   </MenuItem>
                 ))}
             </TextField>
 
-            <Box sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              p: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: "12px"
-            }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                p: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: "12px",
+              }}
+            >
               <Box>
-                <Typography variant="subtitle2">Trạng thái hoạt động</Typography>
-                <Typography variant="body2" color="text.secondary">Kích hoạt để danh mục hiển thị trên hệ thống</Typography>
+                <Typography variant="subtitle2">
+                  Trạng thái hoạt động
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Kích hoạt để danh mục hiển thị trên hệ thống
+                </Typography>
               </Box>
               <Switch
                 checked={isActive}
@@ -1032,7 +1130,12 @@ const CategoryManagement = () => {
             onClick={() => setOpenDialog(false)}
             variant="text"
             color="inherit"
-            sx={{ borderRadius: "10px", px: 3, textTransform: "none", fontWeight: 600 }}
+            sx={{
+              borderRadius: "10px",
+              px: 3,
+              textTransform: "none",
+              fontWeight: 600,
+            }}
           >
             Hủy bỏ
           </Button>
@@ -1045,7 +1148,7 @@ const CategoryManagement = () => {
               py: 1,
               boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 600,
             }}
           >
             {editingId ? "Lưu thay đổi" : "Tạo danh mục"}
@@ -1065,18 +1168,36 @@ const CategoryManagement = () => {
         }}
       >
         <DialogTitle sx={{ pt: 3, px: 3 }}>
-          <Stack direction="row" alignItems="center" spacing={2} color="error.main">
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            color="error.main"
+          >
             <Block />
-            <Typography variant="h6" fontWeight={700}>Xác nhận xóa</Typography>
+            <Typography variant="h6" fontWeight={700}>
+              Xác nhận xóa
+            </Typography>
           </Stack>
         </DialogTitle>
         <DialogContent sx={{ px: 3 }}>
           <Typography variant="body1" sx={{ mt: 1 }}>
-            Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không thể hoàn tác.
+            Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không
+            thể hoàn tác.
           </Typography>
-          <Box sx={{ mt: 2, p: 2, bgcolor: "error.50", borderRadius: "12px", border: "1px dashed", borderColor: "error.main" }}>
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              bgcolor: "error.50",
+              borderRadius: "12px",
+              border: "1px dashed",
+              borderColor: "error.main",
+            }}
+          >
             <Typography variant="caption" color="error.main" fontWeight={600}>
-              Lưu ý: Không thể xóa danh mục đang chứa danh mục con hoặc khóa học. Hãy đảm bảo danh mục rỗng trước khi xóa.
+              Lưu ý: Không thể xóa danh mục đang chứa danh mục con hoặc khóa
+              học. Hãy đảm bảo danh mục rỗng trước khi xóa.
             </Typography>
           </Box>
         </DialogContent>
@@ -1085,7 +1206,12 @@ const CategoryManagement = () => {
             onClick={() => setDeleteDialogOpen(false)}
             variant="text"
             color="inherit"
-            sx={{ borderRadius: "10px", px: 3, textTransform: "none", fontWeight: 600 }}
+            sx={{
+              borderRadius: "10px",
+              px: 3,
+              textTransform: "none",
+              fontWeight: 600,
+            }}
           >
             Hủy bỏ
           </Button>
@@ -1098,7 +1224,7 @@ const CategoryManagement = () => {
               px: 3,
               boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 600,
             }}
           >
             Xóa danh mục

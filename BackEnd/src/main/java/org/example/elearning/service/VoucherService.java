@@ -65,6 +65,15 @@ public interface VoucherService {
     byte[] exportVouchers() throws java.io.IOException;
 
     /**
+     * Validate voucher for real-time feedback (check if can be applied to cart)
+     */
+    org.example.elearning.dto.response.VoucherValidationResponse validateVoucher(
+            String voucherCode,
+            Long userId,
+            List<org.example.elearning.dto.request.VoucherValidationRequest.CartItem> cartItems
+    );
+
+    /**
      * Get all available vouchers for a user to use in booking (Public + User's wallet)
      */
     List<VoucherResponse> getAvailableVouchersForBooking(Long userId);

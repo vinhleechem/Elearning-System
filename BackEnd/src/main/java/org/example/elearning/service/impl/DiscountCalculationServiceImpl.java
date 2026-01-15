@@ -81,22 +81,43 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
             
             subtotal = subtotal.add(originalPrice);
             
-            // Apply promotions
+            // Find best promotion for this item
+            BigDecimal bestDiscount = BigDecimal.ZERO;
+            PromotionEntity bestPromotion = null;
+            PromotionRuleEntity bestRule = null;
+            
             for (PromotionEntity promotion : activePromotions) {
                 for (PromotionRuleEntity rule : promotion.getRules()) {
                     if (isRuleApplicable(rule, course, request)) {
-                        BigDecimal ruleDiscount = calculateRuleDiscount(rule, discountPrice);
+                        BigDecimal ruleDiscount = calculateRuleDiscount(rule, originalPrice);
                         
-                        if (ruleDiscount.compareTo(BigDecimal.ZERO) > 0) {
-                            discountPrice = discountPrice.subtract(ruleDiscount);
-                            appliedDiscount = appliedDiscount.add(ruleDiscount);
-                            
-                            // Add to discounts list
-                            addOrUpdateDiscount(discounts, OrderDiscountType.PROMOTION.name(), 
-                                    promotion.getName(), promotion.getDescription(), ruleDiscount);
+                        // Select best discount (or use priority as tie-breaker)
+                        if (ruleDiscount.compareTo(bestDiscount) > 0 ||
+                            (ruleDiscount.compareTo(bestDiscount) == 0 && 
+                             bestPromotion != null &&
+                             promotion.getPriority() > bestPromotion.getPriority())) {
+                            bestDiscount = ruleDiscount;
+                            bestPromotion = promotion;
+                            bestRule = rule;
                         }
                     }
                 }
+            }
+            
+            // Apply best promotion if found
+            if (bestPromotion != null && bestDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                discountPrice = originalPrice.subtract(bestDiscount);
+                appliedDiscount = bestDiscount;
+                
+                log.info("Applied best promotion '{}' (priority: {}) with discount: {} for course: {}", 
+                        bestPromotion.getName(), 
+                        bestPromotion.getPriority(),
+                        bestDiscount, 
+                        course.getTitle());
+                
+                // Add to discounts list
+                addOrUpdateDiscount(discounts, OrderDiscountType.PROMOTION.name(), 
+                        bestPromotion.getName(), bestPromotion.getDescription(), bestDiscount);
             }
             
             // Add item price

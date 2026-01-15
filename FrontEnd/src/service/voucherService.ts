@@ -6,6 +6,8 @@ import type {
   ClaimVoucherRequest,
   DiscountCalculationRequest,
   DiscountCalculationResponse,
+  VoucherValidationRequest,
+  VoucherValidationResponse,
 } from "../types/voucher";
 
 const VOUCHER_BASE_URL = "/vouchers";
@@ -243,6 +245,28 @@ export const voucherService = {
     }
 
     return await response.blob();
+  },
+
+  // Validate voucher (real-time)
+  validateVoucher: async (
+    voucherCode: string,
+    cartItems: { courseId: number; price: number }[],
+  ): Promise<VoucherValidationResponse> => {
+    const request: VoucherValidationRequest = {
+      voucherCode,
+      cartItems,
+    };
+    const response = await httpClient<VoucherValidationResponse>(
+      `${VOUCHER_BASE_URL}/validate-with-cart`,
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    );
+    if (!response.data) {
+      throw new Error("Validation failed");
+    }
+    return response.data;
   },
 };
 

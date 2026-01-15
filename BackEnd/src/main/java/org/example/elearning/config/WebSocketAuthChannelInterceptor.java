@@ -11,10 +11,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
 
-/**
- * WebSocket authentication interceptor that validates JWT tokens
- * and sets up Spring Security authentication for WebSocket connections.
- */
+
 @Component
 @RequiredArgsConstructor
 @Slf4j

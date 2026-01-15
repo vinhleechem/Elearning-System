@@ -86,13 +86,31 @@ const CourseManagement = () => {
   // Flatten categories for dropdown
   const flattenCategories = (
     cats: CategoryTreeResponse[],
-    result: { id: number; name: string; level: number; path: string; hasChildren: boolean }[] = [],
+    result: {
+      id: number;
+      name: string;
+      level: number;
+      path: string;
+      hasChildren: boolean;
+    }[] = [],
     parentPath = "",
-  ): { id: number; name: string; level: number; path: string; hasChildren: boolean }[] => {
+  ): {
+    id: number;
+    name: string;
+    level: number;
+    path: string;
+    hasChildren: boolean;
+  }[] => {
     cats.forEach((cat) => {
       const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
       const hasChildren = cat.children && cat.children.length > 0;
-      result.push({ id: cat.id, name: cat.name, level: cat.level, path, hasChildren });
+      result.push({
+        id: cat.id,
+        name: cat.name,
+        level: cat.level,
+        path,
+        hasChildren,
+      });
       if (hasChildren) {
         flattenCategories(cat.children, result, path);
       }
@@ -101,7 +119,6 @@ const CourseManagement = () => {
   };
 
   const flatCategories = flattenCategories(categories);
-
 
   // Helper function để tìm category info từ categoryId
   const getCategoryInfo = (categoryId: number) => {
@@ -282,7 +299,6 @@ const CourseManagement = () => {
   };
 
   const getStatusColor = (status: string) => {
-
     switch (status) {
       case "PUBLISHED":
         return "success";
@@ -402,9 +418,13 @@ const CourseManagement = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      enqueueSnackbar("Export danh sách khóa học thành công", { variant: "success" });
+      enqueueSnackbar("Export danh sách khóa học thành công", {
+        variant: "success",
+      });
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Không thể export khóa học", { variant: "error" });
+      enqueueSnackbar(error.message || "Không thể export khóa học", {
+        variant: "error",
+      });
     } finally {
       setIsExporting(false);
     }
@@ -649,6 +669,7 @@ const CourseManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Tiêu đề</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Danh mục</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Giảng viên</TableCell>
@@ -663,7 +684,7 @@ const CourseManagement = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
                         Đang tải dữ liệu...
                       </Typography>
@@ -671,7 +692,7 @@ const CourseManagement = () => {
                   </TableRow>
                 ) : courses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
                         Không có khóa học nào
                       </Typography>
@@ -687,6 +708,11 @@ const CourseManagement = () => {
                         },
                       }}
                     >
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          #{course.courseId}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
                         <Box>
                           <Typography
@@ -790,17 +816,27 @@ const CourseManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Box>
-                          <Typography variant="body2" fontWeight={700} color={course.discountPrice && course.discountPrice < (course.price || 0) ? "error.main" : "text.primary"}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={700}
+                            color={
+                              course.discountPrice &&
+                              course.discountPrice < (course.price || 0)
+                                ? "error.main"
+                                : "text.primary"
+                            }
+                          >
                             {formatPrice(course.discountPrice || course.price)}
                           </Typography>
-                          {course.discountPrice && course.discountPrice < (course.price || 0) && (
-                            <Chip
-                              label={`-${Math.round(((course.price! - course.discountPrice) / course.price!) * 100)}%`}
-                              size="small"
-                              color="error"
-                              sx={{ height: 18, fontSize: 10, mt: 0.5 }}
-                            />
-                          )}
+                          {course.discountPrice &&
+                            course.discountPrice < (course.price || 0) && (
+                              <Chip
+                                label={`-${Math.round(((course.price! - course.discountPrice) / course.price!) * 100)}%`}
+                                size="small"
+                                color="error"
+                                sx={{ height: 18, fontSize: 10, mt: 0.5 }}
+                              />
+                            )}
                         </Box>
                       </TableCell>
                       <TableCell>

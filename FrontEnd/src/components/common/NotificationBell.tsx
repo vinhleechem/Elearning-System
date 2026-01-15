@@ -13,36 +13,18 @@ import {
 import { Notifications as NotificationsIcon } from "@mui/icons-material";
 import { type Notification } from "../../service/webSocketService";
 import { useAuthStore } from "../../store/authStore";
-import { useToast } from "../../hooks/useToast";
+// import { useToast } from "../../hooks/useToast"; // Disabled until WebSocket is re-enabled
 
 const NotificationBell = () => {
   const { user } = useAuthStore();
-  const { enqueueSnackbar } = useToast();
+  // const { enqueueSnackbar } = useToast(); // Disabled until WebSocket is re-enabled
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
   useEffect(() => {
-    // TODO: Re-enable WebSocket after fixing authentication in backend
-    // WebSocket is currently disabled due to 401 Unauthorized errors
-    // The backend needs to be updated to handle JWT tokens in WebSocket handshake
-    // if (user?.userId) {
-    //   // Connect to WebSocket
-    //   webSocketService.connect(user.userId.toString(), (notification) => {
-    //     // Add new notification to list
-    //     setNotifications((prev) => [notification, ...prev]);
-    //     // Show snackbar
-    //     enqueueSnackbar(notification.message, {
-    //       variant: notification.type.toLowerCase() as any,
-    //       autoHideDuration: 5000,
-    //     });
-    //   });
-    //   // Cleanup on unmount
-    //   return () => {
-    //     webSocketService.disconnect();
-    //   };
-    // }
-  }, [user?.userId, enqueueSnackbar]);
+
+  }, [user?.userId]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

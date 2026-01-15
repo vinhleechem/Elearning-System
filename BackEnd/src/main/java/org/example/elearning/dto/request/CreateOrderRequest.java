@@ -16,6 +16,6 @@ public class CreateOrderRequest {
     @NotEmpty(message = "Danh sách khóa học không được để trống")
     private List<Long> courseIds;
 
-    private String couponCode;
+    private String voucherCode;
 }
 

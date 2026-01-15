@@ -11,6 +11,7 @@ export interface CategoryTreeResponse {
 }
 
 export const categoryService = {
+  // Get full category tree (all levels)
   getCategoryTree: async (): Promise<CategoryTreeResponse[]> => {
     const response = await httpClient<CategoryTreeResponse[]>(
       "/categories/tree",
@@ -20,5 +21,26 @@ export const categoryService = {
     );
     return response.data || [];
   },
-};
 
+  // Get only root categories (level 1)
+  getRootCategories: async (): Promise<CategoryTreeResponse[]> => {
+    const response = await httpClient<CategoryTreeResponse[]>(
+      "/categories",
+      {
+        method: "GET",
+      }
+    );
+    return response.data || [];
+  },
+
+  // Get children of a specific category
+  getChildren: async (parentId: number): Promise<CategoryTreeResponse[]> => {
+    const response = await httpClient<CategoryTreeResponse[]>(
+      `/categories/${parentId}/children`,
+      {
+        method: "GET",
+      }
+    );
+    return response.data || [];
+  },
+};

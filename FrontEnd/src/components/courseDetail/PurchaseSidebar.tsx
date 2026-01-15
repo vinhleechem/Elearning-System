@@ -21,6 +21,7 @@ import { useCartStore } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { formatDate } from "../../libs/dateUtils";
 
 interface Props {
   courseId: number;
@@ -100,16 +101,14 @@ const PurchaseSidebar: React.FC<Props> = ({
     navigate(`/course/${courseId}/learn`);
   };
 
-  const formattedDate = purchasedAt
-    ? new Date(purchasedAt).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-    })
-    : "";
+  const formattedDate = purchasedAt ? formatDate(purchasedAt) : "";
 
   // Countdown timer logic
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!promotionEndDate) return;
@@ -121,7 +120,9 @@ const PurchaseSidebar: React.FC<Props> = ({
 
       if (difference > 0) {
         const hours = Math.floor(difference / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60),
+        );
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
         setTimeLeft({ hours, minutes, seconds });
       } else {
@@ -148,7 +149,14 @@ const PurchaseSidebar: React.FC<Props> = ({
       }}
     >
       {/* Preview image with centered play button */}
-      <Box sx={{ position: "relative", height: 220, bgcolor: "grey.900", cursor: "pointer" }}>
+      <Box
+        sx={{
+          position: "relative",
+          height: 220,
+          bgcolor: "grey.900",
+          cursor: "pointer",
+        }}
+      >
         <Box
           component="img"
           src="/images/carousel/carousel-01.png"
@@ -166,14 +174,14 @@ const PurchaseSidebar: React.FC<Props> = ({
             transition: "background-color 0.3s",
             "&:hover": {
               bgcolor: "rgba(0, 0, 0, 0.5)",
-            }
+            },
           }}
         >
           <PlayCircleOutlineIcon
             sx={{
               color: "white",
               fontSize: 80,
-              filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))"
+              filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))",
             }}
           />
         </Box>
@@ -261,10 +269,16 @@ const PurchaseSidebar: React.FC<Props> = ({
             </Box>
 
             {timeLeft && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 2 }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 2 }}
+              >
                 <AccessTimeIcon sx={{ fontSize: 16, color: "#d1293d" }} />
-                <Typography variant="caption" sx={{ color: "#d1293d", fontWeight: 700 }}>
-                  {timeLeft.hours} giờ {timeLeft.minutes} phút còn lại với mức giá này!
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#d1293d", fontWeight: 700 }}
+                >
+                  {timeLeft.hours} giờ {timeLeft.minutes} phút còn lại với mức
+                  giá này!
                 </Typography>
               </Box>
             )}
@@ -278,20 +292,22 @@ const PurchaseSidebar: React.FC<Props> = ({
                 sx={{
                   flex: 1,
                   textTransform: "none",
-                  background: "linear-gradient(180deg, #a435f0 0%, #8710d8 100%)",
+                  background:
+                    "linear-gradient(180deg, #a435f0 0%, #8710d8 100%)",
                   color: "#fff",
                   fontWeight: 700,
                   py: 1.5,
                   borderRadius: 0,
                   boxShadow: "none",
                   "&:hover": {
-                    background: "linear-gradient(180deg, #8710d8 0%, #6c0eb5 100%)",
+                    background:
+                      "linear-gradient(180deg, #8710d8 0%, #6c0eb5 100%)",
                     boxShadow: "none",
                   },
                   "&:disabled": {
                     background: "#e0e0e0",
-                    color: "#9e9e9e"
-                  }
+                    color: "#9e9e9e",
+                  },
                 }}
               >
                 {inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
@@ -308,7 +324,7 @@ const PurchaseSidebar: React.FC<Props> = ({
                   "&:hover": {
                     borderColor: "#2d2f31",
                     bgcolor: "rgba(0, 0, 0, 0.04)",
-                  }
+                  },
                 }}
               >
                 {inWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
@@ -331,24 +347,28 @@ const PurchaseSidebar: React.FC<Props> = ({
                   borderColor: "#2d2f31",
                   bgcolor: "rgba(0, 0, 0, 0.04)",
                   borderWidth: 1,
-                }
+                },
               }}
             >
               Mua ngay
             </Button>
 
             <Box sx={{ textAlign: "center", mt: 2 }}>
-              <Typography variant="caption" sx={{ mb: 0.5, display: "block", color: "text.secondary" }}>
+              <Typography
+                variant="caption"
+                sx={{ mb: 0.5, display: "block", color: "text.secondary" }}
+              >
                 Đảm bảo hoàn tiền trong 30 ngày
               </Typography>
-              <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
+              <Typography
+                variant="caption"
+                sx={{ display: "block", color: "text.secondary" }}
+              >
                 Quyền truy cập đầy đủ suốt đời
               </Typography>
             </Box>
           </>
         )}
-
-
 
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>

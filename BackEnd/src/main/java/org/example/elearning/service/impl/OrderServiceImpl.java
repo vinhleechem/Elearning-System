@@ -11,6 +11,7 @@ import org.example.elearning.enums.OrderStatus;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
+import org.example.elearning.repository.OrderDiscountRepository;
 import org.example.elearning.repository.OrderRepository;
 import org.example.elearning.repository.OrderItemRepository;
 import org.example.elearning.service.OrderService;
@@ -18,6 +19,7 @@ import org.example.elearning.service.UserService;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.NotificationService;
+import org.example.elearning.service.DiscountCalculationService;
 import org.example.elearning.mapper.OrderMapper;
 import org.example.elearning.dto.request.NotificationRequest;
 import org.springframework.data.domain.Page;
@@ -40,15 +42,14 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
-    // ✅ Only own repositories
     OrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
-    
-    // ✅ Use services for other entities
+    OrderDiscountRepository orderDiscountRepository;
     UserService userService;
     CourseService courseService;
     EnrollmentService enrollmentService;
     NotificationService notificationService;
+    DiscountCalculationService discountCalculationService;
     OrderMapper orderMapper;
 
     @Override
@@ -135,6 +136,18 @@ public class OrderServiceImpl implements OrderService {
 
             orderItems.add(orderItemRepository.save(orderItem));
         }
+
+        // Apply discount (promotion + voucher) if available
+        if (request.getVoucherCode() != null && !request.getVoucherCode().isEmpty()) {
+            discountCalculationService.applyDiscountToOrder(order, request.getVoucherCode());
+        } else {
+            // Even without voucher, apply promotions
+            discountCalculationService.applyDiscountToOrder(order, null);
+        }
+
+        // Reload order and items to get updated prices
+        order = orderRepository.findById(order.getOrderId()).orElseThrow();
+        orderItems = orderItemRepository.findByOrder(order);
 
         // Send notification to all admins about new order
         sendNewOrderNotification(order, user);
@@ -273,10 +286,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse mapToOrderResponse(OrderEntity order, List<OrderItemEntity> orderItems) {
-        return orderMapper.toOrderResponse(order, orderItems);
-    }
-
-    private OrderItemResponse mapToOrderItemResponse(OrderItemEntity orderItem) {
-        return orderMapper.toOrderItemResponse(orderItem);
+        List<OrderDiscountEntity> discounts = orderDiscountRepository.findByOrder(order);
+        return orderMapper.toOrderResponse(order, orderItems, discounts);
     }
 }

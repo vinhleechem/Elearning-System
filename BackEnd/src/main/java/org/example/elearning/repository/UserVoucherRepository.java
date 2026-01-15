@@ -41,4 +41,9 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucherEntity, 
     Long countUsedVouchers(
             @Param("userId") Long userId,
             @Param("voucherId") Long voucherId);
+
+    // Check if user has unused voucher
+    boolean existsByUser_UserIdAndVoucher_VoucherIdAndIsUsedFalseAndIsDeletedFalse(
+            Long userId,
+            Long voucherId);
 }
