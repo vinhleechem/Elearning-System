@@ -13,6 +13,7 @@ import FacebookCallbackPage from "./pages/auth/FacebookCallbackPage";
 import CourseDetailPage from "./pages/course/CourseDetailPage";
 import DashboardHome from "./pages/dashboard/Home";
 import UserProfiles from "./pages/dashboard/UserProfiles";
+import MessagesPage from "./pages/dashboard/MessagesPage";
 import AdminProtectedLayout from "./pages/admin/AdminProtectedLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import CourseManagement from "./pages/admin/CourseManagement";
@@ -130,6 +131,10 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         element: <UserProfiles />,
+      },
+      {
+        path: "messages",
+        element: <MessagesPage />,
       },
     ],
   },

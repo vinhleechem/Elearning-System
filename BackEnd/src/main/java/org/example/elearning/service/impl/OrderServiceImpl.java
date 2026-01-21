@@ -4,12 +4,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.request.CreateOrderRequest;
-import org.example.elearning.dto.response.OrderItemResponse;
 import org.example.elearning.dto.response.OrderResponse;
 import org.example.elearning.entity.*;
 import org.example.elearning.enums.OrderStatus;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.OrderDiscountRepository;
 import org.example.elearning.repository.OrderRepository;
@@ -62,13 +61,13 @@ public class OrderServiceImpl implements OrderService {
         List<CourseEntity> courses = courseService.getCourseEntitiesByIds(request.getCourseIds());
 
         if (courses.isEmpty()) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND_LIST.getMessage());
+            throw new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND_LIST.getMessage());
         }
 
         // Kiểm tra đã enroll chưa
         for (CourseEntity course : courses) {
             if (enrollmentService.existsByUserAndCourse(user, course)) {
-                throw new BusinessException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
+                throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
             }
         }
 
@@ -164,9 +163,6 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
 
-        if (!order.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException(ErrorCode.ORDER_UNAUTHORIZED.getMessage());
-        }
 
         List<OrderItemEntity> orderItems = orderItemRepository.findByOrder(order);
 
@@ -234,12 +230,9 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND.getMessage()));
 
-        if (!order.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL.getMessage());
-        }
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new BusinessException("Chỉ có thể hủy đơn hàng đang chờ xử lý");
+            throw new ResourceConflictException(ErrorCode.ORDER_CANNOT_BE_CANCELLED.getMessage());
         }
 
         order.setStatus(OrderStatus.CANCELLED);

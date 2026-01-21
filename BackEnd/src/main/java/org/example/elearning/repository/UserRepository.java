@@ -27,4 +27,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
     
     @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.createdAt >= :startDate AND u.createdAt < :endDate")
     Long countByCreatedAtBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+
 }

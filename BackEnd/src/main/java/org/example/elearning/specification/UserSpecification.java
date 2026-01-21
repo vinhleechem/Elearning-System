@@ -12,9 +12,7 @@ public final class UserSpecification {
         throw new IllegalStateException("Utility class");
     }
 
-    /**
-     * Filter users by keyword (search in email or fullName)
-     */
+
     public static Specification<UserEntity> filterByKeyword(String keyword) {
         return (root, query, criteriaBuilder) -> {
             if (keyword == null || keyword.trim().isEmpty()) {
@@ -28,9 +26,7 @@ public final class UserSpecification {
         };
     }
 
-    /**
-     * Filter users by status
-     */
+
     public static Specification<UserEntity> filterByStatus(UserStatus status) {
         return (root, query, criteriaBuilder) -> {
             if (status == null) {
@@ -40,30 +36,22 @@ public final class UserSpecification {
         };
     }
 
-    /**
-     * Filter users by deleted status
-     */
+
     public static Specification<UserEntity> filterByDeleted(boolean deleted) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isDeleted"), deleted);
     }
 
-    /**
-     * Filter active users (not deleted)
-     */
+
     public static Specification<UserEntity> notDeleted() {
         return filterByDeleted(false);
     }
 
-    /**
-     * Filter active and not deleted users
-     */
+
     public static Specification<UserEntity> activeUsers() {
         return filterByStatus(UserStatus.ACTIVE).and(filterByDeleted(false));
     }
 
-    /**
-     * Filter locked users
-     */
+
     public static Specification<UserEntity> lockedUsers() {
         return filterByStatus(UserStatus.LOCKED);
     }

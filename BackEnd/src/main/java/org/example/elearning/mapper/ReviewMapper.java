@@ -1,9 +1,9 @@
 package org.example.elearning.mapper;
 
+import org.example.elearning.dto.request.UpdateReviewRequest;
 import org.example.elearning.dto.response.ReviewResponse;
 import org.example.elearning.entity.ReviewEntity;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
@@ -14,8 +14,8 @@ public interface ReviewMapper {
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "user.fullName", target = "userName")
     @Mapping(source = "user.avatarUrl", target = "userAvatar")
-    @Mapping(source = "rating", target = "rating")
-    @Mapping(source = "comment", target = "comment")
-    @Mapping(source = "createdAt", target = "createdAt")
     ReviewResponse toResponse(ReviewEntity review);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntity(ReviewEntity review,@MappingTarget UpdateReviewRequest reviewResponse);
 }

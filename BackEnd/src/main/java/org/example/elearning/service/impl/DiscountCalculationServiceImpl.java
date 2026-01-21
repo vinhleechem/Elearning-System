@@ -8,7 +8,7 @@ import org.example.elearning.entity.*;
 import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.OrderDiscountType;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.*;
 import org.example.elearning.service.DiscountCalculationService;
@@ -344,19 +344,19 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         LocalDateTime now = LocalDateTime.now();
 
         if (!voucher.getIsActive()) {
-            throw new BusinessException(ErrorCode.VOUCHER_NOT_ACTIVE.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_NOT_ACTIVE.getMessage());
         }
 
         if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
-            throw new BusinessException(ErrorCode.VOUCHER_EXPIRED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_EXPIRED.getMessage());
         }
         
         if (noApplicableItems) {
-            throw new BusinessException("Voucher không áp dụng cho các khóa học trong giỏ hàng");
+            throw new ResourceConflictException("Voucher không áp dụng cho các khóa học trong giỏ hàng");
         }
 
         if (voucher.getMinOrderValue() != null && applicableTotal.compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new BusinessException(ErrorCode.VOUCHER_MIN_PURCHASE_NOT_MET.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_MIN_PURCHASE_NOT_MET.getMessage());
         }
 
         // Check if user has this voucher
@@ -364,13 +364,13 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                 .findByUser_UserIdAndVoucher_VoucherIdAndIsDeletedFalse(userId, voucher.getVoucherId());
 
         if (userVouchers.isEmpty()) {
-            throw new BusinessException(ErrorCode.VOUCHER_NOT_APPLICABLE.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_NOT_APPLICABLE.getMessage());
         }
 
         // Check if already used
         boolean hasUnusedVoucher = userVouchers.stream().anyMatch(uv -> !uv.getIsUsed());
         if (!hasUnusedVoucher) {
-            throw new BusinessException(ErrorCode.VOUCHER_ALREADY_USED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_ALREADY_USED.getMessage());
         }
     }
     

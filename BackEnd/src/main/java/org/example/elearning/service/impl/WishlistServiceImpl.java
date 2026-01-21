@@ -8,15 +8,13 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.entity.WishlistEntity;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.WishlistRepository;
 import org.example.elearning.service.WishlistService;
 import org.example.elearning.service.UserService;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.mapper.WishlistMapper;
-import org.example.elearning.service.UserService;
-import org.example.elearning.service.CourseService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,9 +55,8 @@ public class WishlistServiceImpl implements WishlistService {
 
         CourseEntity course = courseService.getCourseEntityById(courseId);
 
-        // Kiểm tra đã có trong wishlist chưa
         if (wishlistRepository.existsByUserAndCourse(user, course)) {
-            throw new BusinessException(ErrorCode.COURSE_ALREADY_IN_WISHLIST.getMessage());
+            throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_IN_WISHLIST.getMessage());
         }
 
         WishlistEntity wishlist = WishlistEntity.builder()
@@ -82,7 +79,7 @@ public class WishlistServiceImpl implements WishlistService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.WISHLIST_ITEM_NOT_FOUND.getMessage()));
 
         if (!wishlist.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
+            throw new ResourceConflictException(ErrorCode.FORBIDDEN.getMessage());
         }
 
         wishlistRepository.delete(wishlist);

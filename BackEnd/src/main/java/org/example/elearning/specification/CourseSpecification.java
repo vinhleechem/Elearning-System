@@ -14,9 +14,6 @@ public final class CourseSpecification {
         throw new IllegalStateException("Utility class");
     }
 
-    /**
-     * Filter courses by keyword (search in title)
-     */
     public static Specification<CourseEntity> filterByKeyword(String keyword) {
         return (root, query, criteriaBuilder) -> {
             if (keyword == null || keyword.trim().isEmpty()) {
@@ -30,9 +27,7 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by status
-     */
+
     public static Specification<CourseEntity> filterByStatus(CourseStatus status) {
         return (root, query, criteriaBuilder) -> {
             if (status == null) {
@@ -42,30 +37,22 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by deleted status
-     */
+
     public static Specification<CourseEntity> filterByDeleted(boolean deleted) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isDeleted"), deleted);
     }
 
-    /**
-     * Filter published courses (status = PUBLISHED and not deleted)
-     */
+
     public static Specification<CourseEntity> publishedCourses() {
         return filterByStatus(CourseStatus.PUBLISHED).and(filterByDeleted(false));
     }
 
-    /**
-     * Filter not deleted courses
-     */
+
     public static Specification<CourseEntity> notDeleted() {
         return filterByDeleted(false);
     }
 
-    /**
-     * Filter courses by instructor ID
-     */
+
     public static Specification<CourseEntity> filterByInstructorId(Long instructorId) {
         return (root, query, criteriaBuilder) -> {
             if (instructorId == null) {
@@ -75,9 +62,6 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by category ID
-     */
     public static Specification<CourseEntity> filterByCategoryId(Long categoryId) {
         return (root, query, criteriaBuilder) -> {
             if (categoryId == null) {
@@ -87,9 +71,6 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by level
-     */
     public static Specification<CourseEntity> filterByLevel(CourseLevel level) {
         return (root, query, criteriaBuilder) -> {
             if (level == null) {
@@ -99,9 +80,6 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by minimum price (uses currentPrice if available, otherwise price)
-     */
     public static Specification<CourseEntity> filterByMinPrice(Double minPrice) {
         return (root, query, criteriaBuilder) -> {
             if (minPrice == null) {
@@ -119,9 +97,7 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by maximum price (uses currentPrice if available, otherwise price)
-     */
+
     public static Specification<CourseEntity> filterByMaxPrice(Double maxPrice) {
         return (root, query, criteriaBuilder) -> {
             if (maxPrice == null) {
@@ -139,9 +115,7 @@ public final class CourseSpecification {
         };
     }
 
-    /**
-     * Filter courses by minimum rating
-     */
+
     public static Specification<CourseEntity> filterByMinRating(Double minRating) {
         return (root, query, criteriaBuilder) -> {
             if (minRating == null) {

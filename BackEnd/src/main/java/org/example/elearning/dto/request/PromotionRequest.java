@@ -2,6 +2,7 @@ package org.example.elearning.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.example.elearning.enums.PromotionType;
@@ -31,7 +32,8 @@ public class PromotionRequest {
 
     private Integer priority = 0;
 
+    @NotNull(message = "Danh sách quy tắc không được null")
+    @NotEmpty(message = "Vui lòng thêm ít nhất một quy tắc cho chương trình khuyến mãi")
     @Valid
-    @NotNull(message = "At least one rule is required")
-    private List<PromotionRuleRequest> rules = new ArrayList<>();
+    private List<PromotionRuleRequest> rules;
 }

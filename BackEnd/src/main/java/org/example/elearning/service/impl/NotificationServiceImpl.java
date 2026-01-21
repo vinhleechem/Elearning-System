@@ -8,7 +8,6 @@ import org.example.elearning.dto.response.NotificationResponse;
 import org.example.elearning.entity.NotificationEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.enums.NotificationType;
-import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.NotificationMapper;
 import org.example.elearning.repository.NotificationRepository;
@@ -21,7 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -52,10 +50,6 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationEntity notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo"));
 
-        if (!notification.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền truy cập thông báo này");
-        }
-
         notification.setIsRead(true);
         notification = notificationRepository.save(notification);
 
@@ -82,10 +76,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationEntity notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo"));
-
-        if (!notification.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException("Bạn không có quyền xóa thông báo này");
-        }
 
         notificationRepository.delete(notification);
     }
@@ -143,12 +133,6 @@ public class NotificationServiceImpl implements NotificationService {
         
         // 2. Gửi realtime qua WebSocket
         NotificationResponse response = notificationMapper.toResponse(notification);
-        
-        System.out.println("=== WebSocket Notification Debug ===");
-        System.out.println("Sending to user: " + user.getEmail());
-        System.out.println("Destination: /topic/notifications (BROADCAST TEST)");
-        System.out.println("Message: " + response);
-        System.out.println("====================================");
         
         // TEMPORARY: Use broadcast instead of user-specific
         // SimpleBroker doesn't support user destination resolution properly

@@ -8,21 +8,18 @@ import org.example.elearning.dto.response.CartItemResponse;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PromotionDetailResponse;
 import org.example.elearning.dto.response.PromotionResponse;
-import org.example.elearning.dto.response.PromotionRuleResponse;
-import org.example.elearning.entity.CategoryEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.PromotionEntity;
 import org.example.elearning.entity.PromotionRuleEntity;
 import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.PromotionRuleType;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.PromotionMapper;
+import org.example.elearning.mapper.PromotionRuleMapper;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.PromotionRepository;
 import org.example.elearning.service.PromotionService;
-import org.example.elearning.service.CourseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,82 +45,43 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionRepository promotionRepository;
     private final PromotionMapper promotionMapper;
     private final CourseRepository courseRepository;
+    private final PromotionRuleMapper promotionRuleMapper;
 
 
     @Override
     @Transactional
     public PromotionDetailResponse createPromotion(PromotionRequest request) {
-        log.info("Creating new promotion: {}", request.getName());
-        
-        // Create promotion entity using mapper
         PromotionEntity promotion = promotionMapper.toEntity(request);
-        promotion.setRules(new ArrayList<>());
-        
-        if (request.getRules() == null || request.getRules().isEmpty()) {
-            throw new BusinessException("Vui lòng thêm ít nhất một quy tắc (rule) cho chương trình khuyến mãi.");
-        }
-        
-        // Create promotion rules
+
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
-            PromotionRuleEntity rule = PromotionRuleEntity.builder()
-                    .promotion(promotion)
-                    .ruleType(ruleRequest.getRuleType())
-                    .targetId(ruleRequest.getTargetId())
-                    .discountType(ruleRequest.getDiscountType())
-                    .discountValue(ruleRequest.getDiscountValue())
-                    .maxDiscountAmount(ruleRequest.getMaxDiscountAmount())
-                    .minPurchaseAmount(ruleRequest.getMinPurchaseAmount())
-                    .buyQuantity(ruleRequest.getBuyQuantity())
-                    .getQuantity(ruleRequest.getGetQuantity())
-                    .build();
-            
+            PromotionRuleEntity rule = promotionRuleMapper.toEntity(ruleRequest);
+            rule.setPromotion(promotion);
             promotion.getRules().add(rule);
         }
-        
-        promotion = promotionRepository.save(promotion);
-        log.info("Promotion created successfully with ID: {}", promotion.getPromotionId());
-        
-        return promotionMapper.toDetailResponse(promotion);
+
+        return promotionMapper.toDetailResponse(promotionRepository.save(promotion));
     }
 
     @Override
     @Transactional
     public PromotionDetailResponse updatePromotion(Long promotionId, PromotionRequest request) {
-        log.info("Updating promotion ID: {}", promotionId);
-
         PromotionEntity promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
-
         // Update basic fields using mapper
         promotionMapper.updateEntity(promotion, request);
 
         // Clear old rules and add new ones
         promotion.getRules().clear();
 
-        if (request.getRules() == null || request.getRules().isEmpty()) {
-            throw new BusinessException("Vui lòng thêm ít nhất một quy tắc (rule) cho chương trình khuyến mãi.");
-        }
-
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
-            PromotionRuleEntity rule = PromotionRuleEntity.builder()
-                    .promotion(promotion)
-                    .ruleType(ruleRequest.getRuleType())
-                    .targetId(ruleRequest.getTargetId())
-                    .discountType(ruleRequest.getDiscountType())
-                    .discountValue(ruleRequest.getDiscountValue())
-                    .maxDiscountAmount(ruleRequest.getMaxDiscountAmount())
-                    .minPurchaseAmount(ruleRequest.getMinPurchaseAmount())
-                    .buyQuantity(ruleRequest.getBuyQuantity())
-                    .getQuantity(ruleRequest.getGetQuantity())
-                    .build();
-
+            PromotionRuleEntity rule = promotionRuleMapper.toEntity(ruleRequest);
+            rule.setPromotion(promotion);
             promotion.getRules().add(rule);
         }
 
-        promotion = promotionRepository.save(promotion);
-        log.info("Promotion updated successfully");
 
-        return promotionMapper.toDetailResponse(promotion);
+
+        return promotionMapper.toDetailResponse(promotionRepository.save(promotion));
     }
 
     @Override
@@ -163,20 +121,17 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     @Transactional
     public void deletePromotion(Long promotionId) {
-        log.info("Deleting promotion ID: {}", promotionId);
 
         PromotionEntity promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
 
         promotion.setDeleted(true);
         promotionRepository.save(promotion);
-        log.info("Promotion soft deleted successfully");
     }
 
     @Override
     @Transactional
     public void activatePromotion(Long promotionId) {
-        log.info("Activating promotion ID: {}", promotionId);
 
         PromotionEntity promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
@@ -187,13 +142,11 @@ public class PromotionServiceImpl implements PromotionService {
         // Sync course prices after activation
         syncCoursePrices();
 
-        log.info("Promotion activated successfully and prices synced");
     }
 
     @Override
     @Transactional
     public void deactivatePromotion(Long promotionId) {
-        log.info("Deactivating promotion ID: {}", promotionId);
 
         PromotionEntity promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
@@ -204,12 +157,10 @@ public class PromotionServiceImpl implements PromotionService {
         // Sync course prices after deactivation
         syncCoursePrices();
 
-        log.info("Promotion deactivated successfully and prices synced");
     }
 
     @Override
     public byte[] exportPromotions() throws IOException {
-        log.info("Exporting all promotions to Excel");
         List<PromotionEntity> promotions = promotionRepository.findAll();
 
         try (Workbook workbook = new XSSFWorkbook()) {

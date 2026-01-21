@@ -9,7 +9,7 @@ import org.example.elearning.entity.CartEntity;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.CartRepository;
 import org.example.elearning.service.CartService;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,12 +80,12 @@ public class CartServiceImpl implements CartService {
 
                 // ✅ Use EnrollmentService instead of EnrollmentRepository
                 if (enrollmentService.isEnrolled(courseId)) {
-                        throw new BusinessException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
+                        throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
                 }
 
                 // Kiểm tra đã có trong giỏ hàng chưa
                 if (cart.getCourses().contains(course)) {
-                        throw new BusinessException(ErrorCode.COURSE_ALREADY_IN_CART.getMessage());
+                        throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_IN_CART.getMessage());
                 }
 
                 cart.getCourses().add(course);

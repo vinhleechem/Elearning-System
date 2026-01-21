@@ -5,14 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.elearning.dto.request.VoucherRequest;
+import org.example.elearning.dto.request.VoucherValidationRequest;
 import org.example.elearning.dto.response.UserVoucherResponse;
 import org.example.elearning.dto.response.VoucherResponse;
+import org.example.elearning.dto.response.VoucherValidationResponse;
 import org.example.elearning.entity.*;
 import org.example.elearning.enums.VoucherApplicability;
 import org.example.elearning.enums.VoucherSource;
 import org.example.elearning.enums.VoucherType;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
 import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.VoucherMapper;
@@ -252,33 +253,33 @@ public class VoucherServiceImpl implements VoucherService {
 
         // Check if active
         if (!voucher.getIsActive()) {
-            throw new BusinessException(ErrorCode.VOUCHER_NOT_ACTIVE.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_NOT_ACTIVE.getMessage());
         }
 
         // Check dates
         if (now.isBefore(voucher.getStartDate())) {
-            throw new BusinessException(ErrorCode.VOUCHER_NOT_STARTED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_NOT_STARTED.getMessage());
         }
 
         if (now.isAfter(voucher.getEndDate())) {
-            throw new BusinessException(ErrorCode.VOUCHER_EXPIRED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_EXPIRED.getMessage());
         }
 
         // Check total usage limit
         if (voucher.getTotalUsageLimit() != null && voucher.getUsedCount() >= voucher.getTotalUsageLimit()) {
-            throw new BusinessException(ErrorCode.VOUCHER_TOTAL_LIMIT_REACHED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_TOTAL_LIMIT_REACHED.getMessage());
         }
 
         // Check if user already has this voucher
         if (!userVoucherRepository.findByUser_UserIdAndVoucher_VoucherIdAndIsDeletedFalse(
                 userId, voucher.getVoucherId()).isEmpty()) {
-            throw new BusinessException(ErrorCode.VOUCHER_ALREADY_OWNED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_ALREADY_OWNED.getMessage());
         }
 
         // Check per-user usage limit
         long userUsageCount = userVoucherRepository.countUsedVouchers(userId, voucher.getVoucherId());
         if (voucher.getPerUserLimit() != null && userUsageCount >= voucher.getPerUserLimit()) {
-            throw new BusinessException(ErrorCode.VOUCHER_USER_LIMIT_REACHED.getMessage());
+            throw new ResourceConflictException(ErrorCode.VOUCHER_USER_LIMIT_REACHED.getMessage());
         }
     }
 
@@ -317,50 +318,70 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<VoucherResponse> getAvailableVouchersForBooking(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<VoucherEntity> publicVouchers = voucherRepository.findAvailablePublicVouchers(now);
+
+        List<UserVoucherEntity> userWallet = userVoucherRepository.findAvailableVouchers(userId, now);
+
+        java.util.Map<Long, VoucherEntity> uniqueVouchers = new java.util.HashMap<>();
+
+        publicVouchers.forEach(v -> uniqueVouchers.put(v.getVoucherId(), v));
+
+        userWallet.forEach(uv -> uniqueVouchers.put(uv.getVoucher().getVoucherId(), uv.getVoucher()));
+
+        return uniqueVouchers.values().stream()
+                .map(voucherMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void importVouchers(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
         List<VoucherEntity> vouchers = new ArrayList<>();
-        
+
         try (java.io.InputStream inputStream = file.getInputStream()) {
              org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
              org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
-             
+
              // Date format expected: yyyy-MM-dd HH:mm
              java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-             
+
              for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
                 if (row == null) continue;
-                
+
                 String code = getCellValueAsString(row.getCell(0));
                 if (code == null || code.isEmpty()) continue;
                 if (voucherRepository.findByCodeAndIsDeletedFalse(code).isPresent()) continue;
-                
+
                 VoucherEntity voucher = new VoucherEntity();
                 voucher.setCode(code.toUpperCase());
                 voucher.setName(getCellValueAsString(row.getCell(1)));
                 voucher.setDescription(getCellValueAsString(row.getCell(2)));
-                
+
                 String discountTypeStr = getCellValueAsString(row.getCell(3));
                 try {
                     voucher.setDiscountType(org.example.elearning.enums.DiscountType.valueOf(discountTypeStr.toUpperCase()));
                 } catch (Exception e) {
                     voucher.setDiscountType(org.example.elearning.enums.DiscountType.FIXED);
                 }
-                
+
                 voucher.setDiscountValue(getCellValueAsBigDecimal(row.getCell(4)));
                 voucher.setMinOrderValue(getCellValueAsBigDecimal(row.getCell(5)));
                 voucher.setMaxDiscountAmount(getCellValueAsBigDecimal(row.getCell(6)));
-                
+
                 voucher.setTotalUsageLimit(getCellValueAsInteger(row.getCell(7)));
                 voucher.setPerUserLimit(getCellValueAsInteger(row.getCell(8)));
-                
+
                 try {
                      String startStr = getCellValueAsString(row.getCell(9));
                      if (!startStr.isEmpty()) voucher.setStartDate(LocalDateTime.parse(startStr, formatter));
                      else voucher.setStartDate(LocalDateTime.now());
                 } catch(Exception e) { voucher.setStartDate(LocalDateTime.now()); }
-                
+
                 try {
                      String endStr = getCellValueAsString(row.getCell(10));
                      if (!endStr.isEmpty()) voucher.setEndDate(LocalDateTime.parse(endStr, formatter));
@@ -372,16 +393,16 @@ public class VoucherServiceImpl implements VoucherService {
                  voucher.setDeleted(false);
                  voucher.setUsedCount(0);
                  voucher.setApplicableTo(VoucherApplicability.ALL);
-                
+
                 vouchers.add(voucher);
              }
         }
-        
+
         if (!vouchers.isEmpty()) {
             voucherRepository.saveAll(vouchers);
         }
     }
-    
+
     private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
         if (cell == null) return "";
         try {
@@ -423,7 +444,6 @@ public class VoucherServiceImpl implements VoucherService {
         } catch (Exception e) { return null; }
         return null;
     }
-
     @Override
     public byte[] exportVouchers() throws IOException {
         List<VoucherEntity> vouchers = voucherRepository.findAll().stream()
@@ -477,9 +497,9 @@ public class VoucherServiceImpl implements VoucherService {
     }
     @Override
     @Transactional(readOnly = true)
-    public org.example.elearning.dto.response.VoucherValidationResponse validateVoucher(
+    public VoucherValidationResponse validateVoucher(
             String voucherCode, Long userId,
-            List<org.example.elearning.dto.request.VoucherValidationRequest.CartItem> cartItems) {
+            List<VoucherValidationRequest.CartItem> cartItems) {
 
         var voucherOpt = voucherRepository.findByCodeAndIsDeletedFalse(voucherCode);
         if (voucherOpt.isEmpty()) {
@@ -586,29 +606,5 @@ public class VoucherServiceImpl implements VoucherService {
                 .maxDiscountAmount(voucher.getMaxDiscountAmount())
                 .message("Valid!")
                 .build();
-    }
-    @Override
-    @Transactional(readOnly = true)
-    public List<VoucherResponse> getAvailableVouchersForBooking(Long userId) {
-        LocalDateTime now = LocalDateTime.now();
-
-        // 1. Get PUBLIC active vouchers (available to everyone)
-        List<VoucherEntity> publicVouchers = voucherRepository.findAvailablePublicVouchers(now);
-
-        // 2. Get PRIVATE/GRANT vouchers that user has in wallet (unused and valid)
-        List<UserVoucherEntity> userWallet = userVoucherRepository.findAvailableVouchers(userId, now);
-        
-        // 3. Merge lists using a Map to ensure uniqueness by Voucher ID
-        java.util.Map<Long, VoucherEntity> uniqueVouchers = new java.util.HashMap<>();
-        
-        // Add all public vouchers
-        publicVouchers.forEach(v -> uniqueVouchers.put(v.getVoucherId(), v));
-        
-        // Add user wallet vouchers (will overwrite duplicates, which is fine as they are the same voucher)
-        userWallet.forEach(uv -> uniqueVouchers.put(uv.getVoucher().getVoucherId(), uv.getVoucher()));
-
-        return uniqueVouchers.values().stream()
-                .map(voucherMapper::toResponse)
-                .collect(Collectors.toList());
     }
 }

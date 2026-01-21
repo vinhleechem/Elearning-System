@@ -6,7 +6,7 @@ import org.example.elearning.dto.request.SetPasswordRequest;
 import org.example.elearning.entity.PasswordResetTokenEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.BadRequestException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.PasswordResetTokenRepository;
 import org.example.elearning.repository.UserRepository;
@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import static org.example.elearning.exception.ErrorCode.INVALID_CONFIRM_PASSWORD;
 
 @Service
 @RequiredArgsConstructor
@@ -98,16 +100,16 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public void setPassword(SetPasswordRequest request) {
         // Validate passwords match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException("Mật khẩu xác nhận không khớp");
+            throw new BadRequestException(ErrorCode.INVALID_CONFIRM_PASSWORD.getMessage());
         }
 
         // Find token
         PasswordResetTokenEntity tokenEntity = tokenRepository.findByTokenAndIsUsedFalse(request.getToken())
-                .orElseThrow(() -> new BusinessException("Token không hợp lệ hoặc đã được sử dụng"));
+                .orElseThrow(() -> new BadRequestException(ErrorCode.PASSWORD_RESET_TOKEN_USED.getMessage()));
 
         // Check if expired
         if (tokenEntity.isExpired()) {
-            throw new BusinessException("Token đã hết hạn. Vui lòng yêu cầu link mới");
+            throw new BadRequestException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED.getMessage());
         }
 
         // Update user password

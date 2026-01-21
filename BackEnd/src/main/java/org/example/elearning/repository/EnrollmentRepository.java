@@ -6,6 +6,7 @@ import org.example.elearning.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,10 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentEntity, Lo
     boolean existsByUserAndCourse(UserEntity user, CourseEntity course);
 
     List<EnrollmentEntity> findByUser(UserEntity user);
+
+    boolean existsByCourseAndUser(CourseEntity course, UserEntity user);
+
+    Optional<EnrollmentEntity> findByCourse_CourseIdAndUser_UserId(Long courseCourseId, Long userUserId);
 }
 
 

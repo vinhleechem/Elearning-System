@@ -21,10 +21,7 @@ import org.example.elearning.entity.RoleEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.enums.UserStatus;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
-import org.example.elearning.exception.exceptions.ForbiddenException;
-import org.example.elearning.exception.exceptions.ResourceNotFoundException;
-import org.example.elearning.exception.exceptions.UnauthorizedException;
+import org.example.elearning.exception.exceptions.*;
 import org.example.elearning.mapper.UserMapper;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.UserRepository;
@@ -33,13 +30,9 @@ import org.example.elearning.service.UserService;
 import org.example.elearning.service.RoleService;
 import org.example.elearning.specification.UserSpecification;
 import org.example.elearning.util.CloudinaryUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,12 +88,12 @@ public class UserServiceImpl implements UserService {
 
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_PASSWORD.getMessage());
+            throw new BadRequestException(ErrorCode.INVALID_PASSWORD.getMessage());
         }
 
         // Verify new password and confirm password match
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH.getMessage());
+            throw new BadRequestException(ErrorCode.PASSWORD_MISMATCH.getMessage());
         }
 
         // Update password
@@ -112,16 +105,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse uploadAvatar(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException(ErrorCode.INVALID_FILE.getMessage());
+            throw new BadRequestException(ErrorCode.INVALID_FILE.getMessage());
         }
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = getUserByEmail(email);
 
         // Xoá avatar cũ trên Cloudinary nếu có
-        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
-        }
+        deleteOldAvatarIfExists(user);
 
         try {
             String imageUrl = cloudinaryUtil.uploadImage(file);
@@ -129,7 +120,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             return userMapper.toEntityDTO(user);
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
+            throw new InternalServerException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
@@ -140,11 +131,11 @@ public class UserServiceImpl implements UserService {
         UserEntity user = getUserByEmail(email);
 
         if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
-            throw new BusinessException(ErrorCode.USER_NO_AVATAR.getMessage());
+            throw new BadRequestException(ErrorCode.USER_NO_AVATAR.getMessage());
         }
 
         // Xoá file trên Cloudinary
-        cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
+        deleteOldAvatarIfExists(user);
 
         user.setAvatarUrl(null);
         userRepository.save(user);
@@ -214,7 +205,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse createUser(UserCreateRequest userRequest) {
         // Check if user already exists
         userRepository.findByEmail(userRequest.getEmail()).ifPresent(user -> {
-            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
+            throw new ResourceConflictException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
         });
 
         UserEntity newUser = userMapper.toEntity(userRequest);
@@ -228,13 +219,11 @@ public class UserServiceImpl implements UserService {
             newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         }
         
-        // Set default role if not provided
         if (newUser.getRoles() == null || newUser.getRoles().isEmpty()) {
             RoleEntity studentRole = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
             newUser.setRoles(Set.of(studentRole));
         }
         
-        // Set default status
         newUser.setStatus(UserStatus.ACTIVE);
         
         UserEntity savedUser = userRepository.save(newUser);
@@ -272,15 +261,13 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateUserAvatar(Long id, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException(ErrorCode.INVALID_FILE.getMessage());
+            throw new BadRequestException(ErrorCode.INVALID_FILE.getMessage());
         }
 
         UserEntity user = getUserByIdEntity(id);
 
         // Xoá avatar cũ trên Cloudinary nếu có
-        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
-        }
+        deleteOldAvatarIfExists(user);
 
         try {
             String imageUrl = cloudinaryUtil.uploadImage(file);
@@ -288,7 +275,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             return userMapper.toEntityDTO(user);
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
+            throw new InternalServerException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
@@ -361,7 +348,7 @@ public class UserServiceImpl implements UserService {
     // ==================== Helper methods ====================
     private void handleAdminUser(RoleEntity entity) {
         if (PredefinedRole.ROLE_ADMIN.equals(entity.getRoleName())) {
-            throw new BusinessException(ErrorCode.ADMIN_ACCOUNT_CANNOT_MODIFY.getMessage());
+            throw new ForbiddenException(ErrorCode.ADMIN_ACCOUNT_CANNOT_MODIFY.getMessage());
         }
     }
 
@@ -403,6 +390,13 @@ public class UserServiceImpl implements UserService {
         }
 
         return password.toString();
+    }
+
+   
+    private void deleteOldAvatarIfExists(UserEntity user) {
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
+        }
     }
 
     @Override

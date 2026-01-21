@@ -74,18 +74,18 @@ public class JwtServiceImpl implements JwtService {
             // Check expiry
             Date expiryTime = claims.getExpiration();
             if (expiryTime == null || expiryTime.before(new Date())) {
-                throw new UnauthorizedException(ErrorCode.TOKEN_INCORRECT.getMessage());
+                throw new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage());
             }
 
             // Check jti trong Redis
             String jti = claims.getId(); // tương đương JWT ID
             if (!isRefresh && redisService.exists(jti)) {
-                throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED.getMessage());
+                throw new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage());
             }
 
             return claims;
         } catch (JwtException e) {
-            throw new UnauthorizedException(ErrorCode.TOKEN_INCORRECT.getMessage());
+            throw new UnauthorizedException(ErrorCode.INVALID_TOKEN.getMessage());
         }
     }
 

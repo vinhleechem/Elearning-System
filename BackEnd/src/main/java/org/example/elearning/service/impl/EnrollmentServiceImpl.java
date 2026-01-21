@@ -8,19 +8,18 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.EnrollmentEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.BadRequestException;
+import org.example.elearning.exception.exceptions.ForbiddenException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.EnrollmentRepository;
 import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.UserService;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.mapper.EnrollmentMapper;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,10 +49,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         UserEntity user = userService.getCurrentUser();
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ENROLLMENT_NOT_FOUND.getMessage()));
 
         if (!enrollment.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
+            throw new ForbiddenException(ErrorCode.FORBIDDEN.getMessage());
         }
 
         return mapToEnrollmentResponse(enrollment);
@@ -65,14 +64,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         UserEntity user = userService.getCurrentUser();
 
         EnrollmentEntity enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ENROLLMENT_NOT_FOUND.getMessage()));
 
         if (!enrollment.getUser().getUserId().equals(user.getUserId())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
+            throw new ForbiddenException(ErrorCode.FORBIDDEN.getMessage());
         }
 
         if (progress < 0 || progress > 100) {
-            throw new BusinessException("Progress phải trong khoảng 0-100");
+            throw new BadRequestException("Progress phải trong khoảng 0-100");
         }
 
         enrollment.setProgress(progress);

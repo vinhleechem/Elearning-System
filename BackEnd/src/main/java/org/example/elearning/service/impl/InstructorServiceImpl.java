@@ -8,7 +8,7 @@ import org.example.elearning.dto.response.InstructorResponse;
 import org.example.elearning.entity.InstructorEntity;
 import org.example.elearning.entity.UserEntity;
 import org.example.elearning.exception.ErrorCode;
-import org.example.elearning.exception.exceptions.BusinessException;
+import org.example.elearning.exception.exceptions.ResourceConflictException;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.InstructorMapper;
 import org.example.elearning.repository.InstructorRepository;
@@ -73,7 +73,7 @@ public class InstructorServiceImpl implements InstructorService {
 
         // Kiểm tra đã là instructor chưa
         if (instructorRepository.existsByUser(user)) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED_OPERATION.getMessage());
+            throw new ResourceConflictException(ErrorCode.INSTRUCTOR_NOT_FOUND.getMessage());
         }
 
         InstructorEntity instructor = createDefaultInstructorProfile(user);

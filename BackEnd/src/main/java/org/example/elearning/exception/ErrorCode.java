@@ -17,14 +17,12 @@ public enum ErrorCode {
 
     // Authentication errors
     INVALID_CREDENTIALS("Tài khoản hoặc mật khẩu chưa chính xác", HttpStatus.UNAUTHORIZED.value()),
-    UNAUTHENTICATED("Bạn chưa đăng nhập hoặc token không hợp lệ", HttpStatus.UNAUTHORIZED.value()),
-    INVALID_TOKEN("Token không hợp lệ hoặc đã hết hạn", HttpStatus.UNAUTHORIZED.value()),
-    TOKEN_INCORRECT("Token không hợp lệ", HttpStatus.BAD_REQUEST.value()),
+    UNAUTHENTICATED("Bạn chưa đăng nhập", HttpStatus.UNAUTHORIZED.value()),
+    INVALID_TOKEN("Token không hợp lệ", HttpStatus.UNAUTHORIZED.value()),
 
     // Authorization errors
     FORBIDDEN("Bạn không có quyền truy cập tài nguyên này", HttpStatus.FORBIDDEN.value()),
-    UNAUTHORIZED_OPERATION("Bạn không có quyền thực hiện hành động này", HttpStatus.FORBIDDEN.value()),
-    ADMIN_ACCOUNT_CANNOT_MODIFY("Tài khoản ADMIN không được tùy chỉnh!", HttpStatus.FORBIDDEN.value()),
+    ADMIN_ACCOUNT_CANNOT_MODIFY("Tài khoản Admin không được tùy chỉnh!", HttpStatus.FORBIDDEN.value()),
 
     // Permission errors
     PERMISSION_NOT_FOUND("Permission không tìm thấy", HttpStatus.NOT_FOUND.value()),
@@ -47,9 +45,19 @@ public enum ErrorCode {
     INVALID_CATEGORY_LEVEL("Danh mục không hợp lệ (phải là cấp 3)", HttpStatus.BAD_REQUEST.value()),
     // Course errors
     COURSE_NOT_FOUND("Khóa học không tìm thấy", HttpStatus.NOT_FOUND.value()),
-    CATEGORY_NOT_FOUND("Danh mục không tìm thấy", HttpStatus.NOT_FOUND.value()),
     COURSE_ALREADY_ENROLLED("Bạn đã đăng ký khóa học này rồi", HttpStatus.CONFLICT.value()),
     COURSE_NOT_FOUND_LIST("Không tìm thấy khóa học nào", HttpStatus.NOT_FOUND.value()),
+    INSTRUCTOR_NOT_ASSIGNED_TO_COURSE("Instructor không phụ trách khóa học này",HttpStatus.FORBIDDEN.value()),
+
+    // Enrollment errors
+    ENROLLMENT_NOT_FOUND("Bạn chưa đăng ký khóa học này", HttpStatus.NOT_FOUND.value()),
+
+    //Category errors
+    CATEGORY_NOT_FOUND("Danh mục không tìm thấy", HttpStatus.NOT_FOUND.value()),
+
+    //Instructor errors
+    INSTRUCTOR_NOT_FOUND("Giảng viên không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    INSTRUCTOR_ALREADY_EXISTS("Giảng viên đã tồn tại", HttpStatus.CONFLICT.value()),
 
     // Wishlist errors
     COURSE_ALREADY_IN_WISHLIST("Khóa học đã có trong danh sách yêu thích", HttpStatus.CONFLICT.value()),
@@ -58,15 +66,17 @@ public enum ErrorCode {
     WISHLIST_ITEM_NOT_FOUND("Item trong wishlist không tìm thấy", HttpStatus.NOT_FOUND.value()),
 
     // Review errors
-    REVIEW_NOT_FOUND("Đánh giá không tìm thấy", HttpStatus.NOT_FOUND.value()),
-    REVIEW_UNAUTHORIZED("Bạn không có quyền cập nhật/xóa đánh giá này", HttpStatus.FORBIDDEN.value()),
+    REVIEW_NOT_FOUND("Đánh giá không tồn tại", HttpStatus.NOT_FOUND.value()),
     REVIEW_NOT_ENROLLED("Bạn phải đăng ký khóa học trước khi đánh giá", HttpStatus.FORBIDDEN.value()),
     REVIEW_ALREADY_EXISTS("Bạn đã đánh giá khóa học này rồi", HttpStatus.CONFLICT.value()),
 
     // Order errors
     ORDER_NOT_FOUND("Đơn hàng không tìm thấy", HttpStatus.NOT_FOUND.value()),
     ORDER_UNAUTHORIZED("Bạn không có quyền truy cập đơn hàng này", HttpStatus.FORBIDDEN.value()),
-    ORDER_CANNOT_CANCEL("Bạn không có quyền hủy đơn hàng này", HttpStatus.FORBIDDEN.value()),
+    ORDER_CANNOT_BE_CANCELLED(
+            "Chỉ có thể hủy đơn hàng đang chờ xử lý",
+            HttpStatus.CONFLICT.value()
+    ),
 
     // Payment errors
     PAYMENT_NOT_FOUND("Không tìm thấy thông tin thanh toán", HttpStatus.NOT_FOUND.value()),
@@ -82,20 +92,30 @@ public enum ErrorCode {
     VOUCHER_NOT_FOUND("Voucher không tìm thấy", HttpStatus.NOT_FOUND.value()),
     VOUCHER_CODE_NOT_FOUND("Không tìm thấy voucher với mã này", HttpStatus.NOT_FOUND.value()),
     VOUCHER_ALREADY_EXISTS("Mã voucher đã tồn tại", HttpStatus.CONFLICT.value()),
-    VOUCHER_EXPIRED("Voucher đã hết hạn", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_NOT_STARTED("Voucher chưa bắt đầu", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_NOT_ACTIVE("Voucher không còn hoạt động", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_TOTAL_LIMIT_REACHED("Voucher đã hết lượt sử dụng", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_USER_LIMIT_REACHED("Bạn đã sử dụng hết lượt cho voucher này", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_EXPIRED("Voucher đã hết hạn", HttpStatus.CONFLICT.value()),
+    VOUCHER_NOT_STARTED("Voucher chưa bắt đầu", HttpStatus.CONFLICT.value()),
+    VOUCHER_NOT_ACTIVE("Voucher không còn hoạt động", HttpStatus.CONFLICT.value()),
+    VOUCHER_TOTAL_LIMIT_REACHED("Voucher đã hết lượt sử dụng", HttpStatus.CONFLICT.value()),
+    VOUCHER_USER_LIMIT_REACHED("Bạn đã sử dụng hết lượt cho voucher này", HttpStatus.CONFLICT.value()),
     VOUCHER_ALREADY_OWNED("Bạn đã sở hữu voucher này", HttpStatus.CONFLICT.value()),
-    VOUCHER_ALREADY_USED("Voucher đã được sử dụng", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_MIN_PURCHASE_NOT_MET("Đơn hàng chưa đạt giá trị tối thiểu để sử dụng voucher", HttpStatus.BAD_REQUEST.value()),
-    VOUCHER_NOT_APPLICABLE("Voucher không áp dụng được cho đơn hàng này", HttpStatus.BAD_REQUEST.value()),
+    VOUCHER_ALREADY_USED("Voucher đã được sử dụng", HttpStatus.CONFLICT.value()),
+    VOUCHER_MIN_PURCHASE_NOT_MET("Đơn hàng chưa đạt giá trị tối thiểu để sử dụng voucher", HttpStatus.CONFLICT.value()),
+    VOUCHER_NOT_APPLICABLE("Voucher không áp dụng được cho đơn hàng này", HttpStatus.CONFLICT.value()),
 
     // Discount errors
     DISCOUNT_CALCULATION_FAILED("Không thể tính toán giảm giá", HttpStatus.INTERNAL_SERVER_ERROR.value()),
-    INVALID_DISCOUNT_VALUE("Giá trị giảm giá không hợp lệ", HttpStatus.BAD_REQUEST.value());
+    INVALID_DISCOUNT_VALUE("Giá trị giảm giá không hợp lệ", HttpStatus.BAD_REQUEST.value()),
 
+    //Conversation errors
+    CONVERSATION_NOT_FOUND("Không tìm thấy cuộc trò chuyện nào", HttpStatus.NOT_FOUND.value()),
+
+    //Pasword reset errors
+    PASSWORD_RESET_TOKEN_USED("Token đặt lại mật khẩu đã được sử dụng",HttpStatus.BAD_REQUEST.value()),
+    PASSWORD_RESET_TOKEN_EXPIRED("Token đặt lại mật khẩu đã hết hạn. Vui lòng sử dụng link mới!",HttpStatus.BAD_REQUEST.value()),
+
+    //Message errors
+    MESSAGE_NOT_FOUND("Message không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    MESSAGE_DELETE_FORBIDDEN("Bạn chỉ có thể xóa message của chính mình", HttpStatus.FORBIDDEN.value());
     public String message;
     public int code;
 
