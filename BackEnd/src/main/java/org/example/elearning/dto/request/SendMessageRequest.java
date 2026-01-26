@@ -10,4 +10,5 @@ import lombok.experimental.FieldDefaults;
 public class SendMessageRequest {
     Long conversationId;
     String content;
+    String imageUrl;
 }

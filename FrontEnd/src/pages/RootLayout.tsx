@@ -7,7 +7,13 @@ import { Box } from "@mui/material";
 
 const RootLayout: React.FC = () => {
   const location = useLocation();
-  const hideHeader = location.pathname.startsWith("/instructor");
+  const hideHeader =
+    location.pathname.startsWith("/instructor") ||
+    location.pathname.match(/^\/course\/\d+\/learn$/);
+
+  const hideFooter =
+    location.pathname.startsWith("/instructor") ||
+    location.pathname.match(/^\/course\/\d+\/learn$/);
 
   // Determine chatbot context based on current page
   const getChatbotContext = () => {
@@ -15,7 +21,10 @@ const RootLayout: React.FC = () => {
 
     if (path.startsWith("/courses/")) {
       const courseId = path.split("/")[2];
-      return { page: "course_detail", course_id: parseInt(courseId) || undefined };
+      return {
+        page: "course_detail",
+        course_id: parseInt(courseId) || undefined,
+      };
     } else if (path.startsWith("/learning/")) {
       return { page: "learning" };
     } else if (path.startsWith("/my-learning")) {
@@ -33,13 +42,12 @@ const RootLayout: React.FC = () => {
       <Box component="main" sx={{ flexGrow: 1 }}>
         <Outlet /> {/* cho dat non dung cua route con */}
       </Box>
-      <Footer />
+      {!hideFooter && <Footer />}
 
-      {/* AI Chatbot Widget - Available on all pages */}
-      <ChatbotWidget
-        context={getChatbotContext()}
-        position="bottom-right"
-      />
+      {/* AI Chatbot Widget - Available on all pages except instructor */}
+      {!location.pathname.startsWith("/instructor") && (
+        <ChatbotWidget context={getChatbotContext()} position="bottom-right" />
+      )}
     </Box>
   );
 };

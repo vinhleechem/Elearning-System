@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   TrendingUp,
   RateReview,
+  Chat,
 } from "@mui/icons-material";
 
 type NavItem = {
@@ -69,6 +70,11 @@ const navItems: NavItem[] = [
     icon: <RateReview />,
     name: "Quản lý đánh giá",
     path: "/admin/reviews",
+  },
+  {
+    icon: <Chat />,
+    name: "Quản lý Conversations",
+    path: "/admin/conversations",
   },
   {
     icon: <Notifications />,

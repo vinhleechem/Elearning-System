@@ -13,10 +13,17 @@ import java.time.LocalDateTime;
 public interface ConversationService {
     // ========== USER METHODS ==========
     ConversationEntity findById(Long conversationId);
-    ConversationResponse createConversation(ConversationRequest conversationRequest, Long studentId);
-    PaginatedResponse<ConversationResponse> getMyConversations(Long userId, boolean archived, Pageable pageable);
+    PaginatedResponse<ConversationResponse> getMyConversations(
+            Long userId,
+            Long courseId,
+            String keyword,
+            Boolean archived,
+            Pageable pageable
+    );
     void markAsRead(Long conversationId, Long userId);
     void setConversationArchived(Long conversationId, boolean isArchived);
+    ConversationResponse createConversation(Long userId, Long courseId);
+    Long getUnreadCount(Long userId);
 
     // ========== ADMIN METHODS ==========
     PaginatedResponse<ConversationResponse> getAllConversations(

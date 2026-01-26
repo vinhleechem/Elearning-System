@@ -20,6 +20,7 @@ public class ConversationResponse {
     // Student info
     Long studentId;
     String studentName;
+    String studentAvatar;
 
     // Instructor info
     Long instructorId;
@@ -30,6 +31,9 @@ public class ConversationResponse {
     // Last message preview
     String lastMessageContent;
     LocalDateTime lastMessageAt;
+    Long lastMessageSenderId;
+    String lastMessageSenderType; // STUDENT or INSTRUCTOR
+    Boolean lastMessageIsImage;
     
     // Unread counts
     Integer studentUnreadCount;

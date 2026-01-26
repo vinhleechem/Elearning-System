@@ -56,16 +56,6 @@ public class AdminConversationController {
         );
     }
 
-    @GetMapping("/{id}/messages")
-    public ResponseEntity<StandardResponse<PaginatedResponse<MessageResponse>>> getConversationMessages(
-            @PathVariable Long id,
-            Pageable pageable
-    ) {
-        return ResponseEntity.ok(
-                StandardResponse.success(conversationService.getConversationMessages(id, pageable))
-        );
-    }
-
     @PutMapping("/{id}/lock")
     public ResponseEntity<StandardResponse<Void>> lockConversation(@PathVariable Long id) {
         conversationService.setConversationLocked(id, true);

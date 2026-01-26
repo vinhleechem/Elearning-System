@@ -16,7 +16,9 @@ import java.util.Optional;
 @Repository
 public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
 
-    Page<MessageEntity> findByConversationOrderByCreatedAtAsc(ConversationEntity conversation, Pageable pageable);
+    // Get messages in DESC order (newest first) for pagination
+    // Frontend will reverse to display oldest first
+    Page<MessageEntity> findByConversationOrderByCreatedAtDesc(ConversationEntity conversation, Pageable pageable);
     
     @Modifying
     @Query("""
@@ -30,4 +32,5 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
                            @Param("userId") Long userId);
 
     Optional<MessageEntity> findTopByConversationOrderByCreatedAtDesc(ConversationEntity conversation);
+
 }

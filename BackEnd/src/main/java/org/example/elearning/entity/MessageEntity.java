@@ -38,8 +38,11 @@ public class MessageEntity extends BaseEntity {
     @Column(name = "sender_type", nullable = false, length = 20)
     SenderType senderType;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT")
     String content;
+
+    @Column(name = "image_url", length = 500)
+    String imageUrl;
 
     @Column(name = "is_read")
     @Builder.Default

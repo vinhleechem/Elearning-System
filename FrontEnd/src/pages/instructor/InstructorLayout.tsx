@@ -10,7 +10,11 @@ import {
   PersonOutline,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import ChatbotWidget from "../../components/chatbot/ChatbotWidget";
+import { conversationService } from "../../service/conversationService";
+import { useAuthStore } from "../../store/authStore";
+import { useEffect } from "react";
+
+import { webSocketService } from "../../service/webSocketService";
 
 const sidebarItems = [
   {
@@ -46,6 +50,38 @@ const InstructorLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const { user } = useAuthStore();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    if (user?.userId) {
+      const fetchUnread = () => {
+        conversationService.getUnreadCount()
+          .then(setUnreadMessages)
+          .catch(console.error);
+      };
+
+      fetchUnread();
+
+      // Connect WebSocket
+      if (!webSocketService.isConnected()) {
+        webSocketService.connect(user.userId.toString());
+      }
+
+      const handleNotification = (notif: any) => {
+        if (notif.type === "INFO") {
+          fetchUnread();
+        }
+      };
+
+      webSocketService.addNotificationListener(handleNotification);
+
+      return () => {
+        webSocketService.removeNotificationListener(handleNotification);
+      };
+    }
+  }, [user?.userId]);
 
   // Helper to determine active state.
   const getActiveItem = () => {
@@ -147,16 +183,16 @@ const InstructorLayout = () => {
                 }}
               >
                 {sidebarCollapsed ? item.icon : item.label}
-                {item.hasDot && (
+                {item.label === "Giao tiếp" && unreadMessages > 0 && (
                   <Box
                     sx={{
                       width: 8,
                       height: 8,
-                      bgcolor: "#3b82f6",
+                      bgcolor: "#ef4444", // Red color for notification
                       borderRadius: "50%",
                       position: "absolute",
                       top: 8,
-                      right: 8,
+                      right: sidebarCollapsed ? 8 : 16,
                     }}
                   />
                 )}
@@ -178,11 +214,7 @@ const InstructorLayout = () => {
         <Outlet />
       </Box>
 
-      {/* AI Chatbot Widget for Instructors */}
-      <ChatbotWidget
-        context={{ page: "instructor", section: activeSidebarItem }}
-        position="bottom-right"
-      />
+
     </Box>
   );
 };

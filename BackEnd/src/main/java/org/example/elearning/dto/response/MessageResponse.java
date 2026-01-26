@@ -24,6 +24,7 @@ public class MessageResponse {
     
     // Content
     String content;
+    String imageUrl;
     
     // Read status
     Boolean isRead;

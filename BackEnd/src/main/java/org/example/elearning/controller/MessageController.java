@@ -42,9 +42,9 @@ public class MessageController {
                description = "Gửi tin nhắn trong conversation giữa student và instructor")
     public ResponseEntity<StandardResponse<MessageResponse>> sendMessage(
             @Valid @RequestBody SendMessageRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String email
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         MessageResponse response = messageService.sendMessage(request, user.getUserId());
         
         return ResponseEntity
@@ -61,10 +61,10 @@ public class MessageController {
                description = "Lấy danh sách tin nhắn trong conversation với phân trang")
     public ResponseEntity<StandardResponse<PaginatedResponse<MessageResponse>>> getMessages(
             @RequestParam Long conversationId,
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String email,
             Pageable pageable
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         PaginatedResponse<MessageResponse> response = messageService.getMessages(
                 conversationId, 
                 user.getUserId(), 
@@ -83,9 +83,9 @@ public class MessageController {
                description = "Đánh dấu tất cả tin nhắn trong conversation là đã đọc")
     public ResponseEntity<StandardResponse<Void>> markMessagesAsRead(
             @PathVariable Long conversationId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String email
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         messageService.markMessagesAsRead(conversationId, user.getUserId());
         
         return ResponseEntity.ok(success("Đã đánh dấu tất cả tin nhắn là đã đọc", null));
@@ -100,9 +100,9 @@ public class MessageController {
                description = "User chỉ có thể xóa tin nhắn của chính mình, Admin có thể xóa bất kỳ tin nhắn nào")
     public ResponseEntity<StandardResponse<Void>> deleteMessage(
             @PathVariable Long messageId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String email
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         
         // Check if user is admin
         boolean isAdmin = user.getRoles().stream()
@@ -123,9 +123,9 @@ public class MessageController {
                description = "Admin có thể xóa bất kỳ tin nhắn nào")
     public ResponseEntity<StandardResponse<Void>> adminDeleteMessage(
             @PathVariable Long messageId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String email
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         messageService.deleteMessage(messageId, user.getUserId(), true);
         
         return ResponseEntity.ok(success("Admin đã xóa tin nhắn thành công", null));

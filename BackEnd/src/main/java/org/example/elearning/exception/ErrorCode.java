@@ -23,7 +23,10 @@ public enum ErrorCode {
     // Authorization errors
     FORBIDDEN("Bạn không có quyền truy cập tài nguyên này", HttpStatus.FORBIDDEN.value()),
     ADMIN_ACCOUNT_CANNOT_MODIFY("Tài khoản Admin không được tùy chỉnh!", HttpStatus.FORBIDDEN.value()),
-
+    ADMIN_ACCESS_WRONG_ENDPOINT(
+            "Vui lòng sử dụng API quản lý hội thoại dành cho Admin",
+            HttpStatus.FORBIDDEN.value()
+    ),
     // Permission errors
     PERMISSION_NOT_FOUND("Permission không tìm thấy", HttpStatus.NOT_FOUND.value()),
     PERMISSION_EXISTED("Permission đã tồn tại", HttpStatus.CONFLICT.value()),
@@ -43,6 +46,7 @@ public enum ErrorCode {
     USER_NO_AVATAR("Người dùng chưa có avatar!", HttpStatus.NOT_FOUND.value()),
 
     INVALID_CATEGORY_LEVEL("Danh mục không hợp lệ (phải là cấp 3)", HttpStatus.BAD_REQUEST.value()),
+
     // Course errors
     COURSE_NOT_FOUND("Khóa học không tìm thấy", HttpStatus.NOT_FOUND.value()),
     COURSE_ALREADY_ENROLLED("Bạn đã đăng ký khóa học này rồi", HttpStatus.CONFLICT.value()),

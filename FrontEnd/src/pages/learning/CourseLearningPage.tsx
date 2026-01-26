@@ -8,6 +8,13 @@ import {
   Avatar,
   Rating,
   CircularProgress,
+  Fab,
+  Badge,
+  IconButton,
+  Menu,
+  MenuItem,
+  LinearProgress,
+  Tooltip,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -22,21 +29,35 @@ import type {
   Section as SectionType,
   Lecture,
 } from "../../types/lecture";
-import { ArrowBack, Share, Bookmark } from "@mui/icons-material";
+import {
+  ArrowBack,
+  Share,
+  Bookmark,
+  Chat as ChatIcon,
+  MoreVert,
+  StarRate,
+} from "@mui/icons-material";
+import ChatDrawer from "../../components/chat/ChatDrawer";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
 import { lessonService } from "../../service/lessonService";
 import { formatDate } from "../../libs/dateUtils";
+import { useAuthStore } from "../../store/authStore";
 
 const CourseLearningPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState(0);
   const [currentLectureId, setCurrentLectureId] = useState<number | null>(null);
   const [courseData, setCourseData] = useState<CourseLearning | null>(null);
   const [loading, setLoading] = useState(true);
   const [playerCurrentTime, setPlayerCurrentTime] = useState(0);
   const playerRef = useRef<VideoPlayerRef>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [unreadCount] = useState(0); // TODO: Get from API
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [progressPercent, setProgressPercent] = useState(0);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -108,6 +129,19 @@ const CourseLearningPage = () => {
         ) {
           setCurrentLectureId(sectionsMapped[0].lectures[0].id);
         }
+
+        // Calculate progress
+        const totalLectures = sectionsMapped.reduce(
+          (acc, sec) => acc + sec.lectures.length,
+          0,
+        );
+        const completedLectures = sectionsMapped.reduce(
+          (acc, sec) => acc + sec.completedLectures,
+          0,
+        );
+        setProgressPercent(
+          totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0,
+        );
       } catch (error) {
         console.error(error);
       } finally {
@@ -127,7 +161,7 @@ const CourseLearningPage = () => {
 
     // Construct absolute URL
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8080";
+      const baseUrl = import.meta.env.VITE_BASE_URL;
       // If url starts with /uploads, we want the root origin (e.g. localhost:8080), not the API base (e.g. localhost:8080/api/v1)
       if (url.startsWith("/uploads")) {
         const urlObj = new URL(baseUrl);
@@ -205,56 +239,142 @@ const CourseLearningPage = () => {
         width: "100%",
       }}
     >
-      {/* Header */}
+      {/* Udemy-style Header */}
       <Box
         sx={{
           bgcolor: "#1c1d1f",
           color: "white",
-          px: 2,
-          py: 1,
+          height: 48,
+          borderBottom: "1px solid #3e4143",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #3e4143",
+          px: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate("/my-courses/learning")}
+        <Box sx={{ display: "flex", alignItems: "center", flex: 1, gap: 3 }}>
+          {/* Logo */}
+          <Box
+            component="img"
+            src="/images/logo/logo.png"
+            alt="Logo"
             sx={{
-              color: "white",
-              textTransform: "none",
-              "&:hover": {
-                bgcolor: "rgba(255,255,255,0.1)",
-              },
+              height: 32,
+              cursor: "pointer",
+              "&:hover": { opacity: 0.8 },
+            }}
+            onClick={() => navigate("/")}
+          />
+
+          {/* Divider */}
+          <Box
+            sx={{
+              width: "1px",
+              height: 24,
+              bgcolor: "#3e4143",
+            }}
+          />
+
+          {/* Course Title */}
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              fontSize: "15px",
+              maxWidth: 400,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            Quay lại
-          </Button>
-          <Typography variant="body1" fontWeight={700} noWrap>
             {courseData.title}
           </Typography>
         </Box>
+
+        {/* Right Actions */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* Progress */}
           <Button
-            startIcon={<Share />}
             sx={{
               color: "white",
               textTransform: "none",
+              fontSize: "14px",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
             }}
           >
-            Chia sẻ
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <StarRate sx={{ fontSize: 18 }} />
+              <Typography variant="body2">Tiến độ của bạn</Typography>
+            </Box>
           </Button>
-          <Button
-            startIcon={<Bookmark />}
+
+          {/* Ask Instructor Button */}
+          <Tooltip title="Nhắn tin riêng với giảng viên của khóa học" arrow>
+            <Badge
+              badgeContent={unreadCount}
+              color="error"
+              sx={{
+                "& .MuiBadge-badge": {
+                  right: -3,
+                  top: 3,
+                },
+              }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={<ChatIcon />}
+                onClick={() => setChatOpen(true)}
+                sx={{
+                  color: "white",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  textTransform: "none",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  px: 2,
+                  "&:hover": {
+                    borderColor: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                  },
+                }}
+              >
+                Hỏi giảng viên
+              </Button>
+            </Badge>
+          </Tooltip>
+
+          {/* Share */}
+          <IconButton
             sx={{
               color: "white",
-              textTransform: "none",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
             }}
           >
-            Lưu
-          </Button>
+            <Share sx={{ fontSize: 20 }} />
+          </IconButton>
+
+          {/* More Options */}
+          <IconButton
+            sx={{
+              color: "white",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+            }}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+          >
+            <MoreVert sx={{ fontSize: 20 }} />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+          >
+            <MenuItem onClick={() => setAnchorEl(null)}>
+              Về khóa học này
+            </MenuItem>
+            <MenuItem onClick={() => setAnchorEl(null)}>Lưu</MenuItem>
+            <MenuItem onClick={() => navigate("/my-courses/learning")}>
+              Thoát khóa học
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
@@ -262,7 +382,7 @@ const CourseLearningPage = () => {
       <Box sx={{ display: "flex", flex: 1 }}>
         {/* Video Player Section */}
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <Box sx={{ flex: 1, bgcolor: "#000" }}>
+          <Box sx={{ bgcolor: "#000", minHeight: "65vh" }}>
             <VideoPlayer
               ref={playerRef}
               videoUrl={getSafeVideoUrl(currentLecture?.videoUrl)}
@@ -399,6 +519,33 @@ const CourseLearningPage = () => {
           onLectureClick={handleLectureClick}
         />
       </Box>
+
+      {/* Floating Chat Button */}
+      <Fab
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
+        }}
+        onClick={() => setChatOpen(true)}
+      >
+        <Badge badgeContent={unreadCount} color="error">
+          <ChatIcon />
+        </Badge>
+      </Fab>
+
+      {/* Chat Drawer */}
+      <ChatDrawer
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        courseId={Number(courseId)}
+        currentUserId={user?.userId || 0}
+        currentUserType={
+          user?.roles?.includes("INSTRUCTOR") ? "INSTRUCTOR" : "STUDENT"
+        }
+      />
     </Box>
   );
 };

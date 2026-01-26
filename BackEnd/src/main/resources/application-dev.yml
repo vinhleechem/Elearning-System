@@ -51,8 +51,8 @@ open:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
-  valid-duration: 300
-  refreshable-duration: 1800
+  valid-duration: 3600
+  refreshable-duration: 7200
 outbound:
   identity:
     client-id: ${OUTBOUND_IDENTITY_CLIENT_ID}

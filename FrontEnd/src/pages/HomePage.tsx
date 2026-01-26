@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Container } from "@mui/material";
 import CourseList from "../components/course/CourseList";
 import SliderBanner from "../components/banner/SliderBanner";
+import PaymentSuccessDialog from "../components/payment/PaymentSuccessDialog";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SchoolIcon from "@mui/icons-material/School";
 import PeopleIcon from "@mui/icons-material/People";
@@ -12,6 +13,21 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import confetti from "canvas-confetti";
 
 const HomePage: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+
+    // Check for payment success param
+    useEffect(() => {
+        const paymentSuccess = searchParams.get("payment_success");
+        if (paymentSuccess === "true") {
+            setShowPaymentSuccess(true);
+            // Clean up URL params
+            searchParams.delete("payment_success");
+            searchParams.delete("orderId");
+            setSearchParams(searchParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
+
     useEffect(() => {
         // Confetti effect on page load
         const duration = 3 * 1000;
@@ -369,6 +385,12 @@ const HomePage: React.FC = () => {
                     </div>
                 </Container>
             </section>
+
+            {/* Payment Success Dialog */}
+            <PaymentSuccessDialog
+                open={showPaymentSuccess}
+                onClose={() => setShowPaymentSuccess(false)}
+            />
         </div>
     );
 };

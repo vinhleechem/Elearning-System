@@ -9,12 +9,14 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ConversationMapper {
 
-    @Mapping(target = "courseName", source = "course.courseName")
+    @Mapping(target = "courseName", source = "course.title")
     @Mapping(target = "studentId", source = "student.userId")
     @Mapping(target = "studentName", source = "student.fullName")
+    @Mapping(target = "studentAvatar", source = "student.avatarUrl")
     @Mapping(target = "instructorId", source = "instructor.instructorId")
     @Mapping(target = "instructorUserId", source = "instructor.user.userId")
     @Mapping(target = "instructorName", source = "instructor.user.fullName")
+    @Mapping(target = "instructorAvatar", source = "instructor.user.avatarUrl")
     ConversationResponse toResponse(ConversationEntity conversationEntity);
     ConversationEntity toEntity(ConversationRequest conversationResponse);
 

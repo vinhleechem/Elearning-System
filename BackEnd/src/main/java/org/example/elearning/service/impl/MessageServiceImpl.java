@@ -36,6 +36,7 @@ public class MessageServiceImpl implements MessageService {
     ConversationRepository conversationRepository;
     UserRepository userRepository;
     MessageMapper messageMapper;
+    org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -62,6 +63,7 @@ public class MessageServiceImpl implements MessageService {
                 .sender(sender)
                 .senderType(senderType)
                 .content(request.getContent())
+                .imageUrl(request.getImageUrl())
                 .isRead(false)
                 .build();
 
@@ -70,14 +72,44 @@ public class MessageServiceImpl implements MessageService {
         conversation.setLastMessageId(message.getMessageId());
         conversation.setLastMessageAt(message.getCreatedAt());
 
+        UserEntity recipient;
         if (senderType == SenderType.STUDENT) {
             conversation.setInstructorUnreadCount(conversation.getInstructorUnreadCount() + 1);
+            recipient = conversation.getInstructor().getUser();
         } else {
             conversation.setStudentUnreadCount(conversation.getStudentUnreadCount() + 1);
+            recipient = conversation.getStudent();
         }
 
         conversationRepository.save(conversation);
-        return messageMapper.toResponse(message);
+        MessageResponse response = messageMapper.toResponse(message);
+
+        // Real-time: Send to conversation topic
+        messagingTemplate.convertAndSend("/topic/conversation/" + conversation.getConversationId(), response);
+
+        // Real-time: Notify recipient (use userId as destination)
+        NotificationPayload notification = new NotificationPayload(
+            "Tin nhắn mới",
+            "Bạn có tin nhắn mới từ " + sender.getFullName(),
+            "INFO",
+            conversation.getConversationId()
+        );
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(recipient.getUserId()), 
+            "/queue/notifications", 
+            notification
+        );
+
+        return response;
+    }
+    
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class NotificationPayload {
+        String title;
+        String message;
+        String type;
+        Long conversationId;
     }
 
 
@@ -92,7 +124,10 @@ public class MessageServiceImpl implements MessageService {
                         ErrorCode.CONVERSATION_NOT_FOUND.getMessage()
                 ));
 
-        Page<MessageEntity> messagesPage = messageRepository.findByConversationOrderByCreatedAtAsc(
+        // Get messages in DESC order (newest first)
+        // Page 0 = 50 newest messages
+        // Page 1 = next 50 older messages, etc.
+        Page<MessageEntity> messagesPage = messageRepository.findByConversationOrderByCreatedAtDesc(
                 conversation,
                 pageable
         );

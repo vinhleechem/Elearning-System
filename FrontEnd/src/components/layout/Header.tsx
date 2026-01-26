@@ -6,10 +6,7 @@ import Button from "@mui/material/Button";
 import InputBase from "@mui/material/InputBase";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  ShoppingCartOutlined,
-  FavoriteBorder,
-} from "@mui/icons-material";
+import { ShoppingCartOutlined, FavoriteBorder } from "@mui/icons-material";
 import {
   Badge,
   Avatar,
@@ -31,6 +28,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
 import CartDropdown from "../cart/CartDropdown";
 import { categoryService } from "../../service/categoryService";
+import { conversationService } from "../../service/conversationService";
 import type { CategoryTreeResponse } from "../../service/categoryService";
 import NotificationBell from "../common/NotificationBell";
 
@@ -76,13 +74,15 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
+import { webSocketService } from "../../service/webSocketService";
+
 const Header: React.FC<HeaderProps> = ({
   showSearch = true,
   showLeftPages = true,
   showAuth = true,
   checkoutMode = false,
 }) => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, hasRole } = useAuthStore();
   const { items: cartItemsResponse, fetchCart } = useCartStore();
   const { fetchWishlist } = useWishlistStore();
   const navigate = useNavigate();
@@ -97,13 +97,41 @@ const Header: React.FC<HeaderProps> = ({
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [megaMenuTopics, setMegaMenuTopics] = useState<MegaMenuTopic[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     if (user?.userId) {
       fetchCart();
       fetchWishlist();
+
+      const fetchUnread = () => {
+        if (!hasRole("INSTRUCTOR")) {
+          conversationService.getUnreadCount()
+            .then(setUnreadMessages)
+            .catch(console.error);
+        }
+      };
+
+      fetchUnread();
+
+      // Connect WS
+      if (!webSocketService.isConnected()) {
+        webSocketService.connect(user.userId.toString());
+      }
+
+      const handleNotification = (notif: any) => {
+        if (notif.type === "INFO" && !hasRole("INSTRUCTOR")) {
+          // If we receive a message notification, update count
+          fetchUnread();
+        }
+      };
+
+      webSocketService.addNotificationListener(handleNotification);
+
+      return () => {
+        webSocketService.removeNotificationListener(handleNotification);
+      };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId]); // Only re-fetch when userId changes (login/logout)
 
   const cartItems: CartItemProps[] = cartItemsResponse.map((item) => ({
@@ -247,9 +275,7 @@ const Header: React.FC<HeaderProps> = ({
         px: { xs: 2, md: 5 },
         borderBottom: "1px solid #e5e5e5",
         transition: "all 0.3s ease",
-        boxShadow: isScrolled
-          ? "0 4px 20px rgba(0,0,0,0.08)"
-          : "none",
+        boxShadow: isScrolled ? "0 4px 20px rgba(0,0,0,0.08)" : "none",
         backdropFilter: isScrolled ? "blur(10px)" : "none",
         backgroundColor: isScrolled ? "rgba(255,255,255,0.95)" : "white",
       }}
@@ -269,7 +295,7 @@ const Header: React.FC<HeaderProps> = ({
         >
           <Box
             component="img"
-            src="/images/logo.png"
+            src="/images/logo/logo.png"
             alt="Vidi"
             sx={{ height: 36 }}
           />
@@ -387,7 +413,9 @@ const Header: React.FC<HeaderProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => {
                   if (e.key === "Enter" && searchQuery.trim()) {
-                    navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+                    navigate(
+                      `/courses?search=${encodeURIComponent(searchQuery.trim())}`,
+                    );
                   }
                 }}
               />
@@ -562,6 +590,23 @@ const Header: React.FC<HeaderProps> = ({
               >
                 Khóa học của tôi
               </MenuItem>
+              {!hasRole("INSTRUCTOR") && (
+                <MenuItem
+                  component={Link}
+                  to="/my-courses/messages"
+                  onClick={handleUserMenuClose}
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  Tin nhắn
+                  {unreadMessages > 0 && (
+                    <Badge
+                      badgeContent={unreadMessages}
+                      color="error"
+                      sx={{ mr: 1, '& .MuiBadge-badge': { fontSize: '0.7rem', height: 18, minWidth: 18 } }}
+                    />
+                  )}
+                </MenuItem>
+              )}
               <MenuItem
                 component={Link}
                 to="/settings"

@@ -105,6 +105,9 @@ public class PaymentServiceImpl implements PaymentService {
             redirectUrl = baseUrl + "/payment/success?orderId=" + order.getOrderId();
         } else {
             payment.setStatus(PaymentStatus.FAILED);
+            
+            OrderEntity order = payment.getOrder();
+            orderService.updateOrderStatus(order, OrderStatus.CANCELLED);
 
             redirectUrl = baseUrl + "/payment/failed?orderId=" + payment.getOrder().getOrderId();
         }

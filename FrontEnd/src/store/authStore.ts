@@ -9,6 +9,7 @@ import type {
 } from "../types/auth";
 import { ApiError } from "../service/httpClient";
 import { chatDB } from "../service/chatDB";
+import { webSocketService } from "../service/webSocketService";
 
 type AuthState = {
   tokens: UserLoginResponse | null;
@@ -141,6 +142,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Luôn clear state và tokens bất kể API có thành công hay không
+          webSocketService.disconnect();
           set({ tokens: null, user: null, error: null });
           // Redirect về trang home
           window.location.href = "/";

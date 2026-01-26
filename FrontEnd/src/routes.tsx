@@ -36,6 +36,9 @@ import ReviewManagement from "./pages/admin/ReviewManagement";
 import SetPasswordPage from "./pages/SetPasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
+import AdminConversationList from "./pages/admin/AdminConversationList";
+import AdminConversationDetail from "./pages/admin/AdminConversationDetail";
+import ConversationListPage from "./pages/messages/ConversationListPage";
 
 import CommunicationLayout from "./pages/instructor/communication/CommunicationLayout";
 import InstructorQnAPage from "./pages/instructor/communication/InstructorQnAPage";
@@ -74,6 +77,10 @@ export const router = createBrowserRouter([
           {
             path: "wishlist",
             element: <WishlistPage />,
+          },
+          {
+            path: "messages",
+            element: <ConversationListPage />,
           },
         ],
       },
@@ -236,6 +243,14 @@ export const router = createBrowserRouter([
       {
         path: "reviews",
         element: <ReviewManagement />,
+      },
+      {
+        path: "conversations",
+        element: <AdminConversationList />,
+      },
+      {
+        path: "conversations/:id",
+        element: <AdminConversationDetail />,
       },
     ],
   },

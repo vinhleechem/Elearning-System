@@ -29,23 +29,38 @@ public class ConversationController {
 
     @GetMapping
     public ResponseEntity<StandardResponse<PaginatedResponse<ConversationResponse>>> getConversations(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(required = false) int page,
-            @RequestParam(required = false) int size
-            ) {
+            @AuthenticationPrincipal String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean archived
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
-        PaginatedResponse<ConversationResponse> response = conversationService.getMyConversations(user.getUserId(), false, pageable);
-        return ResponseEntity.ok(success("Lấy danh sách conversations thành công",response));
-
+        UserEntity user = userService.getUserByEmail(email);
+        PaginatedResponse<ConversationResponse> response = conversationService.getMyConversations(
+                user.getUserId(),
+                courseId,
+                keyword,
+                archived,
+                pageable
+        );
+        return ResponseEntity.ok(success("Lấy danh sách conversations thành công", response));
+    }
+    
+    @GetMapping("/unread-count")
+    public ResponseEntity<StandardResponse<Long>> getUnreadCount(@AuthenticationPrincipal String email) {
+        UserEntity user = userService.getUserByEmail(email);
+        Long count = conversationService.getUnreadCount(user.getUserId());
+        return ResponseEntity.ok(success("Lấy số lượng tin nhắn chưa đọc thành công", count));
     }
 
     @PutMapping("/{id}/mark-read")
     public ResponseEntity<StandardResponse<Void>> markAsRead(
             @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String email
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         conversationService.markAsRead(id, user.getUserId());
 
         return ResponseEntity.ok(
@@ -72,19 +87,85 @@ public class ConversationController {
     }
     @GetMapping("/archived")
     public ResponseEntity<StandardResponse<PaginatedResponse<ConversationResponse>>> getArchivedConversations(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String email,
             Pageable pageable
     ) {
-        UserEntity user = userService.getUserByEmail(userDetails.getUsername());
+        UserEntity user = userService.getUserByEmail(email);
         PaginatedResponse<ConversationResponse> response = conversationService.getMyConversations(
                 user.getUserId(),
-                true,
+                null,  // courseId
+                null,  // keyword
+                true,  // archived
                 pageable
         );
         return ResponseEntity.ok(
                 StandardResponse.<PaginatedResponse<ConversationResponse>>builder()
                         .message("Lấy danh sách archived conversations thành công")
                         .data(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/course/{courseId}")
+    public ResponseEntity<StandardResponse<ConversationResponse>> getOrCreateConversation(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal String email
+    ) {
+        UserEntity user = userService.getUserByEmail(email);
+        ConversationResponse response = conversationService.createConversation(user.getUserId(), courseId);
+        
+        return ResponseEntity.ok(
+                StandardResponse.<ConversationResponse>builder()
+                        .message("Lấy conversation thành công")
+                        .data(response)
+                        .build()
+        );
+    }
+
+    // ========== INSTRUCTOR ENDPOINTS ==========
+    
+    @GetMapping("/instructor")
+    public ResponseEntity<StandardResponse<PaginatedResponse<ConversationResponse>>> getInstructorConversations(
+            @AuthenticationPrincipal String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean archived
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        UserEntity user = userService.getUserByEmail(email);
+        
+        PaginatedResponse<ConversationResponse> response = conversationService.getMyConversations(
+                user.getUserId(),
+                courseId,
+                keyword,
+                archived,
+                pageable
+        );
+        
+        return ResponseEntity.ok(
+                StandardResponse.<PaginatedResponse<ConversationResponse>>builder()
+                        .message("Lấy danh sách conversations thành công")
+                        .data(response)
+                        .build()
+        );
+    }
+
+    /**
+     * Mark conversation as read for instructor
+     */
+    @PutMapping("/instructor/{id}/mark-read")
+    public ResponseEntity<StandardResponse<Void>> markAsReadForInstructor(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String email
+    ) {
+        UserEntity user = userService.getUserByEmail(email);
+        conversationService.markAsRead(id, user.getUserId());
+        
+        return ResponseEntity.ok(
+                StandardResponse.<Void>builder()
+                        .message("Đã đánh dấu đã đọc")
                         .build()
         );
     }

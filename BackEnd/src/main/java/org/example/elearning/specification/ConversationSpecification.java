@@ -81,22 +81,84 @@ public class ConversationSpecification {
     }
 
     public static Specification<ConversationEntity> byStudent(Long studentId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("student").get("userId"), studentId);
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("student").get("userId"), studentId);
+        };
     }
 
     public static Specification<ConversationEntity> byInstructor(Long instructorId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("instructor").get("instructorId"), instructorId);
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("instructor").get("instructorId"), instructorId);
+        };
     }
 
     public static Specification<ConversationEntity> notArchived() {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isArchived"), false);
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("isArchived"), false);
+        };
     }
 
     public static Specification<ConversationEntity> archived() {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isArchived"), true);
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("isArchived"), true);
+        };
+    }
+
+    public static Specification<ConversationEntity> hasInstructor(Long instructorId) {
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("instructor").get("instructorId"), instructorId);
+        };
+    }
+
+    public static Specification<ConversationEntity> hasCourse(Long courseId) {
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("course").get("courseId"), courseId);
+        };
+    }
+
+    public static Specification<ConversationEntity> isArchived(Boolean archived) {
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            return criteriaBuilder.equal(root.get("isArchived"), archived);
+        };
+    }
+
+    public static Specification<ConversationEntity> searchByKeyword(String keyword) {
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(criteriaBuilder.desc(
+                    criteriaBuilder.coalesce(root.get("lastMessageAt"), root.get("createdAt"))
+            ));
+            String pattern = "%" + keyword.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("student").get("fullName")),
+                            pattern
+                    ),
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("course").get("title")),
+                            pattern
+                    )
+            );
+        };
     }
 }

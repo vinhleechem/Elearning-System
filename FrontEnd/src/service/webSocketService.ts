@@ -3,8 +3,8 @@ import SockJS from "sockjs-client";
 import { getAuthStoreState } from "../store/authStore";
 
 export interface Notification {
-  notificationId?: number; // Added to match backend
-  id?: number; // Kept for potential backward compat or alias
+  notificationId?: number;
+  id?: number;
   title: string;
   message: string;
   type: "INFO" | "SUCCESS" | "WARNING" | "ERROR";
@@ -12,9 +12,11 @@ export interface Notification {
   link?: string;
   isRead?: boolean;
   createdAt?: string;
+  conversationId?: number; // Added
 }
 
 type NotificationCallback = (notification: Notification) => void;
+type MessageCallback = (message: any) => void;
 
 class WebSocketService {
   private client: Client | null = null;
@@ -22,14 +24,27 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
+  private notificationListeners: Set<NotificationCallback> = new Set();
 
-  connect(userId: string, onNotification: NotificationCallback) {
+  addNotificationListener(callback: NotificationCallback) {
+    this.notificationListeners.add(callback);
+  }
+
+  removeNotificationListener(callback: NotificationCallback) {
+    this.notificationListeners.delete(callback);
+  }
+
+  private notifyListeners(notification: Notification) {
+    this.notificationListeners.forEach(listener => listener(notification));
+  }
+
+  connect(userId: string) {
     if (this.client?.connected) {
       console.log("WebSocket already connected");
       return;
     }
 
-    // WebSocket URL from env (should include /ws in the URL)
+    // WebSocket URL from env
     const wsUrl = import.meta.env.VITE_WS_URL;
 
     const token = getAuthStoreState().tokens?.accessToken;
@@ -43,7 +58,7 @@ class WebSocketService {
         Authorization: `Bearer ${token}`,
       },
       debug: (str) => {
-        console.log("STOMP Debug:", str);
+        // console.log("STOMP Debug:", str);
       },
       reconnectDelay: this.reconnectDelay,
       heartbeatIncoming: 4000,
@@ -60,7 +75,7 @@ class WebSocketService {
         (message) => {
           const notification: Notification = JSON.parse(message.body);
           console.log("📬 Personal Notification:", notification);
-          onNotification(notification);
+          this.notifyListeners(notification);
         },
       );
       this.subscriptions.set("user", userSub);
@@ -71,7 +86,7 @@ class WebSocketService {
         (message) => {
           const notification: Notification = JSON.parse(message.body);
           console.log("📢 Broadcast Notification:", notification);
-          onNotification(notification);
+          this.notifyListeners(notification);
         },
       );
       this.subscriptions.set("broadcast", broadcastSub);
@@ -83,21 +98,48 @@ class WebSocketService {
 
     this.client.onWebSocketClose = () => {
       console.log("🔌 WebSocket connection closed");
-      this.handleReconnect(userId, onNotification);
+      this.handleReconnect(userId);
     };
 
     this.client.activate();
   }
 
-  private handleReconnect(
-    userId: string,
-    onNotification: NotificationCallback,
-  ) {
+  subscribeToConversation(conversationId: number, onMessage: MessageCallback) {
+    if (!this.client?.connected) {
+      console.warn("Cannot subscribe to conversation: WebSocket not connected");
+      return;
+    }
+
+    const topic = `/topic/conversation/${conversationId}`;
+    if (this.subscriptions.has(topic)) {
+      this.subscriptions.get(topic).unsubscribe();
+      this.subscriptions.delete(topic);
+    }
+
+    console.log(`Subscribing to conversation ${conversationId}`);
+    const sub = this.client.subscribe(topic, (message) => {
+      const msg = JSON.parse(message.body);
+      onMessage(msg);
+    });
+    this.subscriptions.set(topic, sub);
+  }
+
+  unsubscribeFromConversation(conversationId: number) {
+    const topic = `/topic/conversation/${conversationId}`;
+    const sub = this.subscriptions.get(topic);
+    if (sub) {
+      sub.unsubscribe();
+      this.subscriptions.delete(topic);
+      console.log(`Unsubscribed from conversation ${conversationId}`);
+    }
+  }
+
+  private handleReconnect(userId: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}`);
       setTimeout(() => {
-        this.connect(userId, onNotification);
+        this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
       console.error("❌ Max reconnection attempts reached");
@@ -117,12 +159,12 @@ class WebSocketService {
   }
 
   // Reconnect with new token after token refresh
-  reconnectWithNewToken(userId: string, onNotification: NotificationCallback) {
+  reconnectWithNewToken(userId: string) {
     console.log("🔄 Reconnecting WebSocket with new token...");
     this.disconnect();
     // Small delay to ensure clean disconnect
     setTimeout(() => {
-      this.connect(userId, onNotification);
+      this.connect(userId);
     }, 500);
   }
 

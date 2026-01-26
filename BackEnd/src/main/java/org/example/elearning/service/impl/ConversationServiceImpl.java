@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,85 +46,95 @@ public class ConversationServiceImpl implements ConversationService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CONVERSATION_NOT_FOUND.getMessage()));
     }
 
-    @Override
-    public ConversationResponse createConversation(ConversationRequest request, Long studentId) {
-        EnrollmentEntity enrollment = enrollmentRepository
-                .findByCourse_CourseIdAndUser_UserId(request.getCourseId(), studentId)
-                .orElseThrow(() -> new BadRequestException(ErrorCode.ENROLLMENT_NOT_FOUND.getMessage()));
-        CourseEntity course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
-        InstructorEntity instructor = instructorRepository.findById(request.getInstructorId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.INSTRUCTOR_NOT_FOUND.getMessage()));
-
-        if (!course.getInstructor().getInstructorId().equals(instructor.getInstructorId())) {
-            throw new ForbiddenException(ErrorCode.INSTRUCTOR_NOT_ASSIGNED_TO_COURSE.getMessage());
+    private ConversationResponse mapToResponseWithLastMessage(ConversationEntity conv) {
+        ConversationResponse response = conversationMapper.toResponse(conv);
+        if (conv.getLastMessageId() != null) {
+            messageRepository.findById(conv.getLastMessageId())
+                    .ifPresent(msg -> {
+                        response.setLastMessageContent(msg.getContent());
+                        response.setLastMessageIsImage(msg.getImageUrl() != null && !msg.getImageUrl().isEmpty());
+                        response.setLastMessageSenderId(msg.getSender().getUserId());
+                        response.setLastMessageSenderType(msg.getSenderType().name());
+                    });
         }
-        Optional<ConversationEntity> existingConv = conversationRepository
-                .findByCourse_CourseIdAndStudent_UserIdAndInstructor_InstructorId(
-                        request.getCourseId(),
-                        studentId,
-                        request.getInstructorId()
-                );
+        return response;
+    }
 
-        if (existingConv.isPresent()) {
-            // Đã có rồi, trả về conversation hiện tại
-            return conversationMapper.toResponse(existingConv.get());
+
+
+    private Specification<ConversationEntity> applyConversationFilters(
+            Specification<ConversationEntity> baseSpec,
+            Long courseId,
+            String keyword,
+            Boolean archived
+    ) {
+        Specification<ConversationEntity> spec = baseSpec;
+        
+        if (archived != null) {
+            spec = spec.and(ConversationSpecification.isArchived(archived));
         }
-        UserEntity student = enrollment.getUser();
-        ConversationEntity conversation = conversationMapper.toEntity(request);
-        conversation.setStudent(student);
-        conversation.setInstructor(instructor);
-        conversation.setCourse(course);
-
-        return conversationMapper.toResponse(conversationRepository.save(conversation));
+        if (courseId != null) {
+            spec = spec.and(ConversationSpecification.hasCourse(courseId));
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            spec = spec.and(ConversationSpecification.searchByKeyword(keyword));
+        }
+        
+        return spec;
     }
 
     @Override
-    public PaginatedResponse<ConversationResponse> getMyConversations(Long userId, boolean archived, Pageable pageable) {
-        UserEntity userEntity = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
-        boolean isStudent = userEntity.getRoles().stream().anyMatch(role -> role.getRoleName().equals("STUDENT"));
-        Page<ConversationEntity> conversationsPage;
+    @Transactional(readOnly = true)
+    public PaginatedResponse<ConversationResponse> getMyConversations(
+            Long userId,
+            Long courseId,
+            String keyword,
+            Boolean archived,
+            Pageable pageable
+    ) {
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+        
+        // Check if user is ADMIN - admins should use getAllConversations instead
+        boolean isAdmin = userEntity.getRoles().stream()
+                .anyMatch(role -> role.getRoleName().equals("ADMIN"));
+        if (isAdmin) {
+            throw new ForbiddenException(ErrorCode.ADMIN_ACCESS_WRONG_ENDPOINT.getMessage());
+        }
+        
+        // Check if user is STUDENT or INSTRUCTOR
+        boolean isStudent = userEntity.getRoles().stream()
+                .anyMatch(role -> role.getRoleName().equals("STUDENT"));
+
+        // Build base specification based on user role
+        Specification<ConversationEntity> baseSpec;
+        
         if (isStudent) {
-            conversationsPage = conversationRepository.findMyConversationsByStudent(userId, archived, pageable);
+            baseSpec = ConversationSpecification.byStudent(userId);
         } else {
             InstructorEntity instructor = instructorRepository.findByUser(userEntity)
                     .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.INSTRUCTOR_NOT_FOUND.getMessage()));
-            conversationsPage = conversationRepository.findMyConversationsByInstructor(instructor.getInstructorId(), archived, pageable);
+            baseSpec = ConversationSpecification.hasInstructor(instructor.getInstructorId());
         }
+        
+        // Apply common filters
+        Specification<ConversationEntity> spec = applyConversationFilters(baseSpec, courseId, keyword, archived);
+        
+        // Execute query
+        Page<ConversationEntity> conversationsPage = conversationRepository.findAll(spec, pageable);
+        
         List<ConversationResponse> conversationResponses = conversationsPage.getContent().stream()
-                .map(conversationMapper::toResponse)
+                .map(this::mapToResponseWithLastMessage)
                 .toList();
         return new PaginatedResponse<>(conversationResponses, new PaginatedResponse.Pagination(
                 conversationsPage.getNumber() + 1,
                 conversationsPage.getSize(),
                 conversationsPage.getTotalElements(),
-                conversationsPage.getTotalPages(
-                )));
+                conversationsPage.getTotalPages()
+        ));
     }
 
-
-
-
-    @Override
-    public void markAsRead(Long conversationId, Long userId) {
-        ConversationEntity conversation = findById(conversationId);
-
-        boolean isStudent = conversation.getStudent().getUserId().equals(userId);
-        if (isStudent) {
-            conversation.setStudentUnreadCount(0);
-        } else {
-            conversation.setInstructorUnreadCount(0);
-        }
-        conversationRepository.save(conversation);
-    }
-
-    @Override
-    public void setConversationArchived(Long conversationId, boolean isArchived) {
-        ConversationEntity conversation = findById(conversationId);
-        conversation.setIsArchived(isArchived);
-        conversationRepository.save(conversation);
-    }
 
     @Override
     public PaginatedResponse<ConversationResponse> getAllConversations(
@@ -151,14 +162,7 @@ public class ConversationServiceImpl implements ConversationService {
         Page<ConversationEntity> page = conversationRepository.findAll(spec, pageable);
 
         List<ConversationResponse> responses = page.getContent().stream()
-                .map(conv -> {
-                    ConversationResponse response = conversationMapper.toResponse(conv);
-                    if (conv.getLastMessageId() != null) {
-                        messageRepository.findById(conv.getLastMessageId())
-                                .ifPresent(msg -> response.setLastMessageContent(msg.getContent()));
-                    }
-                    return response;
-                })
+                .map(this::mapToResponseWithLastMessage)
                 .toList();
 
         return new PaginatedResponse<>(
@@ -173,15 +177,35 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
     @Override
+    public void markAsRead(Long conversationId, Long userId) {
+        ConversationEntity conversation = findById(conversationId);
+
+        boolean isStudent = conversation.getStudent().getUserId().equals(userId);
+        if (isStudent) {
+            conversation.setStudentUnreadCount(0);
+        } else {
+            conversation.setInstructorUnreadCount(0);
+        }
+        conversationRepository.save(conversation);
+    }
+
+    @Override
+    public void setConversationArchived(Long conversationId, boolean isArchived) {
+        ConversationEntity conversation = findById(conversationId);
+        conversation.setIsArchived(isArchived);
+        conversationRepository.save(conversation);
+    }
+
+    @Override
     public ConversationResponse getConversationDetail(Long conversationId) {
         ConversationEntity conversation = findById(conversationId);
         ConversationResponse conversationResponse = conversationMapper.toResponse(conversation);
         if (conversation.getLastMessageId() != null) {
-            conversationResponse.setLastMessageContent(
-                    messageRepository.findById(conversation.getLastMessageId())
-                            .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.MESSAGE_NOT_FOUND.getMessage()))
-                            .getContent()
-            );
+            MessageEntity msg = messageRepository.findById(conversation.getLastMessageId())
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.MESSAGE_NOT_FOUND.getMessage()));
+            
+            conversationResponse.setLastMessageContent(msg.getContent());
+            conversationResponse.setLastMessageIsImage(msg.getImageUrl() != null && !msg.getImageUrl().isEmpty());
         }
         return conversationResponse;
     }
@@ -194,4 +218,66 @@ public class ConversationServiceImpl implements ConversationService {
         conversationRepository.save(conversation);
     }
 
+    // ========== INSTRUCTOR METHODS ==========
+
+    @Override
+    public ConversationResponse createConversation(Long userId, Long courseId) {
+        // Find user
+        UserEntity student = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+
+        // Find course
+        CourseEntity course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+
+        // Get instructor from course
+        InstructorEntity instructor = course.getInstructor();
+        if (instructor == null) {
+            throw new BadRequestException("Khóa học chưa có giảng viên");
+        }
+
+        // Check if student is enrolled
+        enrollmentRepository.findByCourse_CourseIdAndUser_UserId(courseId, userId)
+                .orElseThrow(() -> new BadRequestException("Bạn chưa đăng ký khóa học này"));
+
+        // Check if conversation already exists
+        Optional<ConversationEntity> existingConv = conversationRepository
+                .findByCourse_CourseIdAndStudent_UserIdAndInstructor_InstructorId(
+                        courseId,
+                        userId,
+                        instructor.getInstructorId()
+                );
+
+        if (existingConv.isPresent()) {
+            return conversationMapper.toResponse(existingConv.get());
+        }
+
+        // Create new conversation
+        ConversationEntity conversation = ConversationEntity.builder()
+                .student(student)
+                .instructor(instructor)
+                .course(course)
+                .studentUnreadCount(0)
+                .instructorUnreadCount(0)
+                .isArchived(false)
+                .isLocked(false)
+                .build();
+
+        conversation = conversationRepository.save(conversation);
+        return conversationMapper.toResponse(conversation);
+    }
+    @Override
+    public Long getUnreadCount(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+
+        boolean isInstructor = user.getRoles().stream()
+                .anyMatch(role -> role.getRoleName().equals("INSTRUCTOR"));
+
+        if (isInstructor) {
+            return conversationRepository.countInstructorUnreadMessages(userId);
+        } else {
+            return conversationRepository.countStudentUnreadMessages(userId);
+        }
+    }
 }
