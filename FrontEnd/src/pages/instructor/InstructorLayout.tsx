@@ -57,7 +57,8 @@ const InstructorLayout = () => {
   useEffect(() => {
     if (user?.userId) {
       const fetchUnread = () => {
-        conversationService.getUnreadCount()
+        conversationService
+          .getUnreadCount()
           .then(setUnreadMessages)
           .catch(console.error);
       };
@@ -71,14 +72,25 @@ const InstructorLayout = () => {
 
       const handleNotification = (notif: any) => {
         if (notif.type === "INFO") {
+          // Filter: only process if notification is for current user
+          if (notif.userId && notif.userId !== user.userId) {
+            return; // Ignore notifications for other users
+          }
           fetchUnread();
         }
       };
 
+      // Listen for custom event when messages are marked as read
+      const handleMarkAsRead = () => {
+        fetchUnread();
+      };
+
       webSocketService.addNotificationListener(handleNotification);
+      window.addEventListener("conversation:markAsRead", handleMarkAsRead);
 
       return () => {
         webSocketService.removeNotificationListener(handleNotification);
+        window.removeEventListener("conversation:markAsRead", handleMarkAsRead);
       };
     }
   }, [user?.userId]);
@@ -213,8 +225,6 @@ const InstructorLayout = () => {
       >
         <Outlet />
       </Box>
-
-
     </Box>
   );
 };

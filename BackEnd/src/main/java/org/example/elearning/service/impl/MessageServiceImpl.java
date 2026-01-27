@@ -87,28 +87,29 @@ public class MessageServiceImpl implements MessageService {
         // Real-time: Send to conversation topic
         messagingTemplate.convertAndSend("/topic/conversation/" + conversation.getConversationId(), response);
 
-        // Real-time: Notify recipient (use userId as destination)
-        NotificationPayload notification = new NotificationPayload(
-            "Tin nhắn mới",
-            "Bạn có tin nhắn mới từ " + sender.getFullName(),
-            "INFO",
-            conversation.getConversationId()
-        );
-        messagingTemplate.convertAndSendToUser(
-            String.valueOf(recipient.getUserId()), 
-            "/queue/notifications", 
-            notification
-        );
+        // Real-time: Notify recipient via broadcast (since SimpleBroker doesn't support user destinations well)
+        NotificationPayload notification = NotificationPayload.builder()
+            .title("Tin nhắn mới")
+            .message("Bạn có tin nhắn mới từ " + sender.getFullName())
+            .type("INFO")
+            .userId(recipient.getUserId())
+            .conversationId(conversation.getConversationId())
+            .build();
+        
+        messagingTemplate.convertAndSend("/topic/notifications", notification);
 
         return response;
     }
     
     @lombok.Data
+    @lombok.Builder
     @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
     public static class NotificationPayload {
         String title;
         String message;
         String type;
+        Long userId;
         Long conversationId;
     }
 

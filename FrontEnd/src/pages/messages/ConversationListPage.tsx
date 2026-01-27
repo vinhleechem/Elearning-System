@@ -87,16 +87,56 @@ const ConversationListPage = () => {
       const handleNotification = (notif: any) => {
         // If it's a message notification, refresh the list silently
         if (notif.type === "INFO") {
+          // Filter: only process if notification is for current user
+          if (notif.userId && notif.userId !== user?.userId) {
+            return; // Ignore notifications for other users
+          }
           fetchConversations(true);
         }
       };
 
       webSocketService.addNotificationListener(handleNotification);
+
       return () => {
         webSocketService.removeNotificationListener(handleNotification);
       };
     }
   }, [user?.userId]);
+
+  const handleConversationClick = async (
+    conversation: ConversationResponse,
+  ) => {
+    setSelectedConversation(conversation);
+
+    // Mark as read if there are unread messages
+    const unreadCount = getUnreadCount(conversation);
+    if (unreadCount > 0) {
+      try {
+        // Optimistic update: immediately reset unread count in UI
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.conversationId === conversation.conversationId
+              ? {
+                  ...c,
+                  studentUnreadCount:
+                    currentUserType === "STUDENT" ? 0 : c.studentUnreadCount,
+                  instructorUnreadCount:
+                    currentUserType === "INSTRUCTOR"
+                      ? 0
+                      : c.instructorUnreadCount,
+                }
+              : c,
+          ),
+        );
+
+        // Call API to mark as read
+        await conversationService.markAsRead(conversation.conversationId);
+      } catch (error: any) {
+        // Silently fail - user can still read messages
+        console.error("Failed to mark as read:", error);
+      }
+    }
+  };
 
   const getUnreadCount = (conversation: ConversationResponse) => {
     return currentUserType === "STUDENT"
@@ -260,7 +300,7 @@ const ConversationListPage = () => {
                       <ListItem disablePadding>
                         <ListItemButton
                           selected={isSelected}
-                          onClick={() => setSelectedConversation(conversation)}
+                          onClick={() => handleConversationClick(conversation)}
                           sx={{
                             py: 2,
                             px: 2,

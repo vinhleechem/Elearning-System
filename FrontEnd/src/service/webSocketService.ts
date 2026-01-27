@@ -35,7 +35,7 @@ class WebSocketService {
   }
 
   private notifyListeners(notification: Notification) {
-    this.notificationListeners.forEach(listener => listener(notification));
+    this.notificationListeners.forEach((listener) => listener(notification));
   }
 
   connect(userId: string) {
@@ -50,7 +50,10 @@ class WebSocketService {
     const token = getAuthStoreState().tokens?.accessToken;
     const wsUrlWithToken = `${wsUrl}?token=${token}`;
 
-    console.log("🔌 Connecting WebSocket with token:", token ? "✅ Token exists" : "❌ No token");
+    console.log(
+      "🔌 Connecting WebSocket with token:",
+      token ? "✅ Token exists" : "❌ No token",
+    );
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrlWithToken) as any,
@@ -69,23 +72,26 @@ class WebSocketService {
       console.log("✅ WebSocket Connected");
       this.reconnectAttempts = 0;
 
-      // Subscribe to user-specific notifications
-      const userSub = this.client!.subscribe(
-        `/user/queue/notifications`,
-        (message) => {
-          const notification: Notification = JSON.parse(message.body);
-          console.log("📬 Personal Notification:", notification);
-          this.notifyListeners(notification);
-        },
-      );
-      this.subscriptions.set("user", userSub);
+      // NOTE: SimpleBroker không hỗ trợ tốt user-specific destination
+      // Nên hiện tại chỉ dùng broadcast với filter theo userId ở client-side
 
-      // Subscribe to broadcast notifications
+      // Subscribe to user-specific notifications (currently not used with SimpleBroker)
+      // const userSub = this.client!.subscribe(
+      //   `/user/queue/notifications`,
+      //   (message) => {
+      //     const notification: Notification = JSON.parse(message.body);
+      //     console.log("📬 Personal Notification:", notification);
+      //     this.notifyListeners(notification);
+      //   },
+      // );
+      // this.subscriptions.set("user", userSub);
+
+      // Subscribe to broadcast notifications (with userId filter on client-side)
       const broadcastSub = this.client!.subscribe(
         "/topic/notifications",
         (message) => {
           const notification: Notification = JSON.parse(message.body);
-          console.log("📢 Broadcast Notification:", notification);
+          console.log("📢 Notification received:", notification);
           this.notifyListeners(notification);
         },
       );

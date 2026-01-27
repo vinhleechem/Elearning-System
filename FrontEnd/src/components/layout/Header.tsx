@@ -106,7 +106,8 @@ const Header: React.FC<HeaderProps> = ({
 
       const fetchUnread = () => {
         if (!hasRole("INSTRUCTOR")) {
-          conversationService.getUnreadCount()
+          conversationService
+            .getUnreadCount()
             .then(setUnreadMessages)
             .catch(console.error);
         }
@@ -121,6 +122,10 @@ const Header: React.FC<HeaderProps> = ({
 
       const handleNotification = (notif: any) => {
         if (notif.type === "INFO" && !hasRole("INSTRUCTOR")) {
+          // Filter: only process if notification is for current user
+          if (notif.userId && notif.userId !== user.userId) {
+            return; // Ignore notifications for other users
+          }
           // If we receive a message notification, update count
           fetchUnread();
         }
@@ -595,14 +600,25 @@ const Header: React.FC<HeaderProps> = ({
                   component={Link}
                   to="/my-courses/messages"
                   onClick={handleUserMenuClose}
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
                 >
                   Tin nhắn
                   {unreadMessages > 0 && (
                     <Badge
                       badgeContent={unreadMessages}
                       color="error"
-                      sx={{ mr: 1, '& .MuiBadge-badge': { fontSize: '0.7rem', height: 18, minWidth: 18 } }}
+                      sx={{
+                        mr: 1,
+                        "& .MuiBadge-badge": {
+                          fontSize: "0.7rem",
+                          height: 18,
+                          minWidth: 18,
+                        },
+                      }}
                     />
                   )}
                 </MenuItem>

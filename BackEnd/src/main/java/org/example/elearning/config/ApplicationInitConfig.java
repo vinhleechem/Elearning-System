@@ -186,7 +186,6 @@ public class ApplicationInitConfig {
                                                                 .passwordHash(passwordEncoder.encode("instructor123"))
                                                                 .build());
 
-                                // Save instructor users
                                 List<UserEntity> savedInstructorUsers = userRepository.saveAll(instructorUsers);
                                 log.info("Created {} instructor user accounts", savedInstructorUsers.size());
 
@@ -248,7 +247,6 @@ public class ApplicationInitConfig {
                                 log.info("Created {} instructor profiles", instructorProfiles.size());
                         }
 
-                        // Initialize categories if not exists
                         List<CategoryEntity> rootCategories = Arrays.asList(
                                         CategoryEntity.builder()
                                                         .name("Lập trình")
@@ -572,7 +570,6 @@ public class ApplicationInitConfig {
 
         }
 
-        @Transactional
         private void initializeCourses(List<CategoryEntity> savedCategories) {
                 List<InstructorEntity> allInstructors = instructorRepository.findAll();
                 if (!allInstructors.isEmpty() && !savedCategories.isEmpty()) {
@@ -709,7 +706,6 @@ public class ApplicationInitConfig {
                 }
         }
 
-        @Transactional
         private void initializePromotionsAndVouchers() {
                 log.info("Starting initialization of Promotions and Vouchers...");
 

@@ -38,8 +38,13 @@ const ChatBox = ({
   const [messages, setMessages] = useState<MessageResponse[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { enqueueSnackbar } = useToast();
 
   // Image Upload State
@@ -100,18 +105,50 @@ const ChatBox = ({
     }, 100);
   };
 
-  const fetchMessages = async () => {
-    setLoading(true);
+  const fetchMessages = async (reset: boolean = true) => {
+    if (reset) {
+      setLoading(true);
+      setCurrentPage(0);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const response = await messageService.getMessages(conversationId, 0, 50);
+      const pageToLoad = reset ? 0 : currentPage + 1;
+      const response = await messageService.getMessages(
+        conversationId,
+        pageToLoad,
+        50,
+      );
       if (response && response.data) {
         // Backend returns DESC, sort to ASC (oldest -> newest) for display
         const sorted = [...response.data].sort(
           (a, b) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
-        setMessages(sorted);
-        scrollToBottom();
+
+        setMessages((prev) => {
+          if (reset) {
+            return sorted;
+          } else {
+            // Pagination: prepend older messages
+            const existingIds = new Set(prev.map((m) => m.messageId));
+            const newMessages = sorted.filter(
+              (m) => !existingIds.has(m.messageId),
+            );
+            return [...newMessages, ...prev];
+          }
+        });
+
+        setHasMore((response.data?.length || 0) === 50);
+        if (!reset) {
+          setCurrentPage(pageToLoad);
+        }
+
+        if (reset) {
+          setShouldScrollToBottom(true);
+        }
       }
     } catch (error: any) {
       enqueueSnackbar(error.message || "Lỗi khi tải tin nhắn", {
@@ -119,12 +156,21 @@ const ChatBox = ({
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
     fetchMessages();
-    conversationService.markAsRead(conversationId).catch(() => {});
+
+    // Mark as read when opening conversation
+    conversationService
+      .markAsRead(conversationId)
+      .then(() => {
+        // Notify parent to update conversation list UI
+        onMessageSent?.();
+      })
+      .catch(() => {});
 
     // Connect WebSocket and subscribe
     const { user } = useAuthStore.getState();
@@ -149,7 +195,7 @@ const ChatBox = ({
                 new Date(b.createdAt).getTime(),
             );
           });
-          scrollToBottom();
+          setShouldScrollToBottom(true);
 
           // If message is from other user, mark as read immediately if we are in the chat
           if (message.senderId !== currentUserId) {
@@ -165,6 +211,14 @@ const ChatBox = ({
       webSocketService.unsubscribeFromConversation(conversationId);
     };
   }, [conversationId, currentUserId]);
+
+  // Only scroll to bottom when flag is set
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      scrollToBottom();
+      setShouldScrollToBottom(false);
+    }
+  }, [shouldScrollToBottom]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !selectedImage) return;
@@ -232,6 +286,25 @@ const ChatBox = ({
     >
       {/* Messages Area */}
       <Box
+        ref={messagesContainerRef}
+        onScroll={(e) => {
+          const target = e.currentTarget;
+          // Load more when scrolling to top
+          if (target.scrollTop === 0 && hasMore && !loadingMore && !loading) {
+            const scrollHeightBefore = target.scrollHeight;
+            fetchMessages(false).then(() => {
+              // Preserve scroll position after prepending messages
+              setTimeout(() => {
+                if (messagesContainerRef.current) {
+                  const scrollHeightAfter =
+                    messagesContainerRef.current.scrollHeight;
+                  messagesContainerRef.current.scrollTop =
+                    scrollHeightAfter - scrollHeightBefore;
+                }
+              }, 100);
+            });
+          }
+        }}
         sx={{
           flex: 1,
           overflowY: "auto",
@@ -271,97 +344,106 @@ const ChatBox = ({
             </Typography>
           </Box>
         ) : (
-          messages.map((message) => {
-            const isOwn = isOwnMessage(message);
-            return (
-              <Box
-                key={message.messageId}
-                sx={{
-                  display: "flex",
-                  justifyContent: isOwn ? "flex-end" : "flex-start",
-                  alignItems: "flex-start",
-                  gap: 1,
-                }}
-              >
-                {!isOwn && (
-                  <Avatar
-                    src={message.senderAvatar}
-                    alt={message.senderName}
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    {message.senderName.charAt(0)}
-                  </Avatar>
-                )}
-                <Box sx={{ maxWidth: "70%" }}>
+          <>
+            {loadingMore && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
+            {messages.map((message) => {
+              const isOwn = isOwnMessage(message);
+              return (
+                <Box
+                  key={message.messageId}
+                  sx={{
+                    display: "flex",
+                    justifyContent: isOwn ? "flex-end" : "flex-start",
+                    alignItems: "flex-start",
+                    gap: 1,
+                  }}
+                >
                   {!isOwn && (
+                    <Avatar
+                      src={message.senderAvatar}
+                      alt={message.senderName}
+                      sx={{ width: 32, height: 32 }}
+                    >
+                      {message.senderName.charAt(0)}
+                    </Avatar>
+                  )}
+                  <Box sx={{ maxWidth: "70%" }}>
+                    {!isOwn && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 1, mb: 0.5, display: "block" }}
+                      >
+                        {message.senderName}
+                      </Typography>
+                    )}
+                    <Paper
+                      sx={{
+                        p: message.imageUrl ? 0 : 1.5,
+                        overflow: "hidden",
+                        bgcolor: isOwn ? "primary.main" : "white",
+                        color: isOwn ? "white" : "text.primary",
+                        borderRadius: isOwn
+                          ? "16px 16px 4px 16px"
+                          : "16px 16px 16px 4px",
+                        boxShadow: 1,
+                      }}
+                    >
+                      {message.imageUrl && (
+                        <Box
+                          component="img"
+                          src={message.imageUrl}
+                          onClick={() =>
+                            window.open(message.imageUrl, "_blank")
+                          }
+                          sx={{
+                            width: "100%",
+                            maxWidth: 300,
+                            maxHeight: 300,
+                            objectFit: "cover",
+                            cursor: "pointer",
+                            display: "block",
+                          }}
+                        />
+                      )}
+                      {message.content && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            whiteSpace: "pre-wrap",
+                            p: message.imageUrl ? 1.5 : 0,
+                          }}
+                        >
+                          {message.content}
+                        </Typography>
+                      )}
+                    </Paper>
                     <Typography
                       variant="caption"
                       color="text.secondary"
-                      sx={{ ml: 1, mb: 0.5, display: "block" }}
+                      sx={{ ml: 1, mt: 0.5, display: "block" }}
                     >
-                      {message.senderName}
+                      {formatChatTime(message.createdAt)}
+                      {message.isRead && isOwn && " • Đã đọc"}
                     </Typography>
+                  </Box>
+                  {isOwn && (
+                    <Avatar
+                      src={message.senderAvatar}
+                      alt={message.senderName}
+                      sx={{ width: 32, height: 32 }}
+                    >
+                      {message.senderName.charAt(0)}
+                    </Avatar>
                   )}
-                  <Paper
-                    sx={{
-                      p: message.imageUrl ? 0 : 1.5,
-                      overflow: "hidden",
-                      bgcolor: isOwn ? "primary.main" : "white",
-                      color: isOwn ? "white" : "text.primary",
-                      borderRadius: isOwn
-                        ? "16px 16px 4px 16px"
-                        : "16px 16px 16px 4px",
-                      boxShadow: 1,
-                    }}
-                  >
-                    {message.imageUrl && (
-                      <Box
-                        component="img"
-                        src={message.imageUrl}
-                        onClick={() => window.open(message.imageUrl, "_blank")}
-                        sx={{
-                          width: "100%",
-                          maxWidth: 300,
-                          maxHeight: 300,
-                          objectFit: "cover",
-                          cursor: "pointer",
-                          display: "block",
-                        }}
-                      />
-                    )}
-                    {message.content && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: "pre-wrap",
-                          p: message.imageUrl ? 1.5 : 0,
-                        }}
-                      >
-                        {message.content}
-                      </Typography>
-                    )}
-                  </Paper>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 1, mt: 0.5, display: "block" }}
-                  >
-                    {formatChatTime(message.createdAt)}
-                    {message.isRead && isOwn && " • Đã đọc"}
-                  </Typography>
                 </Box>
-                {isOwn && (
-                  <Avatar
-                    src={message.senderAvatar}
-                    alt={message.senderName}
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    {message.senderName.charAt(0)}
-                  </Avatar>
-                )}
-              </Box>
-            );
-          })
+              );
+            })}
+          </>
         )}
         <div ref={messagesEndRef} />
       </Box>

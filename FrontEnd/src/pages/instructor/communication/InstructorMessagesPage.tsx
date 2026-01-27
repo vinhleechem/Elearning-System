@@ -60,6 +60,7 @@ const InstructorMessagesPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
   const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
@@ -134,7 +135,11 @@ const InstructorMessagesPage = () => {
 
       const handleNotification = (notif: any) => {
         if (notif.type === "INFO") {
-          loadConversations();
+          // Filter: only process if notification is for current user
+          if (notif.userId && notif.userId !== user.userId) {
+            return; // Ignore notifications for other users
+          }
+          refreshConversations(); // Use silent refresh instead of loadConversations
         }
       };
 
@@ -165,12 +170,19 @@ const InstructorMessagesPage = () => {
             );
           });
 
+          // Scroll to bottom when receiving new message
+          setShouldScrollToBottom(true);
+
           if (message.senderId !== user?.userId) {
             conversationService
               .markAsRead(selectedConversation)
+              .then(() => {
+                // Dispatch custom event to notify sidebar to update badge
+                window.dispatchEvent(new Event("conversation:markAsRead"));
+              })
               .catch(() => {});
-            // Refresh conversation list when receiving message from student
-            loadConversations();
+            // Refresh conversation list when receiving message from student (silent)
+            refreshConversations();
           }
         },
       );
@@ -183,9 +195,13 @@ const InstructorMessagesPage = () => {
     };
   }, [selectedConversation, user?.userId]);
 
+  // Only scroll to bottom when flag is set (new message or initial load)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (shouldScrollToBottom) {
+      scrollToBottom();
+      setShouldScrollToBottom(false);
+    }
+  }, [shouldScrollToBottom]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -212,6 +228,26 @@ const InstructorMessagesPage = () => {
       setCourses(response.data || []);
     } catch (error: any) {
       console.error("Error loading courses:", error);
+    }
+  };
+
+  const handleConversationClick = async (conversationId: number) => {
+    setSelectedConversation(conversationId);
+
+    // Mark as read and notify sidebar immediately
+    const conversation = conversations.find(
+      (c) => c.conversationId === conversationId,
+    );
+    if (conversation && conversation.instructorUnreadCount > 0) {
+      try {
+        await conversationService.markAsRead(conversationId);
+        // Dispatch event to update sidebar badge instantly
+        window.dispatchEvent(new Event("conversation:markAsRead"));
+        // Refresh conversation list to update UI
+        refreshConversations();
+      } catch (error) {
+        console.error("Failed to mark as read:", error);
+      }
     }
   };
 
@@ -243,6 +279,32 @@ const InstructorMessagesPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Silent refresh without showing loading spinner
+  const refreshConversations = async () => {
+    try {
+      const response = await conversationService.getMyConversations(0, 50, {
+        keyword: searchTerm || undefined,
+        courseId: selectedCourseId || undefined,
+      });
+
+      let filtered = response.data || [];
+
+      if (showUnread) {
+        filtered = filtered.filter((c) => c.instructorUnreadCount > 0);
+      }
+
+      filtered.sort((a, b) => {
+        const dateA = new Date(a.lastMessageAt || a.createdAt).getTime();
+        const dateB = new Date(b.lastMessageAt || b.createdAt).getTime();
+        return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+      });
+
+      setConversations(filtered);
+    } catch (error: any) {
+      console.error("Error refreshing conversations:", error);
     }
   };
 
@@ -294,6 +356,8 @@ const InstructorMessagesPage = () => {
       if (reset) {
         await conversationService.markAsRead(conversationId);
         await loadConversations();
+        // Scroll to bottom only on initial load
+        setShouldScrollToBottom(true);
       }
     } catch (error: any) {
       console.error("Error loading messages:", error);
@@ -338,8 +402,6 @@ const InstructorMessagesPage = () => {
 
       // Update last message in conversation list
       loadConversations();
-
-      scrollToBottom();
     } catch (error: any) {
       enqueueSnackbar(error.message || "Lỗi khi gửi tin nhắn", {
         variant: "error",
@@ -558,7 +620,7 @@ const InstructorMessagesPage = () => {
             conversations.map((conv) => (
               <Box
                 key={conv.conversationId}
-                onClick={() => setSelectedConversation(conv.conversationId)}
+                onClick={() => handleConversationClick(conv.conversationId)}
                 sx={{
                   p: 2,
                   display: "flex",
