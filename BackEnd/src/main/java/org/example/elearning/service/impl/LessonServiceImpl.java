@@ -28,6 +28,12 @@ public class LessonServiceImpl implements LessonService {
     LessonMapper lessonMapper;
 
     @Override
+    public LessonEntity getLesson(Long lessonId) {
+        return lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.LESSON_NOT_FOUND.getMessage()));
+    }
+
+    @Override
     public List<LessonResponse> getLessonsBySection(Long sectionId) {
         SectionEntity section = sectionService.getSectionEntityById(sectionId);
         return lessonMapper.toResponseList(lessonRepository.findBySectionOrderBySortOrderAsc(section));
@@ -35,8 +41,7 @@ public class LessonServiceImpl implements LessonService {
 
     @Override
     public LessonResponse getLessonById(Long lessonId) {
-        LessonEntity entity = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+        LessonEntity entity = getLesson(lessonId);
         return lessonMapper.toResponse(entity);
     }
 
@@ -55,28 +60,14 @@ public class LessonServiceImpl implements LessonService {
         entity.setSection(section);
         entity.setSortOrder(sortOrder);
         
-        // Set defaults for nullable booleans
-        if (entity.getIsPreview() == null) {
-            entity.setIsPreview(false);
-        }
-        if (entity.getIsDownloadable() == null) {
-            entity.setIsDownloadable(false);
-        }
-        if (entity.getIsActive() == null) {
-            entity.setIsActive(true);
-        }
-
         return lessonMapper.toResponse(lessonRepository.save(entity));
     }
 
     @Override
     @Transactional
     public LessonResponse updateLesson(Long lessonId, LessonRequest request) {
-        LessonEntity entity = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
-
+        LessonEntity entity = getLesson(lessonId);
         lessonMapper.updateEntity(entity, request);
-
         return lessonMapper.toResponse(lessonRepository.save(entity));
     }
 
@@ -85,6 +76,7 @@ public class LessonServiceImpl implements LessonService {
     public void deleteLesson(Long lessonId) {
         LessonEntity entity = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
-        lessonRepository.delete(entity);
+        entity.setDeleted(true);
+        lessonRepository.save(entity);
     }
 }

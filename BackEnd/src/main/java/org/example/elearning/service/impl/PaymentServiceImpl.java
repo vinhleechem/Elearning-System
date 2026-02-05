@@ -18,7 +18,7 @@ import org.example.elearning.repository.PaymentRepository;
 import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.PaymentService;
 import org.example.elearning.service.OrderService;
-import org.example.elearning.util.VNPayUtil;
+import org.example.elearning.utils.VNPayUtil;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

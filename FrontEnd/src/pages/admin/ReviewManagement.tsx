@@ -121,32 +121,26 @@ const ReviewManagement = () => {
         filterCourseId || undefined,
       );
 
-      // Add null checks
-      if (response && response.data && response.pagination) {
+      if (response?.data && response?.pagination) {
         setReviews(response.data);
         setTotalPages(response.pagination.totalPages);
 
-        // Calculate stats
         const total = response.pagination.totalElements;
         const avgRating =
           response.data.length > 0
             ? response.data.reduce((sum, r) => sum + r.rating, 0) /
               response.data.length
             : 0;
-        const fiveStars = response.data.filter((r) => r.rating === 5).length;
-        const oneStars = response.data.filter((r) => r.rating === 1).length;
 
         setStats({
           totalReviews: total,
           averageRating: avgRating,
-          fiveStars,
-          oneStars,
+          fiveStars: response.data.filter((r) => r.rating === 5).length,
+          oneStars: response.data.filter((r) => r.rating === 1).length,
         });
       } else {
-        // Handle empty response
         setReviews([]);
         setTotalPages(0);
-
         setStats({
           totalReviews: 0,
           averageRating: 0,
@@ -219,11 +213,8 @@ const ReviewManagement = () => {
     setViewDialogOpen(true);
   };
 
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4) return "success";
-    if (rating >= 3) return "warning";
-    return "error";
-  };
+  const getRatingColor = (rating: number) =>
+    rating >= 4 ? "success" : rating >= 3 ? "warning" : "error";
 
   return (
     <Box sx={{ pb: 5 }}>

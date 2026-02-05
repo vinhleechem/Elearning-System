@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
@@ -22,6 +21,7 @@ import org.example.elearning.entity.UserEntity;
 import org.example.elearning.enums.UserStatus;
 import org.example.elearning.exception.ErrorCode;
 import org.example.elearning.exception.exceptions.*;
+import org.example.elearning.mapper.InstructorMapper;
 import org.example.elearning.mapper.UserMapper;
 import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.repository.UserRepository;
@@ -29,9 +29,10 @@ import org.example.elearning.service.PasswordResetService;
 import org.example.elearning.service.UserService;
 import org.example.elearning.service.RoleService;
 import org.example.elearning.specification.UserSpecification;
-import org.example.elearning.util.CloudinaryUtil;
+import org.example.elearning.utils.CloudinaryUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,9 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
@@ -53,7 +56,39 @@ public class UserServiceImpl implements UserService {
     PasswordEncoder passwordEncoder;
     CloudinaryUtil cloudinaryUtil;
     PasswordResetService passwordResetService;
+    private final InstructorMapper instructorMapper;
 
+    // ========================================
+    // INTERNAL/HELPER METHODS
+    // ========================================
+
+    @Override
+    public UserEntity getUserByIdEntity(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public UserEntity getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public UserEntity getActiveUser(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
+        
+        if (!userEntity.getStatus().equals(UserStatus.ACTIVE)) {
+            throw new ForbiddenException(ErrorCode.USER_LOCKED.getMessage());
+        }
+        
+        if (userEntity.isDeleted()) {
+            throw new ResourceNotFoundException(ErrorCode.USER_DELETED.getMessage());
+        }
+        
+        return userEntity;
+    }
 
     @Override
     public UserEntity getCurrentUser() {
@@ -61,90 +96,160 @@ public class UserServiceImpl implements UserService {
         return getUserByEmail(email);
     }
 
-    // ==================== User self-service APIs ====================
+    // ========================================
+    // USER SELF-SERVICE OPERATIONS
+    // ========================================
+
     @Override
-    public UserResponse getMyInfo() {
-        String name = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity userEntity = getUserByEmail(name);
-        return userMapper.toEntityDTO(userEntity);
+    @Transactional
+    public UserResponse getMyProfile() {
+        UserEntity currentUser = getCurrentUser();
+        UserResponse dto = userMapper.toEntityDTO(currentUser);
+        enrichInstructorInfo(currentUser, dto);
+        return dto;
     }
 
     @Override
     @Transactional
     public UserResponse updateMyProfile(UpdateProfileRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
-
-        userMapper.updateEntity(user, request);
-
-        return userMapper.toEntityDTO(userRepository.save(user));
+        UserEntity currentUser = getCurrentUser();
+        
+        userMapper.updateEntity(currentUser, request);
+        UserEntity updated = userRepository.save(currentUser);
+        
+        log.info("User {} updated their profile", currentUser.getEmail());
+        return userMapper.toEntityDTO(updated);
     }
 
     @Override
     @Transactional
-    public void changePassword(ChangePasswordRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+    public void changeMyPassword(ChangePasswordRequest request) {
+        UserEntity currentUser = getCurrentUser();
 
-        // Verify current password
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPasswordHash())) {
             throw new BadRequestException(ErrorCode.INVALID_PASSWORD.getMessage());
         }
 
-        // Verify new password and confirm password match
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException(ErrorCode.PASSWORD_MISMATCH.getMessage());
         }
 
-        // Update password
-        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+        
+        log.info("User {} changed their password", currentUser.getEmail());
     }
 
     @Override
     @Transactional
-    public UserResponse uploadAvatar(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new BadRequestException(ErrorCode.INVALID_FILE.getMessage());
-        }
-
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
-
-        // Xoá avatar cũ trên Cloudinary nếu có
-        deleteOldAvatarIfExists(user);
-
+    public UserResponse uploadMyAvatar(MultipartFile file) {
+        validateImageFile(file);
+        
+        UserEntity currentUser = getCurrentUser();
+        
+        deleteAvatarFromCloud(currentUser.getAvatarUrl());
+        
         try {
-            String imageUrl = cloudinaryUtil.uploadImage(file);
-            user.setAvatarUrl(imageUrl);
-            userRepository.save(user);
-            return userMapper.toEntityDTO(user);
+            String avatarUrl = cloudinaryUtil.uploadImage(file);
+            currentUser.setAvatarUrl(avatarUrl);
+            UserEntity updated = userRepository.save(currentUser);
+            
+            log.info("User {} uploaded new avatar", currentUser.getEmail());
+            return userMapper.toEntityDTO(updated);
         } catch (IOException e) {
+            log.error("Failed to upload avatar for user {}", currentUser.getEmail(), e);
             throw new InternalServerException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
     @Override
     @Transactional
-    public void deleteAvatar() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = getUserByEmail(email);
+    public void deleteMyAvatar() {
+        UserEntity currentUser = getCurrentUser();
 
-        if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+        if (currentUser.getAvatarUrl() == null || currentUser.getAvatarUrl().isEmpty()) {
             throw new BadRequestException(ErrorCode.USER_NO_AVATAR.getMessage());
         }
 
-        // Xoá file trên Cloudinary
-        deleteOldAvatarIfExists(user);
+        deleteAvatarFromCloud(currentUser.getAvatarUrl());
 
-        user.setAvatarUrl(null);
-        userRepository.save(user);
+        currentUser.setAvatarUrl(null);
+        userRepository.save(currentUser);
+        
+        log.info("User {} deleted their avatar", currentUser.getEmail());
     }
 
-    // ==================== Admin APIs ====================
+    // ========================================
+    // ADMIN OPERATIONS - USER MANAGEMENT
+    // ========================================
+
     @Override
-    public PaginatedResponse<UserResponse> getAllUsers(Pageable pageable, String search) {
-        var spec = UserSpecification.notDeleted();
+    @Transactional
+    public UserResponse createUser(UserCreateRequest userRequest) {
+        UserEntity user = getUserByEmail(userRequest.getEmail());
+
+        if(user != null){
+            throw new ResourceConflictException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
+        }
+
+        UserEntity newUser = userMapper.toEntity(userRequest);
+
+        RoleEntity studentRole = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
+        newUser.setRoles(Set.of(studentRole));
+
+        newUser.setStatus(UserStatus.ACTIVE);
+        
+        UserEntity savedUser = userRepository.save(newUser);
+        
+        passwordResetService.createActivationToken(savedUser.getUserId());
+
+        log.info("Admin created new user: {}", savedUser.getEmail());
+        return userMapper.toEntityDTO(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserById(Long userId, UserUpdateRequest request) {
+        UserEntity user = getUserByIdEntity(userId);
+
+        String oldAvatarUrl = user.getAvatarUrl();
+
+        String newAvatarUrl = request.getAvatarUrl();
+
+        userMapper.updateEntity(user, request);
+
+        if (newAvatarUrl != null && oldAvatarUrl != null
+                && !oldAvatarUrl.isEmpty() && !oldAvatarUrl.equals(newAvatarUrl)) {
+            deleteAvatarFromCloud(oldAvatarUrl);
+        }
+
+        UserEntity updated = userRepository.save(user);
+        log.info("Admin updated user {}", userId);
+        
+        return userMapper.toEntityDTO(updated);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse getUserById(Long userId) {
+        UserEntity user = getUserByIdEntity(userId);
+        UserResponse dto = userMapper.toEntityDTO(user);
+        enrichInstructorInfo(user, dto);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public PaginatedResponse<UserResponse> getAllUsers(Pageable pageable, String search, UserStatus userStatus, Boolean deleted) {
+        Specification<UserEntity> spec = Specification.allOf();
+
+        if (userStatus != null) {
+            spec = spec.and(UserSpecification.filterByStatus(userStatus));
+        }
+
+        spec = spec.and(deleted != null
+                ? UserSpecification.filterByDeleted(deleted)
+                : UserSpecification.notDeleted());
 
         if (search != null && !search.trim().isEmpty()) {
             spec = spec.and(UserSpecification.filterByKeyword(search.trim()));
@@ -168,140 +273,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getUserById(Long id) {
-        UserEntity user = getUserByIdEntity(id);
-        UserResponse dto = userMapper.toEntityDTO(user);
-        enrichInstructorInfo(user, dto);
-        return dto;
-    }
-
-    @Override
-    public UserEntity getUserByIdEntity(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
-    }
-
-    @Override
-    public UserEntity getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
-    }
-
-    @Override
-    public UserEntity getActiveUser(String email) {
-        UserEntity userEntity = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
-        if (!userEntity.getStatus().equals(UserStatus.ACTIVE)) {
-            throw new ForbiddenException(ErrorCode.USER_LOCKED.getMessage());
-        }
-        if (userEntity.isDeleted()) {
-            throw new ResourceNotFoundException(ErrorCode.USER_DELETED.getMessage());
-        }
-        return userEntity;
-    }
-
-    @Override
     @Transactional
-    public UserResponse createUser(UserCreateRequest userRequest) {
-        // Check if user already exists
-        userRepository.findByEmail(userRequest.getEmail()).ifPresent(user -> {
-            throw new ResourceConflictException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
-        });
-
-        UserEntity newUser = userMapper.toEntity(userRequest);
+    public void deleteUser(Long userId) {
+        UserEntity user = getUserByIdEntity(userId);
         
-        // If password is provided, encode it
-        if (newUser.getPasswordHash() != null && !newUser.getPasswordHash().isEmpty()) {
-            newUser.setPasswordHash(passwordEncoder.encode(newUser.getPasswordHash()));
-        } else {
-            // No password provided - set a temporary placeholder
-            // User will set their own password via activation link
-            newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        }
+        validateNotAdminUser(user);
         
-        if (newUser.getRoles() == null || newUser.getRoles().isEmpty()) {
-            RoleEntity studentRole = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
-            newUser.setRoles(Set.of(studentRole));
-        }
-        
-        newUser.setStatus(UserStatus.ACTIVE);
-        
-        UserEntity savedUser = userRepository.save(newUser);
-        
-        // Send activation email if password was not provided
-        if (userRequest.getPasswordHash() == null || userRequest.getPasswordHash().isEmpty()) {
-            passwordResetService.createActivationToken(savedUser.getUserId());
-        }
-        
-        return userMapper.toEntityDTO(savedUser);
-    }
-
-    @Override
-    @Transactional
-    public UserResponse updateUser(Long id, UserUpdateRequest userUpdateRequest) {
-        UserEntity userEntity = getUserByIdEntity(id);
-
-        // Nếu admin đổi avatarUrl và trước đó user đã có avatar → xoá ảnh cũ
-        String oldAvatarUrl = userEntity.getAvatarUrl();
-        String newAvatarUrl = userUpdateRequest.getAvatarUrl();
-
-        userMapper.updateEntity(userEntity, userUpdateRequest);
-
-        if (newAvatarUrl != null
-                && oldAvatarUrl != null
-                && !oldAvatarUrl.isEmpty()
-                && !oldAvatarUrl.equals(newAvatarUrl)) {
-            cloudinaryUtil.deleteImageByUrl(oldAvatarUrl);
-        }
-
-        return userMapper.toEntityDTO(userRepository.save(userEntity));
-    }
-
-    @Override
-    @Transactional
-    public UserResponse updateUserAvatar(Long id, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new BadRequestException(ErrorCode.INVALID_FILE.getMessage());
-        }
-
-        UserEntity user = getUserByIdEntity(id);
-
-        // Xoá avatar cũ trên Cloudinary nếu có
-        deleteOldAvatarIfExists(user);
-
-        try {
-            String imageUrl = cloudinaryUtil.uploadImage(file);
-            user.setAvatarUrl(imageUrl);
-            userRepository.save(user);
-            return userMapper.toEntityDTO(user);
-        } catch (IOException e) {
-            throw new InternalServerException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
-        }
-    }
-
-    @Override
-    @Transactional
-    public void deleteUser(Long id) {
-        UserEntity user = getUserByIdEntity(id);
-        user.getRoles().forEach(this::handleAdminUser);
         user.setStatus(UserStatus.LOCKED);
         user.setDeleted(true);
         userRepository.save(user);
+        
+        log.info("Admin soft-deleted user {}", userId);
     }
 
     @Override
     @Transactional
-    public void restoreUser(Long id) {
-        UserEntity entity = getUserByIdEntity(id);
-        entity.setDeleted(false);
-        userRepository.save(entity);
+    public void restoreUser(Long userId) {
+        UserEntity user = getUserByIdEntity(userId);
+
+        user.setDeleted(false);
+
+        userRepository.save(user);
+        
+        log.info("Admin restored user {}", userId);
     }
 
     @Override
     @Transactional
-    public UserResponse toggleUserStatus(Long id) {
-        UserEntity user = getUserByIdEntity(id);
-        user.getRoles().forEach(this::handleAdminUser);
+    public UserResponse toggleUserStatus(Long userId) {
+        UserEntity user = getUserByIdEntity(userId);
+        
+        validateNotAdminUser(user);
 
         if (user.getStatus() == UserStatus.ACTIVE) {
             user.setStatus(UserStatus.LOCKED);
@@ -309,107 +311,82 @@ public class UserServiceImpl implements UserService {
             user.setStatus(UserStatus.ACTIVE);
         }
 
-        return userMapper.toEntityDTO(userRepository.save(user));
+        UserEntity updated = userRepository.save(user);
+        log.info("Admin toggled status for user {}: {}", userId, updated.getStatus());
+        
+        return userMapper.toEntityDTO(updated);
     }
 
     @Override
     @Transactional
-    public UserResponse assignRoles(Long id, List<String> roleNames) {
-        UserEntity user = getUserByIdEntity(id);
-        user.getRoles().forEach(this::handleAdminUser);
+    public UserResponse assignRolesToUser(Long userId, List<String> roleNames) {
+        UserEntity user = getUserByIdEntity(userId);
+        
+        validateNotAdminUser(user);
 
         Set<RoleEntity> roles = roleNames.stream()
                 .map(roleService::findByRoleName)
                 .collect(Collectors.toSet());
 
         user.setRoles(roles);
-        return userMapper.toEntityDTO(userRepository.save(user));
+        UserEntity updated = userRepository.save(user);
+        
+        log.info("Admin assigned roles {} to user {}", roleNames, userId);
+        return userMapper.toEntityDTO(updated);
     }
 
     @Override
     @Transactional
-    public String resetPassword(Long id) {
-        UserEntity user = getUserByIdEntity(id);
-        user.getRoles().forEach(this::handleAdminUser);
+    public String resetUserPassword(Long userId) {
+        UserEntity user = getUserByIdEntity(userId);
+        
+        validateNotAdminUser(user);
 
-        String newPassword = generateRandomPassword(8);
+        String newPassword = generateRandomPassword(12);
+
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+
         userRepository.save(user);
 
+        log.info("Admin reset password for user {}", userId);
         return newPassword;
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<UserEntity> findAllAdmins() {
-        return userRepository.findAllAdmins();
-    }
-
-    // ==================== Helper methods ====================
-    private void handleAdminUser(RoleEntity entity) {
-        if (PredefinedRole.ROLE_ADMIN.equals(entity.getRoleName())) {
-            throw new ForbiddenException(ErrorCode.ADMIN_ACCOUNT_CANNOT_MODIFY.getMessage());
+    @Transactional
+    public UserResponse uploadAvatarForUser(Long userId, MultipartFile file) {
+        validateImageFile(file);
+        
+        UserEntity user = getUserByIdEntity(userId);
+        
+        deleteAvatarFromCloud(user.getAvatarUrl());
+        
+        // Upload new avatar
+        try {
+            String avatarUrl = cloudinaryUtil.uploadImage(file);
+            user.setAvatarUrl(avatarUrl);
+            UserEntity updated = userRepository.save(user);
+            
+            log.info("Admin uploaded avatar for user {}", userId);
+            return userMapper.toEntityDTO(updated);
+        } catch (IOException e) {
+            log.error("Failed to upload avatar for user {}", userId, e);
+            throw new InternalServerException(ErrorCode.CLOUDINARY_UPLOAD_FAILED.getMessage());
         }
     }
 
-    /**
-     * Gắn thêm thông tin giảng viên vào UserResponse nếu user này là INSTRUCTOR.
-     */
-    private void enrichInstructorInfo(UserEntity user, UserResponse dto) {
-        if (user.getRoles() == null) {
-            return;
-        }
-
-        boolean isInstructor = user.getRoles().stream()
-                .anyMatch(role -> PredefinedRole.ROLE_INSTRUCTOR.equals(role.getRoleName()));
-
-        if (!isInstructor) {
-            return;
-        }
-
-        instructorRepository.findByUser(user).ifPresent(instructor -> {
-            dto.setInstructorId(instructor.getInstructorId());
-            dto.setInstructorHeadline(instructor.getHeadline());
-            dto.setInstructorBiography(instructor.getBiography());
-            dto.setInstructorWebsite(instructor.getWebsite());
-            dto.setInstructorLinkedin(instructor.getLinkedin());
-            dto.setInstructorTwitter(instructor.getTwitter());
-            dto.setInstructorYoutube(instructor.getYoutube());
-            dto.setInstructorTotalStudents(instructor.getTotalStudents());
-            dto.setInstructorTotalCourses(instructor.getTotalCourses());
-        });
-    }
-
-    private String generateRandomPassword(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
-        SecureRandom random = new SecureRandom();
-        StringBuilder password = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            password.append(chars.charAt(random.nextInt(chars.length())));
-        }
-
-        return password.toString();
-    }
-
-   
-    private void deleteOldAvatarIfExists(UserEntity user) {
-        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-            cloudinaryUtil.deleteImageByUrl(user.getAvatarUrl());
-        }
-    }
 
     @Override
     @Transactional
-    public void importUsers(MultipartFile file) throws IOException {
+    public void importUsersFromExcel(MultipartFile file) throws IOException {
         List<UserEntity> users = new java.util.ArrayList<>();
         
         try (java.io.InputStream inputStream = file.getInputStream()) {
-             org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream);
-             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+             Workbook workbook = WorkbookFactory.create(inputStream);
+             Sheet sheet = workbook.getSheetAt(0);
              
              for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
+                Row row = sheet.getRow(i);
                 if (row == null) continue;
                 
                 String email = getCellValueAsString(row.getCell(0));
@@ -449,13 +426,16 @@ public class UserServiceImpl implements UserService {
                 users.add(user);
              }
         }
-         if (!users.isEmpty()) {
+        
+        if (!users.isEmpty()) {
             userRepository.saveAll(users);
+            log.info("Admin imported {} users from Excel", users.size());
         }
     }
 
     @Override
-    public byte[] exportUsers() throws IOException {
+    @Transactional
+    public byte[] exportUsersToExcel() throws IOException {
         List<UserEntity> users = userRepository.findAll();
         
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -498,11 +478,82 @@ public class UserServiceImpl implements UserService {
             }
             
             workbook.write(out);
+            log.info("Admin exported {} users to Excel", users.size());
             return out.toByteArray();
         }
     }
 
-    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+    @Override
+    @Transactional
+    public List<UserEntity> findAllAdmins() {
+        return userRepository.findAllAdmins();
+    }
+
+
+    private void validateNotAdminUser(UserEntity user) {
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> PredefinedRole.ROLE_ADMIN.equals(role.getRoleName()));
+        
+        if (isAdmin) {
+            throw new ForbiddenException(ErrorCode.ADMIN_ACCOUNT_CANNOT_MODIFY.getMessage());
+        }
+    }
+
+
+    private void enrichInstructorInfo(UserEntity user, UserResponse dto) {
+        boolean isInstructor = user.getRoles().stream()
+                .anyMatch(role -> PredefinedRole.ROLE_INSTRUCTOR.equals(role.getRoleName()));
+
+        if (!isInstructor) {
+            return;
+        }
+
+        instructorRepository.findByUser(user).ifPresent(instructor -> {
+            instructorMapper.toUserResponse(dto, instructor);
+        });
+    }
+
+
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+
+        return password.toString();
+    }
+
+
+    private void deleteAvatarFromCloud(String avatarUrl) {
+        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+            try {
+                cloudinaryUtil.deleteImageByUrl(avatarUrl);
+            } catch (Exception e) {
+                log.warn("Failed to delete avatar from cloud: {}", avatarUrl, e);
+            }
+        }
+    }
+
+
+    private void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException(ErrorCode.INVALID_FILE.getMessage());
+        }
+        
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new BadRequestException("File size must be less than 5MB");
+        }
+        
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BadRequestException("File must be an image");
+        }
+    }
+
+    private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         try {
             return switch (cell.getCellType()) {
@@ -511,6 +562,8 @@ public class UserServiceImpl implements UserService {
                 case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
                 default -> "";
             };
-        } catch (Exception e) { return ""; }
+        } catch (Exception e) { 
+            return ""; 
+        }
     }
 }

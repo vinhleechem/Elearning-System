@@ -1,4 +1,4 @@
-package org.example.elearning.util;
+package org.example.elearning.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,10 +111,7 @@ public class CloudinaryUtil {
         return originalName.split("\\.");
     }
 
-    /**
-     * Extract public_id from Cloudinary URL (format mặc định:
-     * https://res.cloudinary.com/<cloud_name>/image/upload/v<version>/<public_id>.<ext>)
-     */
+
     private String extractPublicIdFromUrl(String url) {
         if (StringUtils.isBlank(url)) {
             return null;

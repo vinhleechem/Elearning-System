@@ -117,15 +117,27 @@ export const router = createBrowserRouter([
               { path: "messages", element: <InstructorMessagesPage /> },
               {
                 path: "assignments",
-                element: <Typography sx={{ m: 4 }}>Bài tập (Đang phát triển)</Typography>,
+                element: (
+                  <Typography sx={{ m: 4 }}>
+                    Bài tập (Đang phát triển)
+                  </Typography>
+                ),
               },
               {
                 path: "announcements",
-                element: <Typography sx={{ m: 4 }}>Thông báo (Đang phát triển)</Typography>,
+                element: (
+                  <Typography sx={{ m: 4 }}>
+                    Thông báo (Đang phát triển)
+                  </Typography>
+                ),
               },
               {
                 path: "ai-assistant",
-                element: <Typography sx={{ m: 4 }}>Chi tiết trợ lý AI (Đang phát triển)</Typography>,
+                element: (
+                  <Typography sx={{ m: 4 }}>
+                    Chi tiết trợ lý AI (Đang phát triển)
+                  </Typography>
+                ),
               },
             ],
           },

@@ -1,6 +1,7 @@
 package org.example.elearning.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.dto.request.PromotionRequest;
 import org.example.elearning.dto.request.PromotionRuleRequest;
@@ -40,12 +41,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class PromotionServiceImpl implements PromotionService {
 
-    private final PromotionRepository promotionRepository;
-    private final PromotionMapper promotionMapper;
-    private final CourseRepository courseRepository;
-    private final PromotionRuleMapper promotionRuleMapper;
+    PromotionRepository promotionRepository;
+    PromotionMapper promotionMapper;
+    CourseRepository courseRepository;
+    PromotionRuleMapper promotionRuleMapper;
 
 
     @Override
@@ -85,7 +87,7 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public PromotionDetailResponse getPromotionById(Long promotionId) {
         PromotionEntity promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROMOTION_NOT_FOUND.getMessage()));
@@ -94,14 +96,13 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<PromotionResponse> getAllPromotions(Pageable pageable) {
         return promotionRepository.findAll(pageable)
                 .map(promotionMapper::toResponse);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<PromotionResponse> getActivePromotions() {
         LocalDateTime now = LocalDateTime.now();
         List<PromotionEntity> promotions = promotionRepository.findActivePromotions(now);
@@ -112,7 +113,6 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<PromotionEntity> getActivePromotionEntities() {
         LocalDateTime now = LocalDateTime.now();
         return promotionRepository.findActivePromotions(now);
@@ -154,59 +154,75 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setIsActive(false);
         promotionRepository.save(promotion);
 
-        // Sync course prices after deactivation
         syncCoursePrices();
 
     }
 
     @Override
-    public byte[] exportPromotions() throws IOException {
-        List<PromotionEntity> promotions = promotionRepository.findAll();
+    @Transactional
+    public void syncCoursePrices() {
+        log.info("Starting to sync current prices for all courses");
+        List<CourseEntity> allCourses = courseRepository.findAll();
+        List<PromotionEntity> activePromotions = getActivePromotionEntities();
 
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Promotions");
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-            // Create header row
-            Row headerRow = sheet.createRow(0);
-            String[] headers = {"ID", "Tên khuyến mãi", "Mô tả", "Loại", "Ngày bắt đầu", "Ngày kết thúc", "Độ ưu tiên", "Trạng thái"};
-            
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerStyle.setFont(headerFont);
-            
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                cell.setCellStyle(headerStyle);
+        int updated = 0;
+        for (CourseEntity course : allCourses) {
+            if (updateCourseCurrentPrice(course, activePromotions)) {
+                updated++;
             }
-
-            // Fill data rows
-            int rowNum = 1;
-            for (PromotionEntity promotion : promotions) {
-                Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(promotion.getPromotionId());
-                row.createCell(1).setCellValue(promotion.getName());
-                row.createCell(2).setCellValue(promotion.getDescription() != null ? promotion.getDescription() : "");
-                row.createCell(3).setCellValue(promotion.getPromotionType().name());
-                row.createCell(4).setCellValue(promotion.getStartDate().format(dateFormatter));
-                row.createCell(5).setCellValue(promotion.getEndDate().format(dateFormatter));
-                row.createCell(6).setCellValue(promotion.getPriority());
-                row.createCell(7).setCellValue(promotion.getIsActive() ? "Đang hoạt động" : "Không hoạt động");
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // Write to byte array
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            workbook.write(outputStream);
-            log.info("Successfully exported {} promotions", promotions.size());
-            return outputStream.toByteArray();
         }
+
+        courseRepository.saveAll(allCourses);
+        log.info("Synced current prices for {} courses", updated);
+    }
+
+    @Override
+    @Transactional
+    public void syncCoursePrice(Long courseId) {
+        CourseEntity course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COURSE_NOT_FOUND.getMessage()));
+        List<PromotionEntity> activePromotions = getActivePromotionEntities();
+
+        if (updateCourseCurrentPrice(course, activePromotions)) {
+            courseRepository.save(course);
+            log.info("Synced current price for course ID: {}", courseId);
+        }
+    }
+
+
+    private boolean updateCourseCurrentPrice(CourseEntity course, List<PromotionEntity> activePromotions) {
+        if (course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+            return false;
+        }
+
+        BigDecimal bestDiscountAmount = BigDecimal.ZERO;
+
+        for (PromotionEntity promotion : activePromotions) {
+            for (PromotionRuleEntity rule : promotion.getRules()) {
+                if (isRuleApplicable(rule, course)) {
+                    BigDecimal discountAmount = calculateDiscountAmount(rule, course.getPrice());
+                    if (discountAmount.compareTo(bestDiscountAmount) > 0) {
+                        bestDiscountAmount = discountAmount;
+                    }
+                }
+            }
+        }
+
+        BigDecimal newCurrentPrice;
+        if (bestDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            newCurrentPrice = course.getPrice().subtract(bestDiscountAmount);
+        } else {
+            newCurrentPrice = course.getPrice();
+        }
+
+        // Only update if price changed
+        if (course.getCurrentPrice() == null || course.getCurrentPrice().compareTo(newCurrentPrice) != 0) {
+            course.setCurrentPrice(newCurrentPrice);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -235,7 +251,6 @@ public class PromotionServiceImpl implements PromotionService {
             response.setPromotionName(bestPromotion.getName());
             response.setPromotionType(bestPromotion.getPromotionType().name());
             response.setPromotionEndDate(bestPromotion.getEndDate());
-            // Calculate percentage
             int percentage = bestDiscountAmount.divide(course.getPrice(), 2, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100)).intValue();
             response.setDiscountPercentage(percentage);
@@ -300,66 +315,116 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional
     public void importPromotions(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
         List<PromotionEntity> promotions = new ArrayList<>();
-        
+
         try (java.io.InputStream inputStream = file.getInputStream()) {
              Workbook workbook = WorkbookFactory.create(inputStream);
              Sheet sheet = workbook.getSheetAt(0);
-             
+
              // Date format expected: yyyy-MM-dd HH:mm
              DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-             
+
              for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
                 if (row == null) continue;
-                
+
                 String name = getCellValueAsString(row.getCell(0));
                 if (name == null || name.isEmpty()) continue;
-                
+
                 PromotionEntity promotion = new PromotionEntity();
                 promotion.setName(name);
                 promotion.setDescription(getCellValueAsString(row.getCell(1)));
-                
+
                 String typeStr = getCellValueAsString(row.getCell(2));
                 try {
                     promotion.setPromotionType(org.example.elearning.enums.PromotionType.valueOf(typeStr.toUpperCase()));
                 } catch (Exception e) {
                     promotion.setPromotionType(org.example.elearning.enums.PromotionType.SEASONAL);
                 }
-                
+
                 try {
                     String startStr = getCellValueAsString(row.getCell(3));
                     if (!startStr.isEmpty())
                         promotion.setStartDate(LocalDateTime.parse(startStr, formatter));
-                    else 
+                    else
                         promotion.setStartDate(LocalDateTime.now());
                 } catch (Exception e) {
                     promotion.setStartDate(LocalDateTime.now());
                 }
-                
+
                 try {
                     String endStr = getCellValueAsString(row.getCell(4));
                      if (!endStr.isEmpty())
                         promotion.setEndDate(LocalDateTime.parse(endStr, formatter));
-                     else 
+                     else
                         promotion.setEndDate(LocalDateTime.now().plusDays(7));
                 } catch (Exception e) {
                      promotion.setEndDate(LocalDateTime.now().plusDays(7));
                 }
-                
+
                 promotion.setIsActive(true);
                 promotion.setPriority(0);
                 promotion.setDeleted(false);
                 promotion.setRules(new ArrayList<>());
-                
+
                 promotions.add(promotion);
              }
         }
-        
+
         if (!promotions.isEmpty()) {
             promotionRepository.saveAll(promotions);
         }
     }
-    
+
+    @Override
+    public byte[] exportPromotions() throws IOException {
+        List<PromotionEntity> promotions = promotionRepository.findAll();
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Promotions");
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"ID", "Tên khuyến mãi", "Mô tả", "Loại", "Ngày bắt đầu", "Ngày kết thúc", "Độ ưu tiên", "Trạng thái"};
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Fill data rows
+            int rowNum = 1;
+            for (PromotionEntity promotion : promotions) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(promotion.getPromotionId());
+                row.createCell(1).setCellValue(promotion.getName());
+                row.createCell(2).setCellValue(promotion.getDescription() != null ? promotion.getDescription() : "");
+                row.createCell(3).setCellValue(promotion.getPromotionType().name());
+                row.createCell(4).setCellValue(promotion.getStartDate().format(dateFormatter));
+                row.createCell(5).setCellValue(promotion.getEndDate().format(dateFormatter));
+                row.createCell(6).setCellValue(promotion.getPriority());
+                row.createCell(7).setCellValue(promotion.getIsActive() ? "Đang hoạt động" : "Không hoạt động");
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write to byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            log.info("Successfully exported {} promotions", promotions.size());
+            return outputStream.toByteArray();
+        }
+    }
+
      private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
         if (cell == null) return "";
         try {
@@ -376,75 +441,5 @@ public class PromotionServiceImpl implements PromotionService {
                 default -> "";
             };
             } catch (Exception e) { return ""; }
-    }
-
-    @Override
-    @Transactional
-    public void syncCoursePrices() {
-        log.info("Starting to sync current prices for all courses");
-        List<CourseEntity> allCourses = courseRepository.findAll();
-        List<PromotionEntity> activePromotions = getActivePromotionEntities();
-        
-        int updated = 0;
-        for (CourseEntity course : allCourses) {
-            if (updateCourseCurrentPrice(course, activePromotions)) {
-                updated++;
-            }
-        }
-        
-        courseRepository.saveAll(allCourses);
-        log.info("Synced current prices for {} courses", updated);
-    }
-
-    @Override
-    @Transactional
-    public void syncCoursePrice(Long courseId) {
-        CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        ErrorCode.COURSE_NOT_FOUND.getMessage()));
-        List<PromotionEntity> activePromotions = getActivePromotionEntities();
-        
-        if (updateCourseCurrentPrice(course, activePromotions)) {
-            courseRepository.save(course);
-            log.info("Synced current price for course ID: {}", courseId);
-        }
-    }
-
-    /**
-     * Helper method to update currentPrice for a course based on active promotions
-     * Returns true if price was updated
-     */
-    private boolean updateCourseCurrentPrice(CourseEntity course, List<PromotionEntity> activePromotions) {
-        if (course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-            return false;
-        }
-
-        BigDecimal bestDiscountAmount = BigDecimal.ZERO;
-        
-        for (PromotionEntity promotion : activePromotions) {
-            for (PromotionRuleEntity rule : promotion.getRules()) {
-                if (isRuleApplicable(rule, course)) {
-                    BigDecimal discountAmount = calculateDiscountAmount(rule, course.getPrice());
-                    if (discountAmount.compareTo(bestDiscountAmount) > 0) {
-                        bestDiscountAmount = discountAmount;
-                    }
-                }
-            }
-        }
-
-        BigDecimal newCurrentPrice;
-        if (bestDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
-            newCurrentPrice = course.getPrice().subtract(bestDiscountAmount);
-        } else {
-            newCurrentPrice = course.getPrice();
-        }
-
-        // Only update if price changed
-        if (course.getCurrentPrice() == null || course.getCurrentPrice().compareTo(newCurrentPrice) != 0) {
-            course.setCurrentPrice(newCurrentPrice);
-            return true;
-        }
-        
-        return false;
     }
 }

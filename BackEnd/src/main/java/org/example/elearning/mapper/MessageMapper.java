@@ -8,7 +8,7 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface MessageMapper {
     @Mapping(target = "conversationId", source = "conversation.conversationId")
     @Mapping(target = "senderId", source = "sender.userId")

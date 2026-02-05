@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.elearning.utils.SlugUtils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,23 @@ public class CategoryServiceImpl implements CategoryService {
     CategoryMapper categoryMapper;
 
     @Override
+    public CategoryEntity getCategoryEntityById(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public CategoryEntity getLevel3CategoryEntityById(Long id) {
+        CategoryEntity categoryEntity = getCategoryEntityById(id);
+        if(!isLevel3Category(categoryEntity.getId())){
+            throw new ResourceNotFoundException(ErrorCode.CATEGORY_MUST_BE_LEVEL_3.getMessage());
+        }
+        return categoryEntity;
+    }
+
+    @Override
     public List<CategoryResponse> getAllActiveRoots() {
-        return categoryRepository.findByParentIsNullAndIsActiveTrueOrderByLevelAscNameAsc()
+        return categoryRepository.findByParentIsNullAndIsActiveTrueAndIsDeletedFalseOrderByNameAsc()
                 .stream()
                 .map(categoryMapper::toResponse)
                 .toList();
@@ -41,7 +57,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryResponse> getChildren(Long parentId) {
-        return categoryRepository.findByParentIdAndIsActiveTrueOrderByLevelAscNameAsc(parentId)
+        return categoryRepository.findByParentIdAndIsActiveTrueAndIsDeletedFalseOrderByLevelAscNameAsc(parentId)
                 .stream()
                 .map(categoryMapper::toResponse)
                 .toList();
@@ -55,17 +71,10 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public CategoryEntity getCategoryEntityById(Long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<CategoryResponse> getCategoryTree() {
         // Lấy toàn bộ root categories + children (recursive)
-        List<CategoryEntity> roots = categoryRepository.findByParentIsNull();
+        List<CategoryEntity> roots = categoryRepository.findByParentIsNullAndIsDeletedFalse();
         return roots.stream()
                 .map(categoryMapper::toResponse)
                 .toList();
@@ -75,7 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse create(CategoryRequest request) {
         CategoryEntity parent = null;
-        Integer level = 1;
+        int level = 1;
 
         if (request.getParentId() != null) {
             parent = categoryRepository.findById(request.getParentId())
@@ -83,9 +92,12 @@ public class CategoryServiceImpl implements CategoryService {
             level = parent.getLevel() + 1;
         }
 
+        // Auto-generate unique slug if not provided
+        String slug = generateUniqueSlug(request.getSlug(), request.getName());
+
         CategoryEntity entity = CategoryEntity.builder()
                 .name(request.getName())
-                .slug(request.getSlug())
+                .slug(slug)
                 .parent(parent)
                 .level(level)
                 .isActive(true)
@@ -101,7 +113,8 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
 
         entity.setName(request.getName());
-        entity.setSlug(request.getSlug());
+        
+        // Slug is immutable - không cho phép update
 
         if (request.getParentId() != null) {
             CategoryEntity parent = categoryRepository.findById(request.getParentId())
@@ -118,7 +131,15 @@ public class CategoryServiceImpl implements CategoryService {
     public void delete(Long id) {
         CategoryEntity entity = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND.getMessage()));
-        categoryRepository.delete(entity);
+        
+        entity.setDeleted(true);
+        categoryRepository.save(entity);
+    }
+
+    @Override
+    public boolean isLevel3Category(Long categoryId) {
+        CategoryEntity category = getCategoryEntityById(categoryId);
+        return category.getLevel() == 3;
     }
 
     @Override
@@ -137,7 +158,7 @@ public class CategoryServiceImpl implements CategoryService {
                     slug = name.toLowerCase().replace(" ", "-");
                 }
 
-                if (categoryRepository.findBySlug(slug).isPresent()) {
+                if (categoryRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
                     continue;
                 }
 
@@ -192,16 +213,6 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isLevel3Category(Long categoryId) {
-        CategoryEntity category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-        
-        // Chỉ cho phép category cấp 3
-        return category.getLevel() == 3;
-    }
-
 
     private String getCellValue(Row row, int index) {
         Cell cell = row.getCell(index);
@@ -219,6 +230,26 @@ public class CategoryServiceImpl implements CategoryService {
             default:
                 return "";
         }
+    }
+
+
+
+    private String generateUniqueSlug(String providedSlug, String name) {
+        String baseSlug = (providedSlug != null && !providedSlug.trim().isEmpty()) 
+                ? SlugUtils.toSlug(providedSlug) 
+                : SlugUtils.toSlug(name);
+        
+        if (baseSlug.isEmpty()) {
+            baseSlug = "category";
+        }
+        
+        String slug = baseSlug;
+        int counter = 2;
+        while (categoryRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
+            slug = SlugUtils.makeUnique(baseSlug, counter++);
+        }
+        
+        return slug;
     }
 }
 

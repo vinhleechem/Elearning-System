@@ -8,6 +8,7 @@ import {
 import Button from "./ui/Button";
 import Menu from "./ui/Menu";
 import { relatedFilter } from "../libs/constants";
+import { BUTTON_STYLES } from "../constants";
 
 export default function FilterBar() {
   return (
@@ -17,15 +18,8 @@ export default function FilterBar() {
           variant="outlined"
           icon={<FilterList className="mr-1" />}
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Tất cả bộ lọc
@@ -34,15 +28,8 @@ export default function FilterBar() {
           variant="outlined"
           icon={<QuestionMarkOutlined fontSize="small" className="mr-1" />}
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Trắc nghiệm
@@ -51,15 +38,8 @@ export default function FilterBar() {
           variant="outlined"
           icon={<CodeOutlined className="mr-1" />}
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Bài tập coding
@@ -68,15 +48,8 @@ export default function FilterBar() {
           variant="outlined"
           icon={<EditOutlined className="mr-1" />}
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Bài kiểm tra thực hành
@@ -85,15 +58,8 @@ export default function FilterBar() {
           variant="outlined"
           icon={<GroupOutlined className="mr-1" />}
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Học tập nhập vai
@@ -101,15 +67,8 @@ export default function FilterBar() {
         <Button
           variant="outlined"
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Ngôn ngữ
@@ -117,15 +76,8 @@ export default function FilterBar() {
         <Button
           variant="outlined"
           sx={{
-            borderRadius: "50px",
-            textTransform: "none",
-            borderColor: "#ccc",
-            color: "#000",
-            "&:hover": {
-              borderColor: "808080",
-            },
-            paddingX: 2,
-            paddingY: 0.5,
+            ...BUTTON_STYLES.pill,
+            ...BUTTON_STYLES.outlined,
           }}
         >
           Xếp hạng

@@ -4,10 +4,11 @@ import { Dropdown } from "../ui/Dropdown";
 import { DropdownItem } from "../ui/DropdownItem";
 import { MoreHoriz } from "@mui/icons-material";
 import type { ApexOptions } from "apexcharts";
+import { COLORS } from "../../constants";
 
 export default function MonthlySalesChart() {
   const options: ApexOptions = {
-    colors: ["#3b82f6"],
+    colors: [COLORS.status.info],
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "bar",

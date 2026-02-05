@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDate } from "../../libs/dateUtils";
+import { formatCurrency } from "../../libs/utils";
 
 interface Voucher {
   voucherId: number;
@@ -122,14 +123,6 @@ const AdminVoucherManagement: React.FC = () => {
       validTo: "2024-12-31",
     },
   ];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      notation: "compact",
-    }).format(amount);
-  };
 
   const getTypeBadge = (type: string) => {
     const badges = {

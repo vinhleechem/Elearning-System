@@ -10,7 +10,7 @@ import org.example.elearning.entity.VideoAssetEntity;
 import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.repository.VideoAssetRepository;
 import org.example.elearning.service.VideoAssetService;
-import org.example.elearning.util.CloudinaryUtil;
+import org.example.elearning.utils.CloudinaryUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;

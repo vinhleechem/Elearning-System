@@ -101,16 +101,9 @@ const MessagesPage: React.FC = () => {
       webSocketService.subscribeToConversation(
         selectedConversation,
         (message: MessageResponse) => {
-          console.log("📨 WebSocket message received:", {
-            id: message.messageId,
-            createdAt: message.createdAt,
-            content: message.content?.substring(0, 30),
-          });
-
           setMessages((prev) => {
             // Check for duplicate
             if (prev.some((m) => m.messageId === message.messageId)) {
-              console.log("⚠️ Duplicate message, skipping");
               return prev;
             }
             // Add new message and sort
@@ -119,12 +112,6 @@ const MessagesPage: React.FC = () => {
               (a, b) =>
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime(),
-            );
-            console.log(
-              "✅ Message added & sorted. Total:",
-              sorted.length,
-              "Last message:",
-              sorted[sorted.length - 1]?.createdAt,
             );
             return sorted;
           });
@@ -200,33 +187,15 @@ const MessagesPage: React.FC = () => {
 
       const incomingMessages = response.data || [];
 
-      console.log("🔍 DEBUG - Incoming messages from API:", {
-        count: incomingMessages.length,
-        first: incomingMessages[0]?.createdAt,
-        last: incomingMessages[incomingMessages.length - 1]?.createdAt,
-        sample: incomingMessages.slice(0, 3).map((m) => ({
-          id: m.messageId,
-          createdAt: m.createdAt,
-          content: m.content?.substring(0, 20),
-        })),
-      });
-
       // Force sort ASC (oldest first) regardless of backend order to ensure consistency
       const sortedMessages = [...incomingMessages].sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
-      console.log("📊 After sort ASC:", {
-        count: sortedMessages.length,
-        first: sortedMessages[0]?.createdAt,
-        last: sortedMessages[sortedMessages.length - 1]?.createdAt,
-      });
-
       setMessages((prev) => {
         if (reset) {
           // Initial load
-          console.log("✅ RESET: Setting messages to sorted array");
           return sortedMessages;
         } else {
           // Load more (older messages) - prepend to beginning
@@ -234,11 +203,6 @@ const MessagesPage: React.FC = () => {
           const existingIds = new Set(prev.map((m) => m.messageId));
           const newMessages = sortedMessages.filter(
             (m) => !existingIds.has(m.messageId),
-          );
-          console.log(
-            "➕ PAGINATION: Prepending",
-            newMessages.length,
-            "older messages",
           );
           // Since both are sorted ASC, and newMessages are chronologically before prev
           // merging them like this preserves order: [Older..., Newer...]

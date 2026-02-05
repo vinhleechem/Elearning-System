@@ -13,7 +13,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  LinearProgress,
   Tooltip,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
@@ -29,14 +28,7 @@ import type {
   Section as SectionType,
   Lecture,
 } from "../../types/lecture";
-import {
-  ArrowBack,
-  Share,
-  Bookmark,
-  Chat as ChatIcon,
-  MoreVert,
-  StarRate,
-} from "@mui/icons-material";
+import { Chat as ChatIcon, MoreVert, StarRate } from "@mui/icons-material";
 import ChatDrawer from "../../components/chat/ChatDrawer";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
@@ -57,7 +49,6 @@ const CourseLearningPage = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadCount] = useState(0); // TODO: Get from API
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [progressPercent, setProgressPercent] = useState(0);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -130,18 +121,10 @@ const CourseLearningPage = () => {
           setCurrentLectureId(sectionsMapped[0].lectures[0].id);
         }
 
-        // Calculate progress
-        const totalLectures = sectionsMapped.reduce(
-          (acc, sec) => acc + sec.lectures.length,
-          0,
-        );
-        const completedLectures = sectionsMapped.reduce(
-          (acc, sec) => acc + sec.completedLectures,
-          0,
-        );
-        setProgressPercent(
-          totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0,
-        );
+        // Calculate progress (not displayed currently)
+        // const totalLectures = sectionsMapped.reduce((acc, sec) => acc + sec.lectures.length, 0);
+        // const completedLectures = sectionsMapped.reduce((acc, sec) => acc + sec.completedLectures, 0);
+        // Progress: totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0
       } catch (error) {
         console.error(error);
       } finally {
@@ -168,7 +151,7 @@ const CourseLearningPage = () => {
         return `${urlObj.origin}${url.startsWith("/") ? "" : "/"}${url}`;
       }
       return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
-    } catch (e) {
+    } catch {
       return `http://localhost:8080${url.startsWith("/") ? "" : "/"}${url}`;
     }
   };

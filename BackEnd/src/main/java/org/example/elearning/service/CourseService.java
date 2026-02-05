@@ -1,7 +1,8 @@
 package org.example.elearning.service;
 
-import org.example.elearning.dto.request.CourseRequest;
+import org.example.elearning.dto.request.AdminCourseRequest;
 import org.example.elearning.dto.request.CourseUpdateRequest;
+import org.example.elearning.dto.request.InstructorCourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CourseEntity;
@@ -15,10 +16,16 @@ import java.io.IOException;
 
 public interface CourseService {
 
+    CourseEntity getCourseEntityById(Long id);
+
+    CourseResponse getCourseByIdForPublic(Long id);
+
+    CourseResponse getCourseByIdForAdmin(Long id);
+
     PaginatedResponse<CourseResponse> getPublicCourses(
-        Pageable pageable, 
-        String search, 
-        Long categoryId, 
+        Pageable pageable,
+        String search,
+        Long categoryId,
         CourseLevel level,
         Double minPrice,
         Double maxPrice,
@@ -26,21 +33,21 @@ public interface CourseService {
 
     PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search, CourseStatus status);
 
+    PaginatedResponse<CourseResponse> getMyCourses(Pageable pageable, String search);
+
     CourseResponse getCourseBySlug(String slug);
 
-    CourseResponse getCourseById(Long id);
-
-    CourseEntity getCourseEntityById(Long id);
-    
     List<CourseEntity> getCourseEntitiesByIds(List<Long> ids);
 
-    CourseResponse createCourse(CourseRequest request);
+    CourseResponse createCourseByInstructor(InstructorCourseRequest request);
+
+    CourseResponse createCourseByAdmin(AdminCourseRequest request);
 
     CourseResponse updateCourse(Long id, CourseUpdateRequest request);
 
-    void deleteCourse(Long id);
+    CourseResponse reassignCourseInstructor(Long courseId, Long instructorId);
 
-    PaginatedResponse<CourseResponse> getMyCourses(Pageable pageable, String search);
+    void deleteCourse(Long id);
 
     void submitCourseForApproval(Long id);
 

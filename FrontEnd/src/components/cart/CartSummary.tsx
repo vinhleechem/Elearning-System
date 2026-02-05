@@ -1,52 +1,32 @@
-import {
-  Button,
-  Card,
-  Divider,
-  Typography,
-} from "@mui/material";
+import { Button, Card, Divider, Typography } from "@mui/material";
 import type { CartSummaryProps } from "../../types/cartSummary";
-import { formatCurrency } from "../../libs/utils";
 import { ArrowForward } from "@mui/icons-material";
 import { Link } from "react-router-dom";
+import { PriceDisplay } from "../shared";
 
 const CartSummary: React.FC<CartSummaryProps> = ({
-  total = 590000,
-  oldTotal = 1920000,
-  discountPercent = 50,
+  total = 0,
+  oldTotal,
+  discountPercent,
 }) => {
   return (
-    <Card
-      sx={{
-        boxShadow: "none",
-      }}
-    >
+    <Card sx={{ boxShadow: "none" }}>
       <Typography variant="subtitle1" fontWeight={600}>
         Tổng:
       </Typography>
 
-      <Typography variant="h5" fontWeight={700} color="text.primary" mt={1}>
-        {formatCurrency(total)}
-      </Typography>
+      <PriceDisplay
+        current={total}
+        original={oldTotal}
+        discountPercent={discountPercent}
+        size="large"
+        orientation="vertical"
+        sx={{ mt: 1 }}
+      />
 
-      {oldTotal && oldTotal > total && (
-        <Typography
-          fontSize={14}
-          sx={{ textDecoration: "line-through", color: "text.secondary" }}
-        >
-          {formatCurrency(oldTotal)}
-        </Typography>
-      )}
-
-      {discountPercent && discountPercent > 0 && (
-        <Typography fontSize={14} color="success.main">
-          Giảm {discountPercent}%
-        </Typography>
-      )}
-
-      {/* Nút checkout */}
       <Button
         component={Link}
-        to={"/payment/checkout"}
+        to="/payment/checkout"
         variant="contained"
         fullWidth
         sx={{

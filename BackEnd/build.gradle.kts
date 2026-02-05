@@ -18,7 +18,6 @@ configurations {
 	compileOnly {
 		extendsFrom(configurations.annotationProcessor.get())
 	}
-    // cấu hình developmentOnly đã được Spring Boot plugin tạo sẵn, không cần tạo lại
 }
 
 repositories {
@@ -35,7 +34,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security:3.5.6")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 
-// hoặc gson nếu bạn thích
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.3.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("redis.clients:jedis:6.2.0")
@@ -65,7 +63,7 @@ dependencies {
     // MapStruct
     implementation ("org.mapstruct:mapstruct:1.5.5.Final")
     annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")
-//    annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+    annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")

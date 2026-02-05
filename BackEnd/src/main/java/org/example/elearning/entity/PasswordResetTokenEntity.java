@@ -45,6 +45,10 @@ public class PasswordResetTokenEntity {
         ACCOUNT_ACTIVATION
     }
     
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiryDate);
+    }
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
@@ -56,9 +60,5 @@ public class PasswordResetTokenEntity {
         if (tokenType == null) {
             tokenType = TokenType.PASSWORD_RESET;
         }
-    }
-    
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
     }
 }

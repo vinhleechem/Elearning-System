@@ -1,4 +1,4 @@
-package org.example.elearning.util;
+package org.example.elearning.utils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,6 @@ public class JwtAuthenticationHelper {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            // Use email as principal (required for WebSocket user-specific messaging)
             return new UsernamePasswordAuthenticationToken(
                     email,
                     null,
@@ -57,8 +56,4 @@ public class JwtAuthenticationHelper {
         }
     }
 
-
-    public void verifyToken(String token, boolean isRefreshToken) {
-        jwtService.verifyToken(token, isRefreshToken);
-    }
 }

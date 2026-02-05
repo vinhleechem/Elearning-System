@@ -18,6 +18,7 @@ import {
   ActivitySquare,
 } from "lucide-react";
 import { formatDate } from "../../libs/dateUtils";
+import { formatCurrency } from "../../libs/utils";
 
 interface Promotion {
   promotionId: number;
@@ -107,15 +108,6 @@ const AdminPromotionManagement: React.FC = () => {
       priority: 10,
     },
   ];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount);
-  };
 
   const getStatusConfig = (status: string) => {
     const configs = {

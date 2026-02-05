@@ -16,12 +16,13 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { IconButton } from "@mui/material";
-import { useWishlistStore } from "../../store/wishlistStore";
-import { useCartStore } from "../../store/cartStore";
-import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
+import { useCart, useWishlist } from "../../hooks";
+import { LoadingButton, PriceDisplay } from "../shared";
 import { useState, useEffect } from "react";
 import { formatDate } from "../../libs/dateUtils";
+import { formatCurrency } from "../../libs/utils";
+import { COLORS } from "../../constants";
 
 interface Props {
   courseId: number;
@@ -38,11 +39,6 @@ interface Props {
   promotionEndDate?: string;
 }
 
-const formatCurrency = (num: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-    num,
-  );
-
 const PurchaseSidebar: React.FC<Props> = ({
   courseId,
   price,
@@ -54,47 +50,19 @@ const PurchaseSidebar: React.FC<Props> = ({
   discountPercentage,
   promotionEndDate,
 }) => {
+  const { checkAndAddToCart, isInCart, goToCheckout } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { isInWishlist, addToWishlist, removeFromWishlist } =
-    useWishlistStore();
-  const { addToCart, isInCart } = useCartStore();
   const inWishlist = isInWishlist(courseId);
   const inCart = isInCart(courseId);
 
-  const handleWishlistClick = async () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (inWishlist) {
-      await removeFromWishlist(courseId);
-    } else {
-      await addToWishlist(courseId);
-    }
-  };
+  const handleWishlistClick = () => toggleWishlist(courseId);
 
-  const handleAddToCart = async () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (inCart) {
-      // If already in cart, navigate to cart page
-      navigate("/cart");
-    } else {
-      // Otherwise add to cart
-      await addToCart(courseId);
-    }
-  };
+  const handleAddToCart = () => checkAndAddToCart(courseId);
 
   const handleBuyNow = async () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    await addToCart(courseId);
-    navigate("/payment/checkout");
+    await checkAndAddToCart(courseId);
+    goToCheckout();
   };
 
   const handleGoToCourse = () => {
@@ -221,15 +189,10 @@ const PurchaseSidebar: React.FC<Props> = ({
               sx={{
                 mt: 1,
                 textTransform: "none",
-                borderColor: "#6C2BD9",
-                color: "#6C2BD9",
                 fontWeight: 700,
                 py: 1.5,
-                "&:hover": {
-                  borderColor: "#5b21b6",
-                  bgcolor: "rgba(108, 43, 217, 0.04)",
-                },
               }}
+              color="secondary"
             >
               Chuyển đến khóa học
             </Button>
@@ -316,14 +279,14 @@ const PurchaseSidebar: React.FC<Props> = ({
                 onClick={handleWishlistClick}
                 sx={{
                   border: "2px solid",
-                  borderColor: "#2d2f31",
+                  borderColor: COLORS.text.primary,
                   borderRadius: "50%",
                   color: inWishlist ? "#ec5252" : "#2d2f31",
                   width: 48,
                   height: 48,
                   "&:hover": {
-                    borderColor: "#2d2f31",
-                    bgcolor: "rgba(0, 0, 0, 0.04)",
+                    borderColor: COLORS.text.primary,
+                    bgcolor: COLORS.background.gray,
                   },
                 }}
               >
@@ -337,15 +300,15 @@ const PurchaseSidebar: React.FC<Props> = ({
               onClick={handleBuyNow}
               sx={{
                 textTransform: "none",
-                borderColor: "#2d2f31",
-                color: "#2d2f31",
+                borderColor: COLORS.text.primary,
+                color: COLORS.text.primary,
                 fontWeight: 700,
                 py: 1.5,
                 borderRadius: 0,
                 borderWidth: 1,
                 "&:hover": {
-                  borderColor: "#2d2f31",
-                  bgcolor: "rgba(0, 0, 0, 0.04)",
+                  borderColor: COLORS.text.primary,
+                  bgcolor: COLORS.background.gray,
                   borderWidth: 1,
                 },
               }}

@@ -37,7 +37,7 @@ public class VideoAssetEntity extends BaseEntity {
     String thumbnailUrl;
 
     @Column(name = "duration")
-    Integer duration; // giây
+    Integer duration; 
 
     @Column(name = "size_bytes")
     Long sizeBytes;
@@ -46,7 +46,7 @@ public class VideoAssetEntity extends BaseEntity {
     String resolution;
 
     @Column(name = "provider", length = 50)
-    String provider; // youtube, aws_s3, cloudflare_stream, bunny_stream
+    String provider;
 }
 
 

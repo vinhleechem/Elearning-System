@@ -7,7 +7,7 @@ import type {
   UserLoginRequest,
   RegisterRequest,
 } from "../types/auth";
-import { ApiError } from "../service/httpClient";
+import { getErrorMessage } from "../libs/utils";
 import { chatDB } from "../service/chatDB";
 import { webSocketService } from "../service/webSocketService";
 
@@ -28,16 +28,6 @@ type AuthState = {
   updateAccessToken: (accessToken: string) => void;
   fetchProfile: () => Promise<UserResponse | null>;
   hasRole: (role: string) => boolean;
-};
-
-const parseErrorMessage = (error: unknown): string => {
-  if (error instanceof ApiError) {
-    return error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Đã xảy ra lỗi không xác định";
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -101,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
             set({ loading: false });
           }
         } catch (error) {
-          set({ error: parseErrorMessage(error), loading: false });
+          set({ error: getErrorMessage(error), loading: false });
           throw error;
         }
       },
@@ -111,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
           const user = await authService.register(payload);
           set({ user, loading: false });
         } catch (error) {
-          set({ error: parseErrorMessage(error), loading: false });
+          set({ error: getErrorMessage(error), loading: false });
           throw error;
         }
       },
@@ -136,7 +126,6 @@ export const useAuthStore = create<AuthState>()(
                 localStorage.removeItem(key);
               }
             });
-            console.log("✅ Chat history cleared on logout");
           } catch (error) {
             console.warn("Failed to clear chat history:", error);
           }
@@ -159,7 +148,5 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
-// Export store instance để httpClient có thể sử dụng (không phải hook)
-// Sử dụng getState() để lấy state hiện tại và setState để cập nhật
 export const getAuthStoreState = () => useAuthStore.getState();
 export const setAuthStoreState = useAuthStore.setState;

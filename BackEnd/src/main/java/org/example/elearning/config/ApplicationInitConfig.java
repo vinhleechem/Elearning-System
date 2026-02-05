@@ -281,11 +281,11 @@ public class ApplicationInitConfig {
 
                         List<CategoryEntity> savedRootCategories = new java.util.ArrayList<>();
                         for (CategoryEntity category : rootCategories) {
-                                if (categoryRepository.findBySlug(category.getSlug()).isEmpty()) {
+                                if (categoryRepository.findBySlugAndIsDeletedFalse(category.getSlug()).isEmpty()) {
                                         savedRootCategories.add(categoryRepository.save(category));
                                 } else {
                                         savedRootCategories
-                                                        .add(categoryRepository.findBySlug(category.getSlug()).get());
+                                                        .add(categoryRepository.findBySlugAndIsDeletedFalse(category.getSlug()).get());
                                 }
                         }
 
@@ -433,34 +433,34 @@ public class ApplicationInitConfig {
 
                                 // Save all subcategories (check duplicate first)
                                 for (CategoryEntity subcat : lapTrinhSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : webDevSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : mobileDevSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : dsAiSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : devopsSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
 
                                 // Create 3rd level subcategories (nested deeper for testing)
                                 // Get Java parent from DB (must exist after save above)
-                                CategoryEntity javaParent = categoryRepository.findBySlug("java")
+                                CategoryEntity javaParent = categoryRepository.findBySlugAndIsDeletedFalse("java")
                                                 .orElseThrow(() -> new RuntimeException("Java category not found"));
                                 List<CategoryEntity> javaSubcats = Arrays.asList(
                                                 CategoryEntity.builder()
@@ -486,7 +486,7 @@ public class ApplicationInitConfig {
                                                                 .build());
 
                                 // Get Frontend parent from DB
-                                CategoryEntity frontendParent = categoryRepository.findBySlug("frontend")
+                                CategoryEntity frontendParent = categoryRepository.findBySlugAndIsDeletedFalse("frontend")
                                                 .orElseThrow(() -> new RuntimeException("Frontend category not found"));
                                 List<CategoryEntity> frontendSubcats = Arrays.asList(
                                                 CategoryEntity.builder()
@@ -512,7 +512,7 @@ public class ApplicationInitConfig {
                                                                 .build());
 
                                 // Get Machine Learning parent from DB
-                                CategoryEntity mlParent = categoryRepository.findBySlug("machine-learning")
+                                CategoryEntity mlParent = categoryRepository.findBySlugAndIsDeletedFalse("machine-learning")
                                                 .orElseThrow(() -> new RuntimeException(
                                                                 "Machine Learning category not found"));
                                 List<CategoryEntity> mlSubcats = Arrays.asList(
@@ -540,17 +540,17 @@ public class ApplicationInitConfig {
 
                                 // Save 3rd level subcategories (check duplicate first)
                                 for (CategoryEntity subcat : javaSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : frontendSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
                                 for (CategoryEntity subcat : mlSubcats) {
-                                        if (categoryRepository.findBySlug(subcat.getSlug()).isEmpty()) {
+                                        if (categoryRepository.findBySlugAndIsDeletedFalse(subcat.getSlug()).isEmpty()) {
                                                 categoryRepository.save(subcat);
                                         }
                                 }
@@ -574,12 +574,12 @@ public class ApplicationInitConfig {
                 List<InstructorEntity> allInstructors = instructorRepository.findAll();
                 if (!allInstructors.isEmpty() && !savedCategories.isEmpty()) {
                         // Get specific categories by slug for accurate assignment
-                        CategoryEntity springBootCat = categoryRepository.findBySlug("spring-boot").orElse(null);
-                        CategoryEntity reactCat = categoryRepository.findBySlug("reactjs").orElse(null);
-                        CategoryEntity pythonCat = categoryRepository.findBySlug("python").orElse(null);
-                        CategoryEntity dockerCat = categoryRepository.findBySlug("docker-kubernetes").orElse(null);
-                        CategoryEntity mlCat = categoryRepository.findBySlug("machine-learning").orElse(null);
-                        CategoryEntity flutterCat = categoryRepository.findBySlug("react-native-flutter").orElse(null);
+                        CategoryEntity springBootCat = categoryRepository.findBySlugAndIsDeletedFalse("spring-boot").orElse(null);
+                        CategoryEntity reactCat = categoryRepository.findBySlugAndIsDeletedFalse("reactjs").orElse(null);
+                        CategoryEntity pythonCat = categoryRepository.findBySlugAndIsDeletedFalse("python").orElse(null);
+                        CategoryEntity dockerCat = categoryRepository.findBySlugAndIsDeletedFalse("docker-kubernetes").orElse(null);
+                        CategoryEntity mlCat = categoryRepository.findBySlugAndIsDeletedFalse("machine-learning").orElse(null);
+                        CategoryEntity flutterCat = categoryRepository.findBySlugAndIsDeletedFalse("react-native-flutter").orElse(null);
 
                         // Fallback to root categories if specific ones not found
                         if (springBootCat == null)

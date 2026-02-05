@@ -7,7 +7,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface WishlistMapper {
-    
     @Mapping(source = "wishlistId", target = "wishlistId")
     @Mapping(source = "course.courseId", target = "courseId")
     @Mapping(source = "course.title", target = "courseTitle")

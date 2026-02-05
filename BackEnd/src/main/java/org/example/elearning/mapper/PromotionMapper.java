@@ -15,9 +15,8 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface PromotionMapper {
-
     @Mapping(target = "rulesCount", expression = "java(entity.getRules() != null ? entity.getRules().size() : 0)")
     @Mapping(target = "updatedAt", source = "updated_At")
     PromotionResponse toResponse(PromotionEntity entity);

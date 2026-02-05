@@ -39,10 +39,9 @@ public class CartServiceImpl implements CartService {
         CartItemMapper cartItemMapper;
 
         @Override
-        @Transactional(readOnly = false)
+        @Transactional
         public CartResponse getMyCart() {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                // ✅ Use UserService instead of UserRepository
                 UserEntity user = userService.getUserByEmail(email);
 
                 CartEntity cart = cartRepository.findByUser(user)
@@ -69,21 +68,17 @@ public class CartServiceImpl implements CartService {
         @Transactional
         public CartResponse addToCart(Long courseId) {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                // ✅ Use UserService instead of UserRepository
                 UserEntity user = userService.getUserByEmail(email);
 
                 CartEntity cart = cartRepository.findByUser(user)
                                 .orElseGet(() -> createCartForUser(user));
 
-                // ✅ Use CourseService instead of CourseRepository
                 CourseEntity course = courseService.getCourseEntityById(courseId);
 
-                // ✅ Use EnrollmentService instead of EnrollmentRepository
                 if (enrollmentService.isEnrolled(courseId)) {
                         throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_ENROLLED.getMessage());
                 }
 
-                // Kiểm tra đã có trong giỏ hàng chưa
                 if (cart.getCourses().contains(course)) {
                         throw new ResourceConflictException(ErrorCode.COURSE_ALREADY_IN_CART.getMessage());
                 }
@@ -98,14 +93,12 @@ public class CartServiceImpl implements CartService {
         @Transactional
         public void removeFromCart(Long courseId) {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                // ✅ Use UserService
                 UserEntity user = userService.getUserByEmail(email);
 
                 CartEntity cart = cartRepository.findByUser(user)
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+                                                ErrorCode.CART_NOT_FOUND.getMessage()));
 
-                // ✅ Use CourseService instead of CourseRepository
                 CourseEntity course = courseService.getCourseEntityById(courseId);
 
                 if (!cart.getCourses().contains(course)) {
@@ -120,11 +113,10 @@ public class CartServiceImpl implements CartService {
         @Transactional
         public void clearCart() {
                 String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                // ✅ Use UserService
                 UserEntity user = userService.getUserByEmail(email);
 
                 CartEntity cart = cartRepository.findByUser(user)
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giỏ hàng"));
+                                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CART_NOT_FOUND.getMessage()));
 
                 cart.getCourses().clear();
                 cartRepository.save(cart);

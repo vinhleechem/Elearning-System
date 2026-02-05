@@ -42,6 +42,7 @@ import {
   type PublicCourseResponse,
 } from "../../service/courseService";
 import { useToast } from "../../hooks/useToast";
+import { getErrorMessage } from "../../libs/errorUtils";
 import { useLocation } from "react-router-dom";
 
 const InstructorDashboardPage = () => {
@@ -248,6 +249,18 @@ const InstructorDashboardPage = () => {
     }
   };
 
+  // Helper to create slug
+  const createSlug = (str: string): string => {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[đĐ]/g, "d")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+  };
+
   const handleSubmitCourse = async (data: any) => {
     if (!tokens?.accessToken || !profile?.instructorId) {
       enqueueSnackbar("Không tìm thấy thông tin giảng viên", {
@@ -255,12 +268,26 @@ const InstructorDashboardPage = () => {
       });
       return;
     }
+
     try {
+      const price = data.price ? Number(data.price) : 0;
+      const categoryId = Number(data.categoryId);
+
+      if (isNaN(price)) {
+        enqueueSnackbar("Giá khóa học không hợp lệ", { variant: "error" });
+        return;
+      }
+
+      if (isNaN(categoryId) || categoryId <= 0) {
+        enqueueSnackbar("Vui lòng chọn danh mục hợp lệ", { variant: "error" });
+        return;
+      }
+
       const request: CreateCourseRequest = {
         instructorId: profile.instructorId,
-        categoryId: Number(data.categoryId),
+        categoryId: categoryId,
         title: data.title,
-        slug: data.slug || data.title.toLowerCase().replace(/ /g, "-"),
+        slug: data.slug || createSlug(data.title),
         shortDescription: data.shortDescription,
         description: data.description,
         whatYouLearn: data.whatYouLearn,
@@ -268,11 +295,10 @@ const InstructorDashboardPage = () => {
         targetAudience: data.targetAudience,
         language: data.language,
         level: data.level,
-        price: data.price ? Number(data.price) : 0,
+        price: price,
         hasCertificate: data.hasCertificate,
+        thumbnailUrl: data.thumbnailUrl,
       };
-      // Manually add extra fields if CreateCourseRequest interface is strict but backend accepts them
-      (request as any).thumbnailUrl = data.thumbnailUrl;
 
       if (editingCourse) {
         await courseService.updateCourse(
@@ -295,8 +321,8 @@ const InstructorDashboardPage = () => {
       setCourses(response.data);
       setCreateCourseDialogOpen(false);
       setEditingCourse(null);
-    } catch (error: any) {
-      throw error;
+    } catch (error) {
+      enqueueSnackbar(getErrorMessage(error), { variant: "error" });
     }
   };
 

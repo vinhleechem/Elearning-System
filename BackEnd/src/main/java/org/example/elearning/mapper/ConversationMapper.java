@@ -8,7 +8,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ConversationMapper {
-
     @Mapping(target = "courseName", source = "course.title")
     @Mapping(target = "studentId", source = "student.userId")
     @Mapping(target = "studentName", source = "student.fullName")
@@ -18,6 +17,7 @@ public interface ConversationMapper {
     @Mapping(target = "instructorName", source = "instructor.user.fullName")
     @Mapping(target = "instructorAvatar", source = "instructor.user.avatarUrl")
     ConversationResponse toResponse(ConversationEntity conversationEntity);
+
     ConversationEntity toEntity(ConversationRequest conversationResponse);
 
 }

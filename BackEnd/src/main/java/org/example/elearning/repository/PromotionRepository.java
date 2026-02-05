@@ -14,7 +14,6 @@ import java.util.Optional;
 @Repository
 public interface PromotionRepository extends JpaRepository<PromotionEntity, Long> {
 
-    // Tìm promotion đang active
     @Query("SELECT p FROM PromotionEntity p " +
             "WHERE p.isActive = true " +
             "AND p.isDeleted = false " +
@@ -22,16 +21,4 @@ public interface PromotionRepository extends JpaRepository<PromotionEntity, Long
             "ORDER BY p.priority DESC")
     List<PromotionEntity> findActivePromotions(@Param("now") LocalDateTime now);
 
-    // Tìm promotion theo type
-    List<PromotionEntity> findByPromotionTypeAndIsActiveTrue(PromotionType promotionType);
-
-    // Tìm promotion theo ID và check active
-    @Query("SELECT p FROM PromotionEntity p " +
-            "WHERE p.promotionId = :id " +
-            "AND p.isActive = true " +
-            "AND p.isDeleted = false " +
-            "AND :now BETWEEN p.startDate AND p.endDate")
-    Optional<PromotionEntity> findActivePromotionById(
-            @Param("id") Long id,
-            @Param("now") LocalDateTime now);
 }

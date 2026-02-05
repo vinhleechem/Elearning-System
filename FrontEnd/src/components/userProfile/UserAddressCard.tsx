@@ -25,7 +25,6 @@ export default function UserAddressCard() {
   const handleClose = () => setOpen(false);
 
   const handleSave = () => {
-    console.log("Saving changes...");
     handleClose();
   };
 

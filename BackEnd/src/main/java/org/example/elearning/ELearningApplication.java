@@ -11,7 +11,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableFeignClients
 public class ELearningApplication {
 
-    // Trigger rebuild 6 (final)
 	public static void main(String[] args) {
         SpringApplication.run(ELearningApplication.class, args);
 	}

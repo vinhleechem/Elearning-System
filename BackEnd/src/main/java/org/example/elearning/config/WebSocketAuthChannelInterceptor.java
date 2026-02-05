@@ -2,7 +2,7 @@ package org.example.elearning.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.elearning.util.JwtAuthenticationHelper;
+import org.example.elearning.utils.JwtAuthenticationHelper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -55,7 +55,6 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             return token;
         }
 
-        // Fallback to session attributes (set during handshake)
         if (accessor.getSessionAttributes() != null) {
             return (String) accessor.getSessionAttributes().get("token");
         }

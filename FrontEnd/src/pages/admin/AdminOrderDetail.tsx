@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { formatCurrency } from "../../libs/utils";
 import {
   ArrowLeft,
   Download,
@@ -63,13 +64,6 @@ const AdminOrderDetail = () => {
     fetchOrderDetail();
   }, [orderId]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   const formatDateLocal = (dateString: string) => {
     return new Date(dateString).toLocaleString("vi-VN", {
       year: "numeric",
@@ -118,9 +112,10 @@ const AdminOrderDetail = () => {
     );
   }
 
-  const savingsPercent = orderData.totalDiscount && orderData.subtotal
-    ? Math.round((orderData.totalDiscount / orderData.subtotal) * 100)
-    : 0;
+  const savingsPercent =
+    orderData.totalDiscount && orderData.subtotal
+      ? Math.round((orderData.totalDiscount / orderData.subtotal) * 100)
+      : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
@@ -183,7 +178,10 @@ const AdminOrderDetail = () => {
                 <div className="flex items-start gap-5">
                   <div className="relative">
                     <img
-                      src={orderData.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(orderData.user?.fullName || orderData.userName || 'User')}&background=6366f1&color=fff&size=128`}
+                      src={
+                        orderData.user?.avatar ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(orderData.user?.fullName || orderData.userName || "User")}&background=6366f1&color=fff&size=128`
+                      }
                       alt={orderData.user?.fullName || orderData.userName}
                       className="h-20 w-20 rounded-2xl ring-4 ring-indigo-100"
                     />
@@ -193,12 +191,12 @@ const AdminOrderDetail = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-slate-900">
-                      {orderData.user?.fullName || orderData.userName || 'N/A'}
+                      {orderData.user?.fullName || orderData.userName || "N/A"}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Mail className="h-4 w-4 text-indigo-500" />
-                        <span>{orderData.user?.email || 'N/A'}</span>
+                        <span>{orderData.user?.email || "N/A"}</span>
                       </div>
                       {orderData.user?.phone && (
                         <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -210,7 +208,9 @@ const AdminOrderDetail = () => {
                     <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700">
                       <Receipt className="h-3.5 w-3.5" />
                       Customer ID: #
-                      {(orderData.user?.userId || orderData.userId).toString().padStart(6, "0")}
+                      {(orderData.user?.userId || orderData.userId)
+                        .toString()
+                        .padStart(6, "0")}
                     </div>
                   </div>
                 </div>
@@ -239,7 +239,10 @@ const AdminOrderDetail = () => {
                     <div className="flex gap-5">
                       <div className="relative flex-shrink-0">
                         <img
-                          src={item.courseThumbnail || 'https://via.placeholder.com/300x200?text=Course'}
+                          src={
+                            item.courseThumbnail ||
+                            "https://via.placeholder.com/300x200?text=Course"
+                          }
                           alt={item.courseTitle}
                           className="h-28 w-44 rounded-xl object-cover shadow-md"
                         />
@@ -270,7 +273,9 @@ const AdminOrderDetail = () => {
                             )}
                             {item.students && (
                               <>
-                                <span className="text-xs text-slate-400">•</span>
+                                <span className="text-xs text-slate-400">
+                                  •
+                                </span>
                                 <span className="text-xs text-slate-500">
                                   {item.students.toLocaleString()} students
                                 </span>
@@ -335,15 +340,17 @@ const AdminOrderDetail = () => {
                 </div>
               </div>
               <div className="space-y-5 p-6">
-                {orderData.discountsApplied && orderData.discountsApplied.length > 0 ? (
+                {orderData.discountsApplied &&
+                orderData.discountsApplied.length > 0 ? (
                   orderData.discountsApplied.map(
                     (discount: any, index: number) => (
                       <div
                         key={index}
-                        className={`relative overflow-hidden rounded-2xl border-2 ${discount.type === "PROMOTION"
-                          ? "border-orange-300 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
-                          : "border-purple-300 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
-                          }`}
+                        className={`relative overflow-hidden rounded-2xl border-2 ${
+                          discount.type === "PROMOTION"
+                            ? "border-orange-300 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
+                            : "border-purple-300 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+                        }`}
                       >
                         {/* Decorative elements */}
                         <div className="absolute right-0 top-0 h-40 w-40 opacity-10">
@@ -359,10 +366,11 @@ const AdminOrderDetail = () => {
                           <div className="mb-5 flex items-start justify-between">
                             <div className="flex items-start gap-4">
                               <div
-                                className={`rounded-2xl p-4 shadow-lg ${discount.type === "PROMOTION"
-                                  ? "bg-gradient-to-br from-orange-500 to-red-600"
-                                  : "bg-gradient-to-br from-purple-500 to-indigo-600"
-                                  }`}
+                                className={`rounded-2xl p-4 shadow-lg ${
+                                  discount.type === "PROMOTION"
+                                    ? "bg-gradient-to-br from-orange-500 to-red-600"
+                                    : "bg-gradient-to-br from-purple-500 to-indigo-600"
+                                }`}
                               >
                                 {discount.type === "PROMOTION" ? (
                                   <Zap className="h-7 w-7 text-white" />
@@ -376,10 +384,11 @@ const AdminOrderDetail = () => {
                                     {discount.name}
                                   </h3>
                                   <span
-                                    className={`rounded-lg px-2.5 py-1 text-xs font-bold uppercase ${discount.type === "PROMOTION"
-                                      ? "bg-orange-600 text-white"
-                                      : "bg-purple-600 text-white"
-                                      }`}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-bold uppercase ${
+                                      discount.type === "PROMOTION"
+                                        ? "bg-orange-600 text-white"
+                                        : "bg-purple-600 text-white"
+                                    }`}
                                   >
                                     {discount.type}
                                   </span>
@@ -496,7 +505,9 @@ const AdminOrderDetail = () => {
                     ),
                   )
                 ) : (
-                  <p className="text-center text-slate-500">No discounts applied</p>
+                  <p className="text-center text-slate-500">
+                    No discounts applied
+                  </p>
                 )}
               </div>
             </div>
@@ -608,7 +619,9 @@ const AdminOrderDetail = () => {
                       </div>
                     </>
                   ) : (
-                    <p className="text-center text-sm text-slate-500">Payment information not available</p>
+                    <p className="text-center text-sm text-slate-500">
+                      Payment information not available
+                    </p>
                   )}
                 </div>
               </div>

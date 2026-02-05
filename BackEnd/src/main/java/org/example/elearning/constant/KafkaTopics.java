@@ -1,8 +1,6 @@
 package org.example.elearning.constant;
 
-/**
- * Kafka topic constants for E-learning system
- */
+
 public final class KafkaTopics {
     
     /**

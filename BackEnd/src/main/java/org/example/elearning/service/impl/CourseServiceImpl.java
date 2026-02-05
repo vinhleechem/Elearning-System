@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.constant.KafkaTopics;
 import org.example.elearning.constant.NotificationTemplate;
 import org.example.elearning.dto.event.CourseEvent;
-import org.example.elearning.dto.request.CourseRequest;
-import org.example.elearning.dto.request.CourseUpdateRequest;
-import org.example.elearning.dto.request.NotificationRequest;
+import org.example.elearning.dto.filter.CourseFilterContext;
+import org.example.elearning.dto.filter.CourseFilterRequest;
+import org.example.elearning.dto.request.*;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CategoryEntity;
@@ -36,9 +36,11 @@ import org.example.elearning.service.NotificationService;
 import org.example.elearning.specification.CourseSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -48,17 +50,16 @@ import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.ArrayList;   
-import java.util.UUID;        
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.regex.Pattern;
-import java.text.Normalizer;  
+import java.text.Normalizer;
+import org.example.elearning.utils.SlugUtils;  
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import static org.example.elearning.dto.filter.CourseFilterContext.*;
 
 @Slf4j
 @Service
@@ -78,9 +79,7 @@ public class CourseServiceImpl implements CourseService {
     ObjectMapper objectMapper;
     SectionRepository sectionRepository;
     LessonRepository lessonRepository;
-    /**
-     * Helper method to publish Kafka events
-     */
+
     private void publishKafkaEvent(String eventType, Long courseId) {
         try {
             CourseEvent event = CourseEvent.builder()
@@ -113,37 +112,16 @@ public class CourseServiceImpl implements CourseService {
             Double minPrice,
             Double maxPrice,
             Double minRating) {
-        
-        // Start with published courses
-        var spec = CourseSpecification.publishedCourses();
 
-        // Apply search filter
-        if (search != null && !search.trim().isEmpty()) {
-            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
-        }
+        CourseFilterRequest filterRequest = new CourseFilterRequest();
+        filterRequest.setSearch(search);
+        filterRequest.setCategoryId(categoryId);
+        filterRequest.setLevel(level);
+        filterRequest.setMinPrice(minPrice);
+        filterRequest.setMaxPrice(maxPrice);
+        filterRequest.setMinRating(minRating);
 
-        // Apply category filter
-        if (categoryId != null) {
-            spec = spec.and(CourseSpecification.filterByCategoryId(categoryId));
-        }
-
-        // Apply level filter
-        if (level != null) {
-            spec = spec.and(CourseSpecification.filterByLevel(level));
-        }
-
-        // Apply price range filters
-        if (minPrice != null) {
-            spec = spec.and(CourseSpecification.filterByMinPrice(minPrice));
-        }
-        if (maxPrice != null) {
-            spec = spec.and(CourseSpecification.filterByMaxPrice(maxPrice));
-        }
-
-        // Apply rating filter
-        if (minRating != null) {
-            spec = spec.and(CourseSpecification.filterByMinRating(minRating));
-        }
+        Specification<CourseEntity> spec = buildCourseFilterSpecification(filterRequest, PUBLIC, null);
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
@@ -162,36 +140,16 @@ public class CourseServiceImpl implements CourseService {
                 page.getTotalPages()));
     }
 
-    /**
-     * Enrich course response with user-specific context (purchase status)
-     */
-    private void enrichCourseWithUserContext(CourseResponse response, CourseEntity course) {
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
-                && !authentication.getName().equals("anonymousUser")) {
-            String email = authentication.getName();
-            UserEntity user = userService.getUserByEmail(email);
-            enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, course).ifPresent(enrollment -> {
-                response.setIsPurchased(true);
-                response.setPurchasedAt(enrollment.getCreatedAt());
-            });
-        }
-    }
 
     @Override
     @Transactional
     public PaginatedResponse<CourseResponse> getAllCoursesForAdmin(Pageable pageable, String search,
             CourseStatus status) {
-        var spec = CourseSpecification.notDeleted();
 
-        if (status != null) {
-            spec = spec.and(CourseSpecification.filterByStatus(status));
-        }
-
-        if (search != null && !search.trim().isEmpty()) {
-            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
-        }
+        CourseFilterRequest filterRequest = new CourseFilterRequest();
+        filterRequest.setSearch(search);
+        filterRequest.setStatus(status);
+        Specification<CourseEntity> spec = buildCourseFilterSpecification(filterRequest, ADMIN, null);
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
@@ -210,7 +168,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public CourseResponse getCourseBySlug(String slug) {
         CourseEntity entity = courseRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
         CourseResponse response = courseMapper.toResponse(entity);
 
         // Apply best promotion
@@ -222,16 +180,8 @@ public class CourseServiceImpl implements CourseService {
         return response;
     }
 
-    @Override
-    @Transactional
-    public CourseResponse getCourseById(Long id) {
-        CourseEntity entity = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
-        return courseMapper.toResponse(entity);
-    }
 
     @Override
-    @Transactional(readOnly = true)
     public CourseEntity getCourseEntityById(Long id) {
         return courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -239,51 +189,51 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<CourseEntity> getCourseEntitiesByIds(List<Long> ids) {
-        return courseRepository.findAllById(ids);
+    public CourseResponse getCourseByIdForPublic(Long id) {
+        CourseEntity entity = getCourseEntityById(id);
+        if(!entity.getStatus().equals(CourseStatus.PUBLISHED)){
+            throw new ResourceNotFoundException(ErrorCode.COURSE_NOT_PUBLIC.getMessage());
+        }
+        return courseMapper.toResponse(entity);
     }
 
     @Override
-    @Transactional
-    public CourseResponse createCourse(CourseRequest request) {
+    public CourseResponse getCourseByIdForAdmin(Long id) {
+        CourseEntity entity = getCourseEntityById(id);
+        return courseMapper.toResponse(entity);
+    }
 
-        InstructorEntity instructor = instructorService.getInstructorEntityById(request.getInstructorId());
-        CategoryEntity category = categoryService.getCategoryEntityById(request.getCategoryId());
+    @Override
+    public List<CourseEntity> getCourseEntitiesByIds(List<Long> ids) {
+        return courseRepository.findAllByCourseIdInAndStatusAndIsDeletedIsFalse(ids, CourseStatus.PUBLISHED);
+    }
 
-        // Validate: Chỉ cho phép chọn category cấp 3
-        if (!categoryService.isLevel3Category(request.getCategoryId())) {
-            throw new BadRequestException(
-                ErrorCode.INVALID_CATEGORY_LEVEL.getMessage()
-            );
-        }
+    @Override
+    public CourseResponse createCourseByInstructor(InstructorCourseRequest request) {
+        InstructorEntity instructor = instructorService.getMyInfo();
+
+        CategoryEntity category = categoryService.getLevel3CategoryEntityById(request.getCategoryId());
 
         CourseEntity entity = courseMapper.toEntity(request);
         entity.setInstructor(instructor);
         entity.setCategory(category);
-        entity.setStatus(CourseStatus.DRAFT);
-        
-        // Auto-generate slug if not provided
-        if (entity.getSlug() == null || entity.getSlug().trim().isEmpty()) {
-            String slugBase = toSlug(entity.getTitle());
-            if (slugBase.isEmpty()) slugBase = "course";
-            
-            // Check for duplicate slugs and append number if needed
-            String finalSlug = slugBase;
-            int counter = 2;
-            while (courseRepository.findBySlug(finalSlug).isPresent()) {
-                finalSlug = slugBase + "-" + counter;
-                counter++;
-            }
-            entity.setSlug(finalSlug);
-        }
+        entity.setSlug(generateCourseSlug(null, request.getTitle()));
 
-        CourseEntity savedCourse = courseRepository.save(entity);
-        
-        // Publish Kafka event
-        publishKafkaEvent("COURSE_CREATED", savedCourse.getCourseId());
-        
-        return courseMapper.toResponse(savedCourse);
+        return courseMapper.toResponse(courseRepository.save(entity));
+    }
+
+    @Override
+    public CourseResponse createCourseByAdmin(AdminCourseRequest request) {
+        InstructorEntity instructor = instructorService.getInstructorEntityById(request.getInstructorId());
+
+        CategoryEntity category = categoryService.getLevel3CategoryEntityById(request.getCategoryId());
+
+        CourseEntity entity = courseMapper.toEntity(request);
+        entity.setInstructor(instructor);
+        entity.setCategory(category);
+        entity.setSlug(generateCourseSlug(request.getSlug(), request.getTitle()));
+
+        return courseMapper.toResponse(courseRepository.save(entity));
     }
 
 
@@ -291,22 +241,12 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public CourseResponse updateCourse(Long id, CourseUpdateRequest request) {
         CourseEntity entity = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         courseMapper.updateEntity(entity, request);
 
-        if (request.getCategoryId() != null) {
-            // Validate: Chỉ cho phép chọn category cấp 3
-            if (!categoryService.isLevel3Category(request.getCategoryId())) {
-                throw new org.example.elearning.exception.exceptions.BadRequestException(
-                    "Bạn phải chọn danh mục cấp 3 (ví dụ: Lập trình > Java > Spring Boot). " +
-                    "Vui lòng chọn danh mục cụ thể nhất để phân loại khóa học chính xác."
-                );
-            }
-            
-            CategoryEntity category = categoryService.getCategoryEntityById(request.getCategoryId());
-            entity.setCategory(category);
-        }
+        CategoryEntity category = categoryService.getLevel3CategoryEntityById(request.getCategoryId());
+        entity.setCategory(category);
 
         CourseEntity savedCourse = courseRepository.save(entity);
         
@@ -316,13 +256,25 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.toResponse(savedCourse);
     }
 
+    @Override
+    public CourseResponse reassignCourseInstructor(Long courseId, Long instructorId) {
+        CourseEntity entity = getCourseEntityById(courseId);
+        InstructorEntity instructor = instructorService.getInstructorEntityById(instructorId);
+
+        if(instructor.getUser().isDeleted()){
+            throw new BadRequestException("Giảng viên này không còn hoạt động");
+        }
+        entity.setInstructor(instructor);
+
+        return courseMapper.toResponse(courseRepository.save(entity));
+    }
 
 
     @Override
     @Transactional
     public void deleteCourse(Long id) {
         CourseEntity entity = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
         entity.setDeleted(true);
         courseRepository.save(entity);
         
@@ -333,33 +285,23 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public PaginatedResponse<CourseResponse> getMyCourses(Pageable pageable, String search) {
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
-        }
-
-        String email = authentication.getName();
-        var user = userService.getUserByEmail(email);
+        var user = userService.getCurrentUser();
         
         var instructorOptional = instructorService.findInstructorByUser(user);
         
         if (instructorOptional.isEmpty()) {
-             return new PaginatedResponse<>(java.util.Collections.emptyList(), new PaginatedResponse.Pagination(
+             return new PaginatedResponse<>(Collections.emptyList(), new PaginatedResponse.Pagination(
                 pageable.getPageNumber() + 1,
                 pageable.getPageSize(),
-                0,
-                0));
+                0,0));
         }
         
-        var instructor = instructorOptional.get();
+        var instructor = instructorOptional.get().getInstructorId();
 
-        var spec = CourseSpecification.notDeleted()
-                .and(CourseSpecification.filterByInstructorId(instructor.getInstructorId()));
+        CourseFilterRequest filterRequest = new CourseFilterRequest();
+        filterRequest.setSearch(search);
 
-        if (search != null && !search.trim().isEmpty()) {
-            spec = spec.and(CourseSpecification.filterByKeyword(search.trim()));
-        }
+        Specification<CourseEntity> spec = buildCourseFilterSpecification(filterRequest, INSTRUCTOR, instructor);
 
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
@@ -377,7 +319,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public void submitCourseForApproval(Long id) {
         CourseEntity course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
                 .getAuthentication();
@@ -404,7 +346,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public void approveCourse(Long id) {
         CourseEntity course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         if (course.getStatus() != CourseStatus.PENDING) {
             throw new IllegalStateException("Course is not waiting for approval");
@@ -425,7 +367,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public void rejectCourse(Long id, String reason) {
         CourseEntity course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
 
         if (course.getStatus() != CourseStatus.PENDING) {
             throw new IllegalStateException("Course is not waiting for approval");
@@ -445,7 +387,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public CourseResponse updateCourseStatus(Long id, CourseStatus status) {
         CourseEntity course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
         
         course.setStatus(status);
         if (status == CourseStatus.PUBLISHED && course.getPublishedAt() == null) {
@@ -456,6 +398,74 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.toResponse(savedCourse);
     }
 
+    private Specification<CourseEntity> buildCourseFilterSpecification(CourseFilterRequest filter,
+                                                                       CourseFilterContext context,
+                                                                       Long instructorId) {
+        var spec = Specification.<CourseEntity>where(null);
+
+        switch (context) {
+            case PUBLIC:
+                spec = CourseSpecification.publishedCourses();
+                break;
+            case ADMIN:
+                spec = CourseSpecification.notDeleted();
+                break;
+            case INSTRUCTOR:
+                spec = CourseSpecification.notDeleted()
+                        .and(CourseSpecification.filterByInstructorId(instructorId));
+                break;
+        }
+
+        if (StringUtils.hasText(filter.getSearch())) {
+            spec = spec.and(CourseSpecification.filterByKeyword(filter.getSearch().trim()));
+        }
+
+        if (context == CourseFilterContext.PUBLIC) {
+            if (filter.getCategoryId() != null) {
+                spec = spec.and(CourseSpecification.filterByCategoryId(filter.getCategoryId()));
+            }
+            if (filter.getLevel() != null) {
+                spec = spec.and(CourseSpecification.filterByLevel(filter.getLevel()));
+            }
+            if (filter.getMinPrice() != null || filter.getMaxPrice() != null) {
+                spec = spec.and(CourseSpecification.filterByPriceRange(
+                        filter.getMinPrice(), filter.getMaxPrice()));
+            }
+            if (filter.getMinRating() != null) {
+                spec = spec.and(CourseSpecification.filterByMinRating(filter.getMinRating()));
+            }
+        }
+
+        if (context == CourseFilterContext.ADMIN) {
+            if (filter.getStatus() != null) {
+                spec = spec.and(CourseSpecification.filterByStatus(filter.getStatus()));
+            }
+        }
+
+        return spec;
+    }
+
+    private String generateCourseSlug(String customSlug, String title) {
+        return SlugUtils.generateUniqueSlug(
+                customSlug,  // ← null for instructor, custom for admin
+                title,
+                slug -> courseRepository.findBySlug(slug).isPresent()
+        );
+    }
+
+    private void enrichCourseWithUserContext(CourseResponse response, CourseEntity course) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && !authentication.getName().equals("anonymousUser")) {
+            String email = authentication.getName();
+            UserEntity user = userService.getUserByEmail(email);
+            enrollmentRepository.findByUserAndCourseAndIsDeletedFalse(user, course).ifPresent(enrollment -> {
+                response.setIsPurchased(true);
+                response.setPurchasedAt(enrollment.getCreatedAt());
+            });
+        }
+    }
     /**
      * Helper method to notify all admins about course approval request
      */
@@ -483,9 +493,7 @@ public class CourseServiceImpl implements CourseService {
         log.info("Successfully notified {} admins", admins.size());
     }
 
-    /**
-     * Helper method to notify instructor about course approval
-     */
+
     private void notifyInstructorCourseApproved(CourseEntity course) {
         UserEntity instructor = course.getInstructor().getUser();
         log.info("Notifying instructor {} about course approval: {}", 
@@ -502,9 +510,7 @@ public class CourseServiceImpl implements CourseService {
         notificationService.createAndSendNotification(notification);
     }
 
-    /**
-     * Helper method to notify instructor about course rejection
-     */
+
     private void notifyInstructorCourseRejected(CourseEntity course, String reason) {
         UserEntity instructor = course.getInstructor().getUser();
         log.info("Notifying instructor {} about course rejection: {}", 
@@ -551,7 +557,7 @@ public class CourseServiceImpl implements CourseService {
                 CourseEntity course = new CourseEntity();
                 course.setTitle(title);
                 
-                String slugBase = toSlug(title);
+                String slugBase = SlugUtils.toSlug(title);
                 if (slugBase.isEmpty()) slugBase = "course";
                 course.setSlug(slugBase + "-" + UUID.randomUUID().toString().substring(0, 8));
 
@@ -810,13 +816,5 @@ public class CourseServiceImpl implements CourseService {
             }
         } catch (Exception e) { return null; }
         return null;
-    }
-
-    private String toSlug(String input) {
-        if (input == null) return "";
-        String nowhitespace = Pattern.compile("[\\s]").matcher(input).replaceAll("-");
-        String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
-        String slug = Pattern.compile("[^\\w-]").matcher(normalized).replaceAll("");
-        return slug.toLowerCase();
     }
 }

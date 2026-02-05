@@ -131,7 +131,7 @@ const ConversationListPage = () => {
 
         // Call API to mark as read
         await conversationService.markAsRead(conversation.conversationId);
-      } catch (error: any) {
+      } catch {
         // Silently fail - user can still read messages
         console.error("Failed to mark as read:", error);
       }

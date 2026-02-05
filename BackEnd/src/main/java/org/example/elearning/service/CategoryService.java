@@ -7,37 +7,28 @@ import org.example.elearning.entity.CategoryEntity;
 import java.util.List;
 
 public interface CategoryService {
-    // Lấy root categories đang active
-    List<CategoryResponse> getAllActiveRoots();
-
-    // Lấy children của 1 category
-    List<CategoryResponse> getChildren(Long parentId);
-
-    // Lấy category theo ID
-    CategoryResponse getById(Long id);
-
-    // For internal service usage - returns entity instead of DTO
     CategoryEntity getCategoryEntityById(Long id);
 
-    // Lấy toàn bộ category tree (recursive)
+    CategoryEntity getLevel3CategoryEntityById(Long id);
+
+    List<CategoryResponse> getAllActiveRoots();
+
+    List<CategoryResponse> getChildren(Long parentId);
+
+    CategoryResponse getById(Long id);
+
     List<CategoryResponse> getCategoryTree();
 
-    // Tạo category mới
     CategoryResponse create(CategoryRequest request);
 
-    // Cập nhật category
     CategoryResponse update(Long id, CategoryRequest request);
 
-    // Xóa category
-    // Xóa category
     void delete(Long id);
 
-    // Import categories from Excel
     void importCategories(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 
     byte[] generateImportTemplate() throws java.io.IOException;
     
-    // Kiểm tra xem category có phải là cấp 3 (level = 3)
     boolean isLevel3Category(Long categoryId);
 }
 

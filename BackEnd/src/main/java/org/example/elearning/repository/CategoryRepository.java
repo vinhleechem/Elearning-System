@@ -10,20 +10,21 @@ import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> {
-    Optional<CategoryEntity> findBySlug(String slug);
+    Optional<CategoryEntity> findBySlugAndIsDeletedFalse(String slug);
 
-    List<CategoryEntity> findByParentIsNullAndIsActiveTrueOrderByLevelAscNameAsc();
+    List<CategoryEntity> findByParentIsNullAndIsActiveTrueAndIsDeletedFalseOrderByNameAsc();
 
-    List<CategoryEntity> findByParentIdAndIsActiveTrueOrderByLevelAscNameAsc(Long parentId);
+    List<CategoryEntity> findByParentIdAndIsActiveTrueAndIsDeletedFalseOrderByLevelAscNameAsc(Long parentId);
 
-    List<CategoryEntity> findByIsActiveFalse();
+    List<CategoryEntity> findByIsActiveFalseAndIsDeletedFalse();
 
     // Eager load children để tránh lazy loading
+    // khi load CategoryEntity cấp cha, tự động load luôn relationship children
     @EntityGraph(attributePaths = {"children"})
-    List<CategoryEntity> findByParentIsNull();
+    List<CategoryEntity> findByParentIsNullAndIsDeletedFalse();
 
     @EntityGraph(attributePaths = {"children"})
-    Optional<CategoryEntity> findByIdAndParentIsNull(Long id);
+    Optional<CategoryEntity> findByIdAndParentIsNullAndIsDeletedFalse(Long id);
 }
 
 

@@ -31,48 +31,49 @@ export const httpClient = async <T>(
   const state = getAuthStoreState();
   const accessToken = state.tokens?.accessToken;
 
+  // Build headers
   const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> ?? {}),
+    ...(options.headers as Record<string, string>),
   };
 
-  // Only set Content-Type if not uploading FormData
-  // Browser will automatically set correct Content-Type with boundary for FormData
+  // Auto set Content-Type for JSON (skip for FormData)
   if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
 
+  // Auto add Authorization token
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  // Make the request
+  // Make request
   let response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
 
-  // Parse response
+  // Parse JSON response
   let body: StandardApiResponse<T> | null = null;
   try {
-    body = (await response.json()) as StandardApiResponse<T>;
+    body = await response.json();
   } catch {
-    // Ignore JSON parse errors
+    // Ignore parse errors
   }
 
-  // Handle 401 Unauthorized - Try refresh token
+  // Handle 401 - Auto refresh token
   if (response.status === 401 && !path.includes("/auth/")) {
-    const refreshed = await tryRefreshToken();
+    const newToken = await tryRefreshToken();
 
-    if (refreshed) {
+    if (newToken) {
       // Retry with new token
-      headers.Authorization = `Bearer ${refreshed}`;
+      headers.Authorization = `Bearer ${newToken}`;
       response = await fetch(`${API_BASE_URL}${path}`, {
         ...options,
         headers,
       });
 
       try {
-        body = (await response.json()) as StandardApiResponse<T>;
+        body = await response.json();
       } catch {
         // Ignore
       }
@@ -87,7 +88,7 @@ export const httpClient = async <T>(
     throw new ApiError(
       body?.message ?? `Request failed with status ${response.status}`,
       response.status,
-      body ?? undefined,
+      body,
     );
   }
 
@@ -98,7 +99,7 @@ export const httpClient = async <T>(
   return body;
 };
 
-// Helper: Try to refresh access token
+// Helper: Refresh access token
 async function tryRefreshToken(): Promise<string | null> {
   try {
     const raw = localStorage.getItem("auth-store");
@@ -120,7 +121,7 @@ async function tryRefreshToken(): Promise<string | null> {
 
     if (!response.ok) return null;
 
-    const result = (await response.json()) as StandardApiResponse<{ accessToken: string }>;
+    const result = await response.json() as StandardApiResponse<{ accessToken: string }>;
     const newToken = result.data?.accessToken;
 
     if (!newToken) return null;
@@ -130,8 +131,7 @@ async function tryRefreshToken(): Promise<string | null> {
     if (currentState.tokens) {
       currentState.updateAccessToken(newToken);
 
-      // Trigger WebSocket reconnection with new token
-      // We dispatch a custom event that NotificationBell can listen to
+      // Notify WebSocket to reconnect
       window.dispatchEvent(new CustomEvent('token-refreshed', {
         detail: { accessToken: newToken }
       }));
@@ -144,27 +144,21 @@ async function tryRefreshToken(): Promise<string | null> {
   }
 }
 
-// Helper: Logout user and redirect
+// Helper: Logout and redirect
 function handleLogout() {
-  try {
-    localStorage.removeItem("auth-store");
+  localStorage.removeItem("auth-store");
 
-    if (!isSessionExpiredNotified) {
-      isSessionExpiredNotified = true;
-      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
-        duration: 3000,
-      });
-    }
+  // Show toast once
+  if (!isSessionExpiredNotified) {
+    isSessionExpiredNotified = true;
+    toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", {
+      duration: 3000,
+    });
+  }
 
-    // Redirect to login
-    if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
-    }
-  } catch (error) {
-    console.error("Logout failed:", error);
+  // Redirect to login
+  const currentPath = window.location.pathname;
+  if (currentPath !== "/login" && currentPath !== "/register") {
+    window.location.href = "/login";
   }
 }
-
-

@@ -20,24 +20,20 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
   const [loading, setLoading] = useState(false);
 
   const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) {
-      setError("Vui lòng nhập mã voucher");
-      return;
-    }
+    if (!voucherCode.trim()) return setError("Vui lòng nhập mã voucher");
 
     setLoading(true);
     setError("");
 
     try {
       const isValid = await voucherService.validateVoucherCode(voucherCode);
-      if (isValid) {
-        onVoucherApply(voucherCode);
-        setVoucherCode("");
-      } else {
-        setError("Mã voucher không hợp lệ");
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Không thể áp dụng voucher");
+      isValid
+        ? (onVoucherApply(voucherCode), setVoucherCode(""))
+        : setError("Mã voucher không hợp lệ");
+    } catch (err) {
+      setError(
+        (err as any).response?.data?.message || "Không thể áp dụng voucher",
+      );
     } finally {
       setLoading(false);
     }
@@ -67,10 +63,18 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <CheckCircleIcon color="success" sx={{ fontSize: 24 }} />
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: "0.75rem" }}
+              >
                 Đã áp dụng
               </Typography>
-              <Typography color="success.main" fontWeight={700} sx={{ fontSize: "1rem" }}>
+              <Typography
+                color="success.main"
+                fontWeight={700}
+                sx={{ fontSize: "1rem" }}
+              >
                 {appliedVoucherCode}
               </Typography>
             </Box>
@@ -87,7 +91,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
               fontWeight: 600,
               "&:hover": {
                 backgroundColor: "rgba(211, 47, 47, 0.08)",
-              }
+              },
             }}
           />
         </Box>
@@ -111,7 +115,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
               sx={{
                 "& .MuiOutlinedInput-root": {
                   backgroundColor: "white",
-                }
+                },
               }}
             />
             <Button

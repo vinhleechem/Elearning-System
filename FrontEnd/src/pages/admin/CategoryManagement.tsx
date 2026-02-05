@@ -196,11 +196,12 @@ const CategoryManagement = () => {
     }
 
     // Filter by status
-    if (filterStatus === "ACTIVE") {
-      filtered = filtered.filter((cat) => cat.isActive);
-    } else if (filterStatus === "INACTIVE") {
-      filtered = filtered.filter((cat) => !cat.isActive);
-    }
+    filtered =
+      filterStatus === "ACTIVE"
+        ? filtered.filter((cat) => cat.isActive)
+        : filterStatus === "INACTIVE"
+          ? filtered.filter((cat) => !cat.isActive)
+          : filtered;
 
     setFilteredList(filtered);
   }, [flatList, searchTerm, filterLevel, filterStatus]);
@@ -216,11 +217,7 @@ const CategoryManagement = () => {
         targetLevel: number,
       ) => {
         nodes.forEach((node) => {
-          if (
-            node.level < targetLevel &&
-            node.children &&
-            node.children.length > 0
-          ) {
+          if (node.level < targetLevel && node.children?.length) {
             nodesToExpand.add(node.id);
             collectParentIds(node.children, targetLevel);
           }

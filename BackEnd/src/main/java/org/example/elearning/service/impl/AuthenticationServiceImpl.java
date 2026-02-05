@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationServiceImpl implements AuthenticationService {
+
     UserService userService;
     UserRepository userRepository;
     UserMapper userMapper;
@@ -248,7 +249,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     return existing;
                 }).orElseGet(() -> {
                     RoleEntity roleEntity = roleService.findByRoleName(PredefinedRole.ROLE_STUDENT);
-                    return userRepository.save(UserEntity.builder()
+                    return userRepository.save(
+                            UserEntity.builder()
                             .email(email)
                             .fullName(fullName)
                             .passwordHash(passwordEncoder.encode(generateRandomPassword()))
@@ -257,7 +259,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                             .provider(Provider.FACEBOOK)
                             .providerId(userInfo.getId())
                             .roles(Set.of(roleEntity))
-                            .build());
+                            .build()
+                    );
                 });
 
         String accessToken = jwtService.generateAccessToken(userEntity);

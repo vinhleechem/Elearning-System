@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.elearning.util.JwtAuthenticationHelper;
+import org.example.elearning.utils.JwtAuthenticationHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -14,10 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * JWT authentication filter for HTTP requests.
- * Validates JWT tokens and sets up Spring Security authentication context.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j

@@ -9,7 +9,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CommissionMapper {
-    
     @Mapping(source = "instructor.instructorId", target = "instructorId")
     @Mapping(source = "instructor.user.fullName", target = "instructorName")
     CommissionRateResponse toCommissionRateResponse(CommissionRateEntity entity);

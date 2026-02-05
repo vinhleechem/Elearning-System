@@ -2,8 +2,10 @@ package org.example.elearning.mapper;
 
 import java.util.List;
 
+import org.example.elearning.dto.request.AdminCourseRequest;
 import org.example.elearning.dto.request.CourseRequest;
 import org.example.elearning.dto.request.CourseUpdateRequest;
+import org.example.elearning.dto.request.InstructorCourseRequest;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.mapstruct.BeanMapping;
@@ -13,7 +15,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface CourseMapper {
 
     @Mapping(target = "instructorId", source = "instructor.instructorId")
@@ -25,20 +27,22 @@ public interface CourseMapper {
 
     List<CourseResponse> toResponseList(List<CourseEntity> entities);
 
-    @Mapping(target = "courseId", ignore = true)
     @Mapping(target = "instructor", ignore = true)
     @Mapping(target = "category", ignore = true)
-    CourseEntity toEntity(CourseRequest request);
+    CourseEntity toEntity(AdminCourseRequest request);
+
+
+    @Mapping(target = "instructor", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    CourseEntity toEntity(InstructorCourseRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "courseId", ignore = true)
     @Mapping(target = "instructor", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "slug", ignore = true)
     void updateEntity(@MappingTarget CourseEntity entity, CourseRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "courseId", ignore = true)
     @Mapping(target = "instructor", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "slug", ignore = true)

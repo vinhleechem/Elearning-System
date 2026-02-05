@@ -138,16 +138,16 @@ const UserManagement = () => {
             instructor:
               role === "INSTRUCTOR"
                 ? {
-                  id: u.instructorId,
-                  headline: u.instructorHeadline,
-                  biography: u.instructorBiography,
-                  website: u.instructorWebsite,
-                  linkedin: u.instructorLinkedin,
-                  twitter: u.instructorTwitter,
-                  youtube: u.instructorYoutube,
-                  totalStudents: u.instructorTotalStudents,
-                  totalCourses: u.instructorTotalCourses,
-                }
+                    id: u.instructorId,
+                    headline: u.instructorHeadline,
+                    biography: u.instructorBiography,
+                    website: u.instructorWebsite,
+                    linkedin: u.instructorLinkedin,
+                    twitter: u.instructorTwitter,
+                    youtube: u.instructorYoutube,
+                    totalStudents: u.instructorTotalStudents,
+                    totalCourses: u.instructorTotalCourses,
+                  }
                 : undefined,
           };
         });
@@ -451,11 +451,11 @@ const UserManagement = () => {
             prevUsers.map((user) =>
               user.id === editingUser.id
                 ? {
-                  ...user,
-                  name: formData.name,
-                  email: formData.email,
-                  role,
-                }
+                    ...user,
+                    name: formData.name,
+                    email: formData.email,
+                    role,
+                  }
                 : user,
             ),
           );
@@ -481,17 +481,17 @@ const UserManagement = () => {
             prevUsers.map((user) =>
               user.id === editingUser.id
                 ? {
-                  ...user,
-                  instructor: {
-                    ...user.instructor,
-                    headline: formData.instructorHeadline,
-                    biography: formData.instructorBiography,
-                    website: formData.instructorWebsite,
-                    linkedin: formData.instructorLinkedin,
-                    twitter: formData.instructorTwitter,
-                    youtube: formData.instructorYoutube,
-                  },
-                }
+                    ...user,
+                    instructor: {
+                      ...user.instructor,
+                      headline: formData.instructorHeadline,
+                      biography: formData.instructorBiography,
+                      website: formData.instructorWebsite,
+                      linkedin: formData.instructorLinkedin,
+                      twitter: formData.instructorTwitter,
+                      youtube: formData.instructorYoutube,
+                    },
+                  }
                 : user,
             ),
           );
@@ -538,9 +538,9 @@ const UserManagement = () => {
     } catch (error: any) {
       enqueueSnackbar(
         error.message ||
-        (editingUser
-          ? "Cập nhật người dùng thất bại"
-          : "Tạo người dùng thất bại"),
+          (editingUser
+            ? "Cập nhật người dùng thất bại"
+            : "Tạo người dùng thất bại"),
         { variant: "error" },
       );
       console.error("Save user error:", error);
@@ -581,34 +581,28 @@ const UserManagement = () => {
     }
   };
 
-  const baseFilteredUsers = users.filter((user) => {
+  const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "ALL" || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const filteredUsers = baseFilteredUsers.filter((user) => {
     const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
-    return matchesRole;
+    return matchesSearch && matchesStatus && matchesRole;
   });
 
-  const instructorUsers = baseFilteredUsers.filter(
+  const instructorUsers = filteredUsers.filter(
     (user) => user.role === "INSTRUCTOR",
   );
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "ADMIN":
-        return <AdminPanelSettings fontSize="small" color="error" />;
-      case "INSTRUCTOR":
-        return <School fontSize="small" color="primary" />;
-      default:
-        return <Person fontSize="small" color="action" />;
-    }
-  };
+  const getRoleIcon = (role: string) =>
+    role === "ADMIN" ? (
+      <AdminPanelSettings fontSize="small" color="error" />
+    ) : role === "INSTRUCTOR" ? (
+      <School fontSize="small" color="primary" />
+    ) : (
+      <Person fontSize="small" color="action" />
+    );
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -1108,22 +1102,22 @@ const UserManagement = () => {
                           <Box display="flex" flexWrap="wrap" gap={1}>
                             {typeof user.instructor?.totalCourses ===
                               "number" && (
-                                <Chip
-                                  size="small"
-                                  label={`${user.instructor.totalCourses} khóa học`}
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              )}
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalCourses} khóa học`}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            )}
                             {typeof user.instructor?.totalStudents ===
                               "number" && (
-                                <Chip
-                                  size="small"
-                                  label={`${user.instructor.totalStudents} học viên`}
-                                  color="success"
-                                  variant="outlined"
-                                />
-                              )}
+                              <Chip
+                                size="small"
+                                label={`${user.instructor.totalStudents} học viên`}
+                                color="success"
+                                variant="outlined"
+                              />
+                            )}
                           </Box>
                           <Box display="flex" gap={0.5} mt={0.5}>
                             {user.instructor?.website && (
@@ -1407,7 +1401,9 @@ const UserManagement = () => {
               label="Số điện thoại"
               fullWidth
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}
@@ -1417,7 +1413,9 @@ const UserManagement = () => {
               label="Địa chỉ"
               fullWidth
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}
@@ -1428,7 +1426,9 @@ const UserManagement = () => {
               fullWidth
               type="date"
               value={formData.dateOfBirth}
-              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, dateOfBirth: e.target.value })
+              }
               InputLabelProps={{ shrink: true }}
               InputProps={{
                 sx: { borderRadius: "12px" },
@@ -1440,7 +1440,9 @@ const UserManagement = () => {
               multiline
               rows={3}
               value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, bio: e.target.value })
+              }
               InputProps={{
                 sx: { borderRadius: "12px" },
               }}

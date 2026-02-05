@@ -1,3 +1,11 @@
+export const UserStatus = {
+  ACTIVE: "ACTIVE",
+  LOCKED: "LOCKED",
+  PENDING: "PENDING",
+} as const;
+
+export type UserStatusType = typeof UserStatus[keyof typeof UserStatus];
+
 export type UserLoginResponse = {
   accessToken: string;
   refreshToken: string;
@@ -11,15 +19,13 @@ export type UserResponse = {
   providerId?: string;
   provider?: string;
   roles?: string[];
-  status?: "ACTIVE" | "LOCKED"; // User status from backend
+  status?: "ACTIVE" | "LOCKED";
 
-  // Thông tin cơ bản của User
   phone?: string;
   address?: string;
-  dateOfBirth?: string; // ISO date string
+  dateOfBirth?: string;
   bio?: string;
 
-  // Thông tin giảng viên (chỉ set khi user là INSTRUCTOR)
   instructorId?: number;
   instructorHeadline?: string;
   instructorBiography?: string;
@@ -42,4 +48,3 @@ export type RegisterRequest = {
   password: string;
   confirmPassword: string;
 };
-

@@ -70,7 +70,6 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Tạo thành công")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("ADD_USER")
     public ResponseEntity<StandardResponse<CategoryResponse>> createCategory(
             @Valid @RequestBody CategoryRequest request) {
         CategoryResponse result = categoryService.create(request);
@@ -81,7 +80,6 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Cập nhật thành công")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("UPDATE_USER")
     public ResponseEntity<StandardResponse<CategoryResponse>> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest request) {
@@ -93,22 +91,22 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Xóa thành công")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @SecuredEndpoint("DELETE_USER")
     public ResponseEntity<StandardResponse<String>> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);
         return ResponseEntity.ok(success("Xóa category thành công"));
     }
 
     @Operation(summary = "Import categories from Excel")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiResponse(responseCode = "200", description = "Import thành công")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StandardResponse<Void>> importCategories(@RequestParam("file") MultipartFile file) throws IOException {
         categoryService.importCategories(file);
         return ResponseEntity.ok(success("Import categories thành công", null));
     }
 
     @GetMapping("/import/template")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Resource> getImportTemplate() throws IOException {
         byte[] data = categoryService.generateImportTemplate();
         ByteArrayResource resource = new ByteArrayResource(data);

@@ -28,8 +28,8 @@ const CourseList = () => {
         if (res.data) {
           setPurchasedIds(new Set(res.data.map((item) => item.courseId)));
         }
-      } catch (error) {
-        console.error("Failed to fetch enrollments for status check", error);
+      } catch {
+        // Silent fail - enrollment check is not critical
       }
     };
     void fetchEnrollments();
@@ -57,16 +57,12 @@ const CourseList = () => {
       const hasDiscount =
         c.discountPrice !== undefined && c.discountPrice !== null;
       const price = hasDiscount ? c.discountPrice! : (c.price ?? 0);
-      const oldPrice = hasDiscount ? (c.price ?? undefined) : undefined;
-
-      // Calculate discount percentage if not provided by backend
+      const oldPrice = hasDiscount ? c.price : undefined;
       const discountPercentage =
         c.discountPercentage ??
         (hasDiscount && c.price && c.price > 0
           ? Math.round(((c.price - c.discountPrice!) / c.price) * 100)
           : undefined);
-
-      // Convert minutes to hours if available
       const totalHours =
         c.totalDurationMinutes && c.totalDurationMinutes > 0
           ? `${(c.totalDurationMinutes / 60).toFixed(1)} giờ`
@@ -89,7 +85,6 @@ const CourseList = () => {
         slug: c.slug,
         learningPoints: c.whatYouLearn ? c.whatYouLearn.split("\n") : undefined,
         isPurchased: purchasedIds.has(c.courseId),
-        // Promotion info from backend
         promotionName: c.promotionName,
         promotionType: c.promotionType,
         discountPercentage,

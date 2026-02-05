@@ -1,4 +1,4 @@
-package org.example.elearning.util;
+package org.example.elearning.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;

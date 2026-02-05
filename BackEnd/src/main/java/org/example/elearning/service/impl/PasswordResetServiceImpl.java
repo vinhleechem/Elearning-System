@@ -39,15 +39,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void createActivationToken(Long userId) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
 
-        // Delete old tokens for this user
         tokenRepository.deleteByUser(user);
 
-        // Generate unique token
         String token = UUID.randomUUID().toString();
 
-        // Create token entity (expires in 24 hours)
         PasswordResetTokenEntity tokenEntity = PasswordResetTokenEntity.builder()
                 .token(token)
                 .user(user)
@@ -58,7 +55,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         tokenRepository.save(tokenEntity);
 
-        // Send activation email
         String activationLink = frontendUrl + "/set-password?token=" + token;
         emailService.sendActivationEmail(user.getEmail(), user.getFullName(), activationLink);
 

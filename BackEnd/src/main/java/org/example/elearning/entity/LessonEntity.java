@@ -47,10 +47,10 @@ public class LessonEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    ContentType type; // VIDEO, ARTICLE, QUIZ, ASSIGNMENT
+    ContentType type;
 
     @Column(name = "video_asset_id")
-    Long videoAssetId; // sẽ link tới bảng video_assets
+    Long videoAssetId;
 
     @Column(name = "video_url")
     String videoUrl;
@@ -62,14 +62,18 @@ public class LessonEntity extends BaseEntity {
     Integer durationSeconds;
 
     @Column(name = "is_preview")
-    Boolean isPreview;
+    @Builder.Default
+    Boolean isPreview = false;
 
     @Column(name = "is_downloadable")
-    Boolean isDownloadable;
+    @Builder.Default
+    Boolean isDownloadable = false;
+
+    @Column(name = "is_active")
+    @Builder.Default
+    Boolean isActive = true;
 
     @Column(name = "sort_order")
     Integer sortOrder;
 
-    @Column(name = "is_active")
-    Boolean isActive;
 }

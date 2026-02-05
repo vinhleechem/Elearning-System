@@ -1,7 +1,7 @@
 package org.example.elearning.config;
 
 import lombok.Getter;
-import org.example.elearning.util.VNPayUtil;
+import org.example.elearning.utils.VNPayUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 

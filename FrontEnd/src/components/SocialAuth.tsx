@@ -14,7 +14,6 @@ export default function SocialAuth() {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
       try {
-        console.log("Google code response:", codeResponse);
         const tokens = await authService.loginGoogle(codeResponse.code);
         const user = await authService.getProfile(tokens.accessToken);
         setAuth(tokens.accessToken, tokens.refreshToken, user);
@@ -22,16 +21,14 @@ export default function SocialAuth() {
       } catch (error) {
         enqueueSnackbar(
           `Đăng nhập Google thất bại: ${error instanceof Error ? error.message : "Unknown error"}`,
-          { variant: "error" }
+          { variant: "error" },
         );
-        console.error("Google login failed:", error);
       }
     },
     onError: (error) => {
       enqueueSnackbar("Đăng nhập Google thất bại. Vui lòng thử lại.", {
         variant: "error",
       });
-      console.error("Google login error:", error);
     },
     flow: "auth-code",
     ux_mode: "popup",

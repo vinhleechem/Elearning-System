@@ -47,7 +47,7 @@ public class PromotionEntity extends BaseEntity {
 
     @Column(name = "priority")
     @Builder.Default
-    Integer priority = 0; // Số càng cao càng ưu tiên khi có nhiều promotion cùng lúc
+    Integer priority = 0;
 
     // Relationship với PromotionRule
     @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)

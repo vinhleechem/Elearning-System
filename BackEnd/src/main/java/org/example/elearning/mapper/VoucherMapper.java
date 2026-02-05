@@ -12,7 +12,7 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface VoucherMapper {
 
     @Mapping(target = "applicableCourseIds", expression = "java(entity.getApplicableCourses() != null ? entity.getApplicableCourses().stream().map(c -> c.getCourseId()).collect(java.util.stream.Collectors.toList()) : new java.util.ArrayList<>())")

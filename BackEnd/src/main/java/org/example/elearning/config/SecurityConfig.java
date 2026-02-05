@@ -25,7 +25,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)

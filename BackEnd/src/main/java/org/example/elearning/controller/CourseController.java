@@ -32,6 +32,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
@@ -53,170 +55,30 @@ public class CourseController {
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) Double minRating) {
-        log.info("Price filter - minPrice: {}, maxPrice: {}", minPrice, maxPrice);
         Pageable pageable = PageRequest.of(page, size);
         PaginatedResponse<CourseResponse> result = courseService.getPublicCourses(
             pageable, search, categoryId, level, minPrice, maxPrice, minRating);
         return ResponseEntity.ok(success("Lấy danh sách khóa học thành công", result));
     }
 
-    // ==================== ADMIN ENDPOINTS ====================
-    // Sử dụng /admin/list để tránh conflict với route /{slug}
-
-    @Operation(summary = "Lấy danh sách khóa học cho admin (phân trang)", description = "API dành cho admin để lấy danh sách khóa học với phân trang, tìm kiếm và filter theo status")
+    @Operation(summary = "Lấy chi tiết khóa học theo ID")
     @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/admin/list")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StandardResponse<PaginatedResponse<CourseResponse>>> getAllCoursesForAdmin(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "courseId") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) CourseStatus status) {
-        Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        PaginatedResponse<CourseResponse> courses = courseService.getAllCoursesForAdmin(pageable, search, status);
-        return ResponseEntity.ok(success("Lấy danh sách khóa học thành công", courses));
-    }
-
-    @Operation(summary = "Lấy chi tiết khóa học theo ID (Admin)")
-    @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/admin/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StandardResponse<CourseResponse>> getCourseById(@PathVariable Long id) {
-        CourseResponse result = courseService.getCourseById(id);
-        return ResponseEntity.ok(success("Lấy khóa học thành công", result));
-    }
-
-    @Operation(summary = "Lấy chi tiết khóa học theo ID (Student/Public)")
-    @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/{id}/info")
+    @GetMapping("/{id}")
     public ResponseEntity<StandardResponse<CourseResponse>> getCourseInfoById(@PathVariable Long id) {
-        CourseResponse result = courseService.getCourseById(id);
+        CourseResponse result = courseService.getCourseByIdForPublic(id);
         return ResponseEntity.ok(success("Lấy khóa học thành công", result));
     }
 
-    @Operation(summary = "Lấy chi tiết khóa học theo slug")
-    @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/{slug}")
-    public ResponseEntity<StandardResponse<CourseResponse>> getCourseBySlug(@PathVariable String slug) {
-        CourseResponse result = courseService.getCourseBySlug(slug);
-        return ResponseEntity.ok(success("Lấy khóa học thành công", result));
-    }
-
-    // Các API dưới đây dành cho instructor/admin
-    
-    @Operation(summary = "Lấy danh sách khóa học của giảng viên hiện tại")
-    @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/my-courses")
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<PaginatedResponse<CourseResponse>>> getMyCourses(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        PaginatedResponse<CourseResponse> result = courseService.getMyCourses(pageable, search);
-        return ResponseEntity.ok(success("Lấy danh sách khóa học thành công", result));
-    }
-
-    @Operation(summary = "Tạo khóa học mới")
-    @ApiResponse(responseCode = "200", description = "Tạo thành công")
-    @PostMapping
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<CourseResponse>> createCourse(
-            @Valid @RequestBody CourseRequest request) {
-        CourseResponse result = courseService.createCourse(request);
-        return ResponseEntity.ok(success("Tạo khóa học thành công", result));
-    }
-
-    @Operation(summary = "Cập nhật khóa học")
-    @ApiResponse(responseCode = "200", description = "Cập nhật thành công")
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<CourseResponse>> updateCourse(
-            @PathVariable Long id,
-            @Valid @RequestBody CourseUpdateRequest request) {
-        CourseResponse result = courseService.updateCourse(id, request);
-        return ResponseEntity.ok(success("Cập nhật khóa học thành công", result));
-    }
-
-    @Operation(summary = "Xóa khóa học")
-    @ApiResponse(responseCode = "200", description = "Xóa thành công")
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<String>> deleteCourse(@PathVariable Long id) {
-        courseService.deleteCourse(id);
-        return ResponseEntity.ok(success("Xóa khóa học thành công"));
-    }
-
-    @Operation(summary = "Gửi yêu cầu duyệt khóa học (Giảng viên)")
-    @ApiResponse(responseCode = "200", description = "Gửi yêu cầu thành công")
-    @PutMapping("/{id}/submit-approval")
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<String>> submitCourseForApproval(@PathVariable Long id) {
-        courseService.submitCourseForApproval(id);
-        return ResponseEntity.ok(success("Gửi yêu cầu duyệt khóa học thành công"));
-    }
-
-    @Operation(summary = "Duyệt khóa học (Admin)")
-    @ApiResponse(responseCode = "200", description = "Duyệt thành công")
-    @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StandardResponse<String>> approveCourse(@PathVariable Long id) {
-        courseService.approveCourse(id);
-        return ResponseEntity.ok(success("Duyệt khóa học thành công"));
-    }
-
-    @Operation(summary = "Từ chối khóa học (Admin)")
-    @ApiResponse(responseCode = "200", description = "Từ chối thành công")
-    @PutMapping("/{id}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StandardResponse<String>> rejectCourse(
-            @PathVariable Long id,
-            @RequestParam String reason) {
-        courseService.rejectCourse(id, reason);
-        return ResponseEntity.ok(success("Từ chối khóa học thành công"));
-    }
 
     @Operation(summary = "Cập nhật trạng thái khóa học")
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public ResponseEntity<StandardResponse<CourseResponse>> updateCourseStatus(
             @PathVariable Long id, 
-            @RequestBody java.util.Map<String, String> body) {
+            @RequestBody Map<String, String> body) {
             
         CourseStatus status = CourseStatus.valueOf(body.get("status"));
         CourseResponse result = courseService.updateCourseStatus(id, status);
         return ResponseEntity.ok(success("Cập nhật trạng thái thành công", result));
-    }
-
-    @Operation(summary = "Import khóa học từ Excel (Admin/Instructor)")
-    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<StandardResponse<String>> importCourses(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
-        try {
-            courseService.importCourses(file);
-            return ResponseEntity.ok(success("Import khóa học thành công"));
-        } catch (java.io.IOException e) {
-            return ResponseEntity.badRequest().body(StandardResponse.error("Lỗi khi đọc file: " + e.getMessage()));
-        }
-    }
-
-    @Operation(summary = "Export danh sách khóa học ra Excel (Admin/Instructor)")
-    @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<byte[]> exportCourses() {
-        try {
-            byte[] data = courseService.exportCourses();
-            String filename = "courses_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
-            
-            return ResponseEntity.ok()
-                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                    .body(data);
-        } catch (java.io.IOException e) {
-            return ResponseEntity.internalServerError().build();
-        }
     }
 }

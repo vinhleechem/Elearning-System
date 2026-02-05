@@ -7,7 +7,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PromotionRuleMapper {
-
     @Mapping(target = "promotion", ignore = true)
     PromotionRuleEntity toEntity(PromotionRuleRequest promotionRuleRequest);
 }

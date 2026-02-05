@@ -3,6 +3,7 @@ import { Box, Typography, Divider, Paper, Stack, Chip } from "@mui/material";
 import type { DiscountCalculationResponse } from "../../types/voucher";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CampaignIcon from "@mui/icons-material/Campaign";
+import { formatCurrency } from "../../libs/utils";
 
 interface DiscountSummaryProps {
   discountCalculation: DiscountCalculationResponse | null;
@@ -14,10 +15,6 @@ export const DiscountSummary: React.FC<DiscountSummaryProps> = ({
   if (!discountCalculation) {
     return null;
   }
-
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString("vi-VN") + " VNĐ";
-  };
 
   const getDiscountIcon = (type: string) => {
     return type === "PROMOTION" ? <CampaignIcon /> : <LocalOfferIcon />;

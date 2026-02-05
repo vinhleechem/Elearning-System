@@ -1,10 +1,16 @@
-import { Container, Box, Typography, Button, Alert, Snackbar } from "@mui/material";
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Alert,
+  Snackbar,
+} from "@mui/material";
 import { useCartStore } from "../store/cartStore";
 import { useEffect, useState, useRef } from "react";
 import CartItemList from "../components/cart/CartItemList";
 import CartSummary from "../components/cart/CartSummary";
 import type { CartItemProps } from "../types/cartItem";
-
 
 interface PriceChange {
   courseId: number;
@@ -43,9 +49,7 @@ const CartPage = () => {
 
     const pollCart = async () => {
       // Only poll if tab is visible
-      if (document.visibilityState === 'visible') {
-        console.log('🔄 Polling cart prices...');
-
+      if (document.visibilityState === "visible") {
         // Store old prices before fetching
         const oldPrices = new Map<number, number>();
         items.forEach((item) => {
@@ -65,7 +69,6 @@ const CartPage = () => {
     // Cleanup on unmount
     return () => {
       clearInterval(intervalId);
-      console.log('⏹️ Stopped cart polling');
     };
   }, [items, fetchCart]);
 
@@ -93,7 +96,6 @@ const CartPage = () => {
     });
 
     if (changes.length > 0) {
-      console.log('💰 Price changes detected:', changes);
       setPriceChanges(changes);
       setShowPriceAlert(true);
 
@@ -106,28 +108,25 @@ const CartPage = () => {
     }
   }, [items]);
 
-  const total = items.reduce((acc, item) => {
-    return acc + (item.discountPrice ?? item.price);
-  }, 0);
-
-  const oldTotal = items.reduce((acc, item) => {
-    return acc + item.price;
-  }, 0);
-
+  const total = items.reduce(
+    (acc, item) => acc + (item.discountPrice ?? item.price),
+    0,
+  );
+  const oldTotal = items.reduce((acc, item) => acc + item.price, 0);
   const discountPercent =
     oldTotal > 0 ? Math.ceil(((oldTotal - total) / oldTotal) * 100) : 0;
 
   const cartItems: CartItemProps[] = items.map((item) => ({
     id: item.courseId,
     title: item.courseTitle,
-    author: "Giảng viên", // Placeholder
-    reviews: 0, // Placeholder
-    rating: 0, // Placeholder
+    author: "Giảng viên",
+    reviews: 0,
+    rating: 0,
     price: item.discountPrice ?? item.price,
     oldPrice: item.discountPrice ? item.price : null,
     image: item.courseImage,
-    duration: 0, // Placeholder
-    lesson: 0, // Placeholder
+    duration: 0,
+    lesson: 0,
   }));
 
   if (items.length === 0) {
@@ -161,10 +160,6 @@ const CartPage = () => {
                 px: 4,
                 py: 1.2,
                 borderRadius: 2,
-                bgcolor: "#d32f2f",
-                "&:hover": {
-                  bgcolor: "#b71c1c",
-                },
               }}
             >
               Mua hàng
@@ -181,7 +176,6 @@ const CartPage = () => {
     );
   }
 
-
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Price Change Alert */}
@@ -189,26 +183,30 @@ const CartPage = () => {
         open={showPriceAlert}
         autoHideDuration={8000}
         onClose={() => setShowPriceAlert(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
         sx={{ mt: 8 }}
       >
         <Alert
           onClose={() => setShowPriceAlert(false)}
-          severity={priceChanges.some(c => c.isIncrease) ? "warning" : "success"}
+          severity={
+            priceChanges.some((c) => c.isIncrease) ? "warning" : "success"
+          }
           variant="filled"
-          sx={{ width: '100%', maxWidth: 600 }}
+          sx={{ width: "100%", maxWidth: 600 }}
         >
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
             💰 Giá đã được cập nhật!
           </Typography>
           {priceChanges.map((change) => (
             <Typography key={change.courseId} variant="body2" sx={{ mt: 0.5 }}>
-              <strong>{change.courseTitle}</strong>:{' '}
-              {change.oldPrice.toLocaleString('vi-VN')}₫ →{' '}
-              <span style={{ color: change.isIncrease ? '#ff6b6b' : '#51cf66' }}>
-                {change.newPrice.toLocaleString('vi-VN')}₫
+              <strong>{change.courseTitle}</strong>:{" "}
+              {change.oldPrice.toLocaleString("vi-VN")}₫ →{" "}
+              <span
+                style={{ color: change.isIncrease ? "#ff6b6b" : "#51cf66" }}
+              >
+                {change.newPrice.toLocaleString("vi-VN")}₫
               </span>
-              {change.isIncrease ? ' ⬆️' : ' ⬇️'}
+              {change.isIncrease ? " ⬆️" : " ⬇️"}
             </Typography>
           ))}
         </Alert>
@@ -224,9 +222,9 @@ const CartPage = () => {
             total={total}
             oldTotal={oldTotal}
             discountPercent={discountPercent}
-            cartItems={items.map(item => ({
+            cartItems={items.map((item) => ({
               courseId: item.courseId,
-              price: item.discountPrice ?? item.price
+              price: item.discountPrice ?? item.price,
             }))}
           />
         </Box>
@@ -236,4 +234,3 @@ const CartPage = () => {
 };
 
 export default CartPage;
-

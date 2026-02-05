@@ -32,7 +32,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     EnrollmentMapper enrollmentMapper;
 
     @Override
-    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getMyEnrollments() {
         UserEntity user = userService.getCurrentUser();
 
@@ -44,7 +43,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public EnrollmentResponse getEnrollmentDetail(Long enrollmentId) {
         UserEntity user = userService.getCurrentUser();
 

@@ -1,11 +1,4 @@
-export const formatCurrency = (value: number): string => {
-  return (
-    new Intl.NumberFormat("vi-VN", {
-      style: "decimal",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-      .format(value)
-      .replace(/\s/g, ".") + " ₫"
-  );
-};
+// Re-export all utilities from centralized modules
+export * from "./formatUtils";
+export * from "./errorUtils";
+export * from "./validationUtils";

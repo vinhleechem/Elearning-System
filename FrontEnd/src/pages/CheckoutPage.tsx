@@ -45,12 +45,10 @@ const CheckoutPage = () => {
         })),
         voucherCode: appliedVoucherCode,
       };
-
       const result = await voucherService.calculateDiscount(request);
       setDiscountCalculation(result);
     } catch (error) {
       console.error("Failed to calculate discount:", error);
-      // Fallback to simple calculation
       const total = items.reduce((sum, item) => sum + item.price, 0);
       const final = items.reduce(
         (sum, item) => sum + (item.discountPrice ?? item.price),
@@ -78,12 +76,10 @@ const CheckoutPage = () => {
     }
 
     try {
-      // Validate voucher with current cart items
       const cartItems = items.map((item) => ({
         courseId: item.courseId,
         price: item.price,
       }));
-
       const validationResult = await voucherService.validateVoucher(
         code.trim(),
         cartItems,
@@ -92,15 +88,14 @@ const CheckoutPage = () => {
       if (!validationResult.valid) {
         const errorMsg = validationResult.message || "Mã voucher không hợp lệ";
         enqueueSnackbar(errorMsg, { variant: "error" });
-        throw new Error(errorMsg); // Throw to prevent dialog from closing
+        throw new Error(errorMsg);
       }
 
       setAppliedVoucherCode(code.trim());
       setVoucherCode(code.trim());
       enqueueSnackbar(`Đã áp dụng voucher: ${code}`, { variant: "success" });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to validate voucher:", error);
-      // Re-throw to prevent dialog from closing
       throw error;
     }
   };
@@ -119,40 +114,32 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // 1. Create Order with voucher code
       const courseIds = items.map((item) => item.courseId);
       const orderRes = await orderService.createOrder({
         courseIds,
         voucherCode: appliedVoucherCode,
       });
 
-      if (!orderRes.data) {
+      if (!orderRes.data)
         throw new Error(orderRes.message || "Không thể tạo đơn hàng");
-      }
 
-      const orderId = orderRes.data.orderId;
-      const orderAmount = orderRes.data.finalAmount;
+      const { orderId, finalAmount: orderAmount } = orderRes.data;
 
-      // 2. Process Payment based on method
       if (paymentMethod === "vnpay") {
         const paymentRes = await httpClient<{ paymentUrl: string }>(
           "/payment/create_payment",
           {
             method: "POST",
             body: JSON.stringify({
-              orderId: orderId,
+              orderId,
               amount: orderAmount,
-              bankCode: "", // Default to empty to let user select bank on payment gateway
+              bankCode: "",
               language: "vn",
             }),
           },
         );
 
-        if (
-          paymentRes.success &&
-          paymentRes.data &&
-          paymentRes.data.paymentUrl
-        ) {
+        if (paymentRes.success && paymentRes.data?.paymentUrl) {
           window.location.href = paymentRes.data.paymentUrl;
         } else {
           throw new Error(paymentRes.message || "Lỗi tạo thanh toán VNPay");

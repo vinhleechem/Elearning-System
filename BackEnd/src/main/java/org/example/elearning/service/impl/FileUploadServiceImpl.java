@@ -3,7 +3,7 @@ package org.example.elearning.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.elearning.service.FileUploadService;
-import org.example.elearning.util.CloudinaryUtil;
+import org.example.elearning.utils.CloudinaryUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

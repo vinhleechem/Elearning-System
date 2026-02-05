@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatCurrency } from "../../libs/utils";
 import {
   Table,
   TableBody,
@@ -326,10 +327,7 @@ const CourseManagement = () => {
 
   const formatPrice = (price?: number) => {
     if (!price) return "Miễn phí";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
+    return formatCurrency(price);
   };
 
   const handleStatusClick = (course: CourseResponse) => {

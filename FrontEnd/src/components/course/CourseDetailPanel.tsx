@@ -27,7 +27,8 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
   const { enqueueSnackbar } = useToast();
   const [loading, setLoading] = useState(false);
   const { addToCart, isInCart } = useCartStore();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } =
+    useWishlistStore();
   const navigate = useNavigate();
   const inCart = isInCart(id);
   const inWishlist = isInWishlist(id);
@@ -38,9 +39,14 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
     try {
       await addToCart(id);
       enqueueSnackbar("Đã thêm khóa học vào giỏ hàng", { variant: "success" });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Add to cart error:", error);
-      enqueueSnackbar(error.message || "Không thể thêm vào giỏ hàng", { variant: "error" });
+      enqueueSnackbar(
+        (error as Error).message || "Không thể thêm vào giỏ hàng",
+        {
+          variant: "error",
+        },
+      );
     } finally {
       setLoading(false);
     }
@@ -54,11 +60,15 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
         enqueueSnackbar("Đã xóa khỏi danh sách yêu thích", { variant: "info" });
       } else {
         await addToWishlist(id);
-        enqueueSnackbar("Đã thêm vào danh sách yêu thích", { variant: "success" });
+        enqueueSnackbar("Đã thêm vào danh sách yêu thích", {
+          variant: "success",
+        });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Wishlist error:", error);
-      enqueueSnackbar(error.message || "Có lỗi xảy ra", { variant: "error" });
+      enqueueSnackbar((error as Error).message || "Có lỗi xảy ra", {
+        variant: "error",
+      });
     }
   };
 
@@ -77,12 +87,12 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
 
   return (
     <Box
-      className="absolute bg-white rounded-lg shadow-2xl p-4 w-80"
+      className="absolute w-80 rounded-lg bg-white p-4 shadow-2xl"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 10000,
-        border: "1px solid #e0e0e0",
+        border: `1px solid ${COLORS.border.light}`,
         minHeight: "420px", // luôn cao hơn card tiêu chuẩn (~345px + padding)
         maxHeight: "80vh",
         overflow: "visible",
@@ -123,7 +133,12 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
       )}
 
       {/* Updated Date */}
-      <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        display="block"
+        mb={1}
+      >
         Đã cập nhật {updatedAt}
       </Typography>
 
@@ -133,11 +148,7 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
       </Typography>
 
       {/* Description */}
-      <Typography
-        variant="body2"
-        fontSize={14}
-        mb={2}
-      >
+      <Typography variant="body2" fontSize={14} mb={2}>
         {description}
       </Typography>
 
@@ -148,11 +159,8 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
         </Typography>
         {learningPoints?.map((point, index) => (
           <Box key={index} display="flex" alignItems="flex-start" mb={1}>
-            <span className="text-blue-600 mr-2">•</span>
-            <Typography
-              variant="body2"
-              fontSize={13}
-            >
+            <span className="mr-2 text-blue-600">•</span>
+            <Typography variant="body2" fontSize={13}>
               {point}
             </Typography>
           </Box>
@@ -169,7 +177,7 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
           onClick={handleButtonClick}
           disabled={loading}
           sx={{
-            backgroundColor: "#3b82f6", // System Blue
+            backgroundColor: COLORS.status.info,
             textTransform: "none",
             fontWeight: 700,
             height: 48,
@@ -179,7 +187,13 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
             },
           }}
         >
-          {loading ? "Đang thêm..." : isPurchased ? "Vào học ngay" : inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
+          {loading
+            ? "Đang thêm..."
+            : isPurchased
+              ? "Vào học ngay"
+              : inCart
+                ? "Chuyển đến giỏ hàng"
+                : "Thêm vào giỏ hàng"}
         </Button>
 
         {/* Wishlist Button */}
@@ -188,9 +202,9 @@ const CourseDetailPanel: React.FC<CourseDetailProps> = ({
           sx={{
             width: 48,
             height: 48,
-            border: "1px solid #2d2f31", // Default border
-            borderColor: inWishlist ? "#3b82f6" : "#2d2f31",
-            color: inWishlist ? "#3b82f6" : "#2d2f31",
+            border: `1px solid ${COLORS.text.primary}`,
+            borderColor: inWishlist ? COLORS.status.info : COLORS.text.primary,
+            color: inWishlist ? COLORS.status.info : COLORS.text.primary,
             "&:hover": {
               bgcolor: "rgba(59, 130, 246, 0.04)",
             },

@@ -49,6 +49,7 @@ public enum ErrorCode {
 
     // Course errors
     COURSE_NOT_FOUND("Khóa học không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    COURSE_NOT_PUBLIC("Khóa học chưa được xuất bản", HttpStatus.NOT_FOUND.value()),
     COURSE_ALREADY_ENROLLED("Bạn đã đăng ký khóa học này rồi", HttpStatus.CONFLICT.value()),
     COURSE_NOT_FOUND_LIST("Không tìm thấy khóa học nào", HttpStatus.NOT_FOUND.value()),
     INSTRUCTOR_NOT_ASSIGNED_TO_COURSE("Instructor không phụ trách khóa học này",HttpStatus.FORBIDDEN.value()),
@@ -58,6 +59,7 @@ public enum ErrorCode {
 
     //Category errors
     CATEGORY_NOT_FOUND("Danh mục không tìm thấy", HttpStatus.NOT_FOUND.value()),
+    CATEGORY_MUST_BE_LEVEL_3("Danh mục phải ở cấp 3", HttpStatus.NOT_FOUND.value()),
 
     //Instructor errors
     INSTRUCTOR_NOT_FOUND("Giảng viên không tìm thấy", HttpStatus.NOT_FOUND.value()),
@@ -67,6 +69,7 @@ public enum ErrorCode {
     COURSE_ALREADY_IN_WISHLIST("Khóa học đã có trong danh sách yêu thích", HttpStatus.CONFLICT.value()),
     COURSE_ALREADY_IN_CART("Khóa học đã có trong giỏ hàng", HttpStatus.CONFLICT.value()),
     CART_ITEM_NOT_FOUND("Khóa học không có trong giỏ hàng", HttpStatus.NOT_FOUND.value()),
+    CART_NOT_FOUND("Không tìm thấy giỏ hàng", HttpStatus.NOT_FOUND.value()),
     WISHLIST_ITEM_NOT_FOUND("Item trong wishlist không tìm thấy", HttpStatus.NOT_FOUND.value()),
 
     // Review errors
@@ -119,7 +122,13 @@ public enum ErrorCode {
 
     //Message errors
     MESSAGE_NOT_FOUND("Message không tìm thấy", HttpStatus.NOT_FOUND.value()),
-    MESSAGE_DELETE_FORBIDDEN("Bạn chỉ có thể xóa message của chính mình", HttpStatus.FORBIDDEN.value());
+    MESSAGE_DELETE_FORBIDDEN("Bạn chỉ có thể xóa message của chính mình", HttpStatus.FORBIDDEN.value()),
+
+    //Lesson errors
+    LESSON_NOT_FOUND("Bài học không tìm thấy", HttpStatus.NOT_FOUND.value());
+
+
+
     public String message;
     public int code;
 

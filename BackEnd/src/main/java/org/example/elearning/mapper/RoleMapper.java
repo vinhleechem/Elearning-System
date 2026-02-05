@@ -7,7 +7,7 @@ import org.example.elearning.entity.RoleEntity;
 import org.mapstruct.*;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface RoleMapper {
     @Mapping(target = "roleId", ignore = true)
     @Mapping(target = "permissions", ignore = true)

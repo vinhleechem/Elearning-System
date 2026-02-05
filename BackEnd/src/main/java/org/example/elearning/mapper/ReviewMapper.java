@@ -7,7 +7,6 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
-    
     @Mapping(source = "reviewId", target = "reviewId")
     @Mapping(source = "course.courseId", target = "courseId")
     @Mapping(source = "course.title", target = "courseTitle")

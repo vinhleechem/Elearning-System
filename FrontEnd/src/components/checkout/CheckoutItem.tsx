@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, CardMedia, Typography } from "@mui/material";
-import { formatCurrency } from "../../libs/utils";
+import { PriceDisplay } from "../shared";
 import type { CheckoutItemProps } from "../../types/checkoutItem";
 
 const CheckoutItem: React.FC<CheckoutItemProps> = ({
@@ -17,12 +17,12 @@ const CheckoutItem: React.FC<CheckoutItemProps> = ({
         </Typography>
       </CardContent>
       <Box textAlign="right" pr={2}>
-        <Typography fontSize={14} fontWeight={700}>
-          {formatCurrency(price)}
-        </Typography>
-        <Typography fontSize={12} sx={{ textDecoration: "line-through" }}>
-          {formatCurrency(oldPrice || 0)}
-        </Typography>
+        <PriceDisplay
+          current={price}
+          original={oldPrice}
+          size="small"
+          orientation="vertical"
+        />
       </Box>
     </Card>
   );

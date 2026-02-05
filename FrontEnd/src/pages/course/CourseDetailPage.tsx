@@ -158,13 +158,11 @@ const CourseDetailPage = () => {
         return;
       }
 
-      console.log("Fetching course with slug:", slug);
       setLoading(true);
       setError(null);
 
       try {
         const course = await courseService.getCourseBySlug(slug);
-        console.log("Course data received:", course);
 
         // Fetch sections with lessons
         let sections = mockData.sections; // Default to mock
@@ -172,7 +170,6 @@ const CourseDetailPage = () => {
           const sectionsData = await sectionService.getSectionsByCourse(
             course.courseId,
           );
-          console.log("Sections data received:", sectionsData);
 
           // Map sections to CourseDetail format
           sections = sectionsData.map((section) => ({
@@ -235,7 +232,6 @@ const CourseDetailPage = () => {
           reviews: mockData.reviews, // Use mock reviews for now
           related: mockData.related, // Use mock related for now
         };
-        console.log("Mapped data:", mappedData);
         setData(mappedData);
         setLoading(false);
       } catch (error) {

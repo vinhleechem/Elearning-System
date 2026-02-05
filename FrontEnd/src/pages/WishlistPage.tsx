@@ -14,25 +14,26 @@ import {
 import { Favorite } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { formatCurrency } from "../libs/utils";
-import { useWishlistStore } from "../store/wishlistStore";
+import { useWishlist } from "../hooks";
+import { EmptyState } from "../components/shared";
+import { COLORS, GRID_CONFIGS } from "../constants";
 
 const WishlistPage = () => {
   const navigate = useNavigate();
-  const { items: wishlistCourses, removeFromWishlist } = useWishlistStore();
+  const { items: wishlistCourses, toggleWishlist } = useWishlist();
 
-  const handleRemoveFromWishlist = async (courseId: number) => {
-    await removeFromWishlist(courseId);
+  const handleRemoveFromWishlist = (courseId: number) => {
+    toggleWishlist(courseId);
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     if (newValue === 0) navigate("/my-courses/learning");
     else if (newValue === 1) navigate("/my-courses/learning");
-    // Tab 2 là wishlist - đang ở đây rồi
   };
 
   return (
     <>
-      <Box sx={{ bgcolor: "#1c1d1f", color: "white", py: 3 }}>
+      <Box sx={{ bgcolor: COLORS.background.dark, color: "white", py: 3 }}>
         <Container maxWidth="xl" sx={{ px: { xs: 2, lg: 4 } }}>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 3 }}>
             Học tập
@@ -43,9 +44,9 @@ const WishlistPage = () => {
             variant="scrollable"
             scrollButtons={false}
             sx={{
-              borderBottom: "1px solid rgba(255,255,255,0.2)",
+              borderBottom: `1px solid ${COLORS.border.transparent}`,
               "& .MuiTab-root": {
-                color: "#d1d7dc",
+                color: COLORS.text.light,
                 textTransform: "none",
                 fontSize: 16,
                 fontWeight: 600,
@@ -53,10 +54,10 @@ const WishlistPage = () => {
                 mr: 3,
               },
               "& .Mui-selected": {
-                color: "#fff",
+                color: COLORS.text.white,
               },
               "& .MuiTabs-indicator": {
-                backgroundColor: "#3b82f6",
+                backgroundColor: COLORS.status.info,
                 height: 3,
               },
             }}
@@ -71,7 +72,9 @@ const WishlistPage = () => {
         </Container>
       </Box>
 
-      <Box sx={{ bgcolor: "#fff", minHeight: "100vh", py: 4 }}>
+      <Box
+        sx={{ bgcolor: COLORS.background.default, minHeight: "100vh", py: 4 }}
+      >
         <Container maxWidth="xl" sx={{ px: { xs: 2, lg: 4 } }}>
           {wishlistCourses.length === 0 ? (
             <Box
@@ -93,14 +96,12 @@ const WishlistPage = () => {
                 to="/"
                 variant="contained"
                 sx={{
-                  bgcolor: "#3b82f6",
+                  bgcolor: COLORS.status.info,
                   textTransform: "none",
                   fontWeight: 600,
                   px: 3,
-                  "&:hover": {
-                    bgcolor: "#2563eb",
-                  },
                 }}
+                color="primary"
               >
                 Khám phá khóa học
               </Button>
@@ -109,13 +110,7 @@ const WishlistPage = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
-                  xl: "repeat(5, 1fr)",
-                },
+                gridTemplateColumns: GRID_CONFIGS.wishlistGrid,
                 gap: 3,
               }}
             >
@@ -125,12 +120,12 @@ const WishlistPage = () => {
                   sx={{
                     display: "flex",
                     flexDirection: "column",
-                    border: "1px solid #d1d7dc",
+                    border: `1px solid ${COLORS.border.default}`,
                     borderRadius: 0,
                     boxShadow: "none",
                     position: "relative",
                     "&:hover": {
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      boxShadow: COLORS.shadow.medium,
                     },
                   }}
                 >
@@ -150,7 +145,9 @@ const WishlistPage = () => {
                       },
                     }}
                   >
-                    <Favorite sx={{ color: "#ec5252", fontSize: 20 }} />
+                    <Favorite
+                      sx={{ color: COLORS.status.error, fontSize: 20 }}
+                    />
                   </IconButton>
 
                   {/* Image */}
@@ -182,7 +179,7 @@ const WishlistPage = () => {
                       fontSize="0.95rem"
                       sx={{
                         textDecoration: "none",
-                        color: "#2d2f31",
+                        color: COLORS.text.primary,
                         mb: 0.5,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -191,7 +188,7 @@ const WishlistPage = () => {
                         WebkitBoxOrient: "vertical",
                         minHeight: "2.8em",
                         "&:hover": {
-                          color: "#3b82f6",
+                          color: COLORS.status.info,
                         },
                       }}
                     >

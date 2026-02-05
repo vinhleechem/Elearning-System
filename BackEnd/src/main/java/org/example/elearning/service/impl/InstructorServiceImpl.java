@@ -31,10 +31,20 @@ public class InstructorServiceImpl implements InstructorService {
     InstructorMapper instructorMapper;
 
     @Override
-    public InstructorResponse getInstructorById(Long instructorId) {
-        InstructorEntity instructor = instructorRepository.findById(instructorId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
+    public InstructorEntity getMyInfo() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userService.getUserByEmail(email);
+        return findInstructorByUser(user).orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
+    }
 
+    @Override
+    public Optional<InstructorEntity> findInstructorByUser(UserEntity user) {
+        return instructorRepository.findByUser(user);
+    }
+
+    @Override
+    public InstructorResponse getInstructorById(Long instructorId) {
+        InstructorEntity instructor = getInstructorEntityById(instructorId);
         return instructorMapper.toResponse(instructor);
     }
 
@@ -71,7 +81,6 @@ public class InstructorServiceImpl implements InstructorService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = userService.getUserByEmail(email);
 
-        // Kiểm tra đã là instructor chưa
         if (instructorRepository.existsByUser(user)) {
             throw new ResourceConflictException(ErrorCode.INSTRUCTOR_NOT_FOUND.getMessage());
         }
@@ -96,18 +105,15 @@ public class InstructorServiceImpl implements InstructorService {
         return instructorMapper.toResponse(instructor);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public InstructorEntity getInstructorEntityById(Long instructorId) {
-        return instructorRepository.findById(instructorId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PERMISSION_NOT_FOUND.getMessage()));
-    }
+
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<InstructorEntity> findInstructorByUser(UserEntity user) {
-        return instructorRepository.findByUser(user);
+    public InstructorEntity getInstructorEntityById(Long instructorId) {
+        return instructorRepository.findById(instructorId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.INSTRUCTOR_NOT_FOUND.getMessage()));
     }
+
+
 
     private InstructorEntity createDefaultInstructorProfile(UserEntity user) {
         InstructorEntity newInstructor = InstructorEntity.builder()

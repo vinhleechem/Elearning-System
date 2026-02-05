@@ -234,4 +234,5 @@ export interface CreateCourseRequest {
   language?: string;
   level?: string;
   hasCertificate?: boolean;
+  thumbnailUrl?: string;
 }

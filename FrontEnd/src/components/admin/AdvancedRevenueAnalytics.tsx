@@ -31,14 +31,15 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { COLORS as THEME_COLORS } from "../../constants";
 
-const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#8884d8",
-  "#82ca9d",
+const CHART_COLORS = [
+  THEME_COLORS.chart.primary,
+  THEME_COLORS.chart.teal,
+  THEME_COLORS.chart.yellow,
+  THEME_COLORS.chart.orange,
+  THEME_COLORS.chart.indigo,
+  THEME_COLORS.chart.mint,
 ];
 
 export const AdvancedRevenueAnalytics = () => {
@@ -180,13 +181,13 @@ export const AdvancedRevenueAnalytics = () => {
                         <Legend wrapperStyle={{ paddingTop: 20 }} />
                         <Bar
                           dataKey="revenue"
-                          fill="#667eea"
+                          fill={THEME_COLORS.chart.purple}
                           name="Tổng Doanh Thu"
                           radius={[8, 8, 0, 0]}
                         />
                         <Bar
                           dataKey="instructorEarnings"
-                          fill="#43e97b"
+                          fill={THEME_COLORS.chart.green}
                           name="Thu Nhập GV"
                           radius={[8, 8, 0, 0]}
                         />
@@ -241,7 +242,7 @@ export const AdvancedRevenueAnalytics = () => {
                           {paymentMethodRevenue.map((_, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
                             />
                           ))}
                         </Pie>
@@ -286,13 +287,13 @@ export const AdvancedRevenueAnalytics = () => {
                         <Legend />
                         <Bar
                           dataKey="revenue"
-                          fill="#667eea"
+                          fill={THEME_COLORS.chart.purple}
                           name="Doanh Thu"
                           radius={[8, 8, 0, 0]}
                         />
                         <Bar
                           dataKey="orderCount"
-                          fill="#43e97b"
+                          fill={THEME_COLORS.chart.green}
                           name="Số Đơn"
                           radius={[8, 8, 0, 0]}
                         />
@@ -325,8 +326,7 @@ export const AdvancedRevenueAnalytics = () => {
                           sx={{
                             p: 2,
                             borderRadius: 2,
-                            background:
-                              "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            background: THEME_COLORS.gradient.purpleIndigo,
                             color: "white",
                           }}
                         >
@@ -346,8 +346,7 @@ export const AdvancedRevenueAnalytics = () => {
                           sx={{
                             p: 2,
                             borderRadius: 2,
-                            background:
-                              "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                            background: THEME_COLORS.gradient.pinkRed,
                             color: "white",
                           }}
                         >
@@ -367,8 +366,7 @@ export const AdvancedRevenueAnalytics = () => {
                           sx={{
                             p: 2,
                             borderRadius: 2,
-                            background:
-                              "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                            background: THEME_COLORS.gradient.blueAqua,
                             color: "white",
                           }}
                         >
@@ -388,8 +386,7 @@ export const AdvancedRevenueAnalytics = () => {
                           sx={{
                             p: 2,
                             borderRadius: 2,
-                            background:
-                              "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                            background: THEME_COLORS.gradient.greenTeal,
                             color: "white",
                           }}
                         >
