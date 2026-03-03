@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ConversationMapper {
+    @Mapping(target = "courseId", source = "course.courseId")
     @Mapping(target = "courseName", source = "course.title")
     @Mapping(target = "studentId", source = "student.userId")
     @Mapping(target = "studentName", source = "student.fullName")

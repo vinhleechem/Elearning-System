@@ -75,5 +75,4 @@ public class LessonEntity extends BaseEntity {
 
     @Column(name = "sort_order")
     Integer sortOrder;
-
 }

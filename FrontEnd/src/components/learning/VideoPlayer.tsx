@@ -28,6 +28,7 @@ interface VideoPlayerProps {
   hasNext?: boolean;
   hasPrevious?: boolean;
   onTimeUpdate?: (time: number) => void;
+  onEnded?: () => void;
 }
 
 const VideoPlayer = React.forwardRef<VideoPlayerRef, VideoPlayerProps>(({
@@ -38,6 +39,7 @@ const VideoPlayer = React.forwardRef<VideoPlayerRef, VideoPlayerProps>(({
   hasNext,
   hasPrevious,
   onTimeUpdate,
+  onEnded,
 }, ref) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -221,6 +223,7 @@ const VideoPlayer = React.forwardRef<VideoPlayerRef, VideoPlayerProps>(({
           }}
           src={videoUrl}
           onClick={handlePlayPause}
+          onEnded={onEnded}
         />
       ) : (
         <Box

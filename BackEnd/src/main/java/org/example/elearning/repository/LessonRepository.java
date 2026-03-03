@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface LessonRepository extends JpaRepository<LessonEntity, Long> {
     List<LessonEntity> findBySectionOrderBySortOrderAsc(SectionEntity section);
+    int countBySection_Course_CourseId(Long sectionCourseCourseId);
 }
 
 

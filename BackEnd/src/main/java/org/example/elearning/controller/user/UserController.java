@@ -29,7 +29,7 @@ public class UserController {
 
     @Operation(summary = "Lấy thông tin profile", description = "API lấy thông tin người dùng hiện tại")
     @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping
+    @GetMapping("/me")
     public ResponseEntity<StandardResponse<UserResponse>> getCurrentUser() {
         UserResponse user = userService.getMyProfile();
         return ResponseEntity.ok(success("Lấy thông tin người dùng thành công", user));
@@ -37,7 +37,7 @@ public class UserController {
 
     @Operation(summary = "Cập nhật profile", description = "API cho user tự cập nhật thông tin cá nhân")
     @ApiResponse(responseCode = "200", description = "Cập nhật thành công")
-    @PutMapping
+    @PutMapping("/me")
     public ResponseEntity<StandardResponse<UserResponse>> updateProfile(
             @Valid @RequestBody UpdateProfileRequest request) {
         UserResponse user = userService.updateMyProfile(request);
@@ -55,7 +55,7 @@ public class UserController {
 
     @Operation(summary = "Upload avatar", description = "API cho user tự upload ảnh đại diện")
     @ApiResponse(responseCode = "200", description = "Upload thành công")
-    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StandardResponse<UserResponse>> uploadAvatar(
             @RequestParam("file") MultipartFile file) {
         UserResponse user = userService.uploadMyAvatar(file);
@@ -64,7 +64,7 @@ public class UserController {
 
     @Operation(summary = "Xóa avatar", description = "API cho user xóa ảnh đại diện")
     @ApiResponse(responseCode = "200", description = "Xóa thành công")
-    @DeleteMapping("/avatar")
+    @DeleteMapping("/me/avatar")
     public ResponseEntity<StandardResponse<String>> deleteAvatar() {
         userService.deleteMyAvatar();
         return ResponseEntity.ok(success("Xóa avatar thành công"));

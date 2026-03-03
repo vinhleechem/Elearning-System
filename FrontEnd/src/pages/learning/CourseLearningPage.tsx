@@ -28,18 +28,23 @@ import type {
   Section as SectionType,
   Lecture,
 } from "../../types/lecture";
-import { Chat as ChatIcon, MoreVert, StarRate } from "@mui/icons-material";
+import { Chat as ChatIcon, MoreVert, StarRate, Share } from "@mui/icons-material";
 import ChatDrawer from "../../components/chat/ChatDrawer";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
 import { lessonService } from "../../service/lessonService";
 import { formatDate } from "../../libs/dateUtils";
 import { useAuthStore } from "../../store/authStore";
+import { httpClient } from "../../service/httpClient";
+import { lessonProgressService } from "../../service/lessonProgressService";
+import type { LessonProgress } from "../../types/lessonProgress";
+import { useToast } from "../../hooks/useToast";
 
 const CourseLearningPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { enqueueSnackbar } = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [currentLectureId, setCurrentLectureId] = useState<number | null>(null);
   const [courseData, setCourseData] = useState<CourseLearning | null>(null);
@@ -49,6 +54,12 @@ const CourseLearningPage = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadCount] = useState(0); // TODO: Get from API
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [enrollmentId, setEnrollmentId] = useState<number | null>(null);
+  const [lessonProgressMap, setLessonProgressMap] = useState<
+    Record<number, LessonProgress>
+  >({});
+  const heartbeatTimeoutRef = useRef<number | null>(null);
+  const autoCompleteRef = useRef<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -76,7 +87,7 @@ const CourseLearningPage = () => {
               id: l.lessonId,
               title: l.title,
               duration: l.durationSeconds || 0,
-              isCompleted: false, // TODO: Implement progress tracking
+              isCompleted: false,
               videoUrl: l.videoUrl,
               description: l.description,
             }));
@@ -93,9 +104,6 @@ const CourseLearningPage = () => {
             };
           }),
         );
-
-        // Sắp xếp sections theo sortOrder hoặc position nếu có (backend thường trả về đúng thứ tự)
-        // Nếu cần sort: sectionsMapped.sort(...)
 
         const mappedCourseData: CourseLearning = {
           id: courseDetail.courseId,
@@ -120,18 +128,86 @@ const CourseLearningPage = () => {
         ) {
           setCurrentLectureId(sectionsMapped[0].lectures[0].id);
         }
-
-        // Calculate progress (not displayed currently)
-        // const totalLectures = sectionsMapped.reduce((acc, sec) => acc + sec.lectures.length, 0);
-        // const completedLectures = sectionsMapped.reduce((acc, sec) => acc + sec.completedLectures, 0);
-        // Progress: totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
+        enqueueSnackbar(
+          error?.message || "Không tải được dữ liệu khóa học",
+          { variant: "error" },
+        );
       } finally {
         setLoading(false);
       }
     };
-    fetchCourseData();
+
+    const init = async () => {
+      await fetchCourseData();
+
+      // Sau khi có dữ liệu khóa học, tìm enrollment hiện tại của user cho khóa học này
+      if (!courseId) return;
+      try {
+        const enrollmentRes = await httpClient<
+          {
+            enrollmentId: number;
+            courseId: number;
+            progress: number;
+          }[]
+        >("/enrollments", { method: "GET" });
+
+        const found = enrollmentRes.data?.find(
+          (e) => e.courseId === Number(courseId),
+        );
+
+        if (found) {
+          setEnrollmentId(found.enrollmentId);
+          // Lấy danh sách progress từng bài học cho enrollment này
+          const progressList =
+            await lessonProgressService.getEnrollmentProgress(
+              found.enrollmentId,
+            );
+
+          const map: Record<number, LessonProgress> = {};
+          progressList.forEach((p) => {
+            map[p.lessonId] = p;
+          });
+          setLessonProgressMap(map);
+
+          // Áp tiến độ vào courseData
+          setCourseData((prev) => {
+            if (!prev) return prev;
+            const updatedSections = prev.sections.map((sec) => {
+              const updatedLectures = sec.lectures.map((lec) => {
+                const lp = map[lec.id];
+                return {
+                  ...lec,
+                  isCompleted: lp?.isCompleted ?? lec.isCompleted,
+                };
+              });
+              const completedLectures = updatedLectures.filter(
+                (l) => l.isCompleted,
+              ).length;
+              return {
+                ...sec,
+                lectures: updatedLectures,
+                completedLectures,
+              };
+            });
+            return { ...prev, sections: updatedSections };
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        // Không show toast lớn nếu chỉ lỗi phần progress
+      }
+    };
+
+    void init();
+
+    return () => {
+      if (heartbeatTimeoutRef.current) {
+        window.clearTimeout(heartbeatTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -142,17 +218,17 @@ const CourseLearningPage = () => {
     if (!url) return "";
     if (url.startsWith("http")) return url;
 
-    // Construct absolute URL
+    // Luôn dùng origin (http://localhost:8080) cho file video,
+    // tránh dính thêm path /api/v1 gây 404.
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL;
-      // If url starts with /uploads, we want the root origin (e.g. localhost:8080), not the API base (e.g. localhost:8080/api/v1)
-      if (url.startsWith("/uploads")) {
-        const urlObj = new URL(baseUrl);
-        return `${urlObj.origin}${url.startsWith("/") ? "" : "/"}${url}`;
-      }
-      return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+      const urlObj = new URL(baseUrl);
+      const origin = urlObj.origin;
+      const cleanUrl = url.startsWith("/") ? url : `/${url}`;
+      return `${origin}${cleanUrl}`;
     } catch {
-      return `http://localhost:8080${url.startsWith("/") ? "" : "/"}${url}`;
+      const cleanUrl = url.startsWith("/") ? url : `/${url}`;
+      return `http://localhost:8080${cleanUrl}`;
     }
   };
 
@@ -181,6 +257,119 @@ const CourseLearningPage = () => {
       playerRef.current.seekTo(time);
     }
   };
+
+  // Heartbeat lưu vị trí video (10s/lần)
+  useEffect(() => {
+    if (!enrollmentId || !currentLectureId) return;
+
+    if (heartbeatTimeoutRef.current) {
+      window.clearTimeout(heartbeatTimeoutRef.current);
+    }
+
+    heartbeatTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        await lessonProgressService.updateVideoPosition(
+          enrollmentId,
+          currentLectureId,
+          Math.floor(playerCurrentTime),
+        );
+      } catch (error) {
+        console.error("Failed to update video position", error);
+      }
+    }, 10000);
+  }, [playerCurrentTime, enrollmentId, currentLectureId]);
+
+  const getOverallProgress = () => {
+    if (!courseData) return 0;
+    const totalLectures = courseData.sections.reduce(
+      (acc, sec) => acc + sec.lectures.length,
+      0,
+    );
+    if (totalLectures === 0) return 0;
+    const completedLectures = courseData.sections.reduce(
+      (acc, sec) => acc + sec.completedLectures,
+      0,
+    );
+    return Math.round((completedLectures * 100) / totalLectures);
+  };
+
+  const markLectureCompleted = async (lessonId: number, isToggle = false) => {
+    if (!enrollmentId) return;
+
+    // Nếu là auto-complete và đã completed rồi thì bỏ qua
+    if (!isToggle) {
+      if (autoCompleteRef.current[lessonId] && lessonProgressMap[lessonId]?.isCompleted) {
+        return;
+      }
+    }
+
+    try {
+      await lessonProgressService.markLessonCompleted(
+        enrollmentId,
+        lessonId,
+        { isToggle },
+      );
+
+      setLessonProgressMap((prev) => {
+        const existing = prev[lessonId];
+        const newCompleted = isToggle
+          ? !existing?.isCompleted
+          : true;
+        const updated: LessonProgress = {
+          ...(existing || {
+            enrollmentId,
+            lessonId,
+          }),
+          isCompleted: newCompleted,
+        };
+        return {
+          ...prev,
+          [lessonId]: updated,
+        };
+      });
+
+      setCourseData((prev) => {
+        if (!prev) return prev;
+        const updatedSections = prev.sections.map((sec) => {
+          const updatedLectures = sec.lectures.map((lec) =>
+            lec.id === lessonId
+              ? { ...lec, isCompleted: isToggle ? !lec.isCompleted : true }
+              : lec,
+          );
+          const completedLectures = updatedLectures.filter(
+            (l) => l.isCompleted,
+          ).length;
+          return {
+            ...sec,
+            lectures: updatedLectures,
+            completedLectures,
+          };
+        });
+        return { ...prev, sections: updatedSections };
+      });
+    } catch (error: any) {
+      console.error(error);
+      enqueueSnackbar(
+        error?.message || "Không thể đánh dấu hoàn thành bài học",
+        { variant: "error" },
+      );
+    }
+  };
+
+  // Tự động đánh dấu hoàn thành khi xem >= 90%
+  useEffect(() => {
+    if (!enrollmentId || !currentLectureId || !currentLecture) return;
+    if (!currentLecture.duration || currentLecture.duration <= 0) return;
+
+    const ratio = playerCurrentTime / currentLecture.duration;
+    const alreadyCompleted = lessonProgressMap[currentLectureId]?.isCompleted;
+
+    if (ratio >= 0.9 && !alreadyCompleted) {
+      if (autoCompleteRef.current[currentLectureId]) return;
+      autoCompleteRef.current[currentLectureId] = true;
+      void markLectureCompleted(currentLectureId);
+    }
+  }, [playerCurrentTime, enrollmentId, currentLectureId, currentLecture, lessonProgressMap]);
 
   if (loading) {
     return (
@@ -286,7 +475,9 @@ const CourseLearningPage = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <StarRate sx={{ fontSize: 18 }} />
-              <Typography variant="body2">Tiến độ của bạn</Typography>
+              <Typography variant="body2">
+                Tiến độ của bạn: {getOverallProgress()}%
+              </Typography>
             </Box>
           </Button>
 
@@ -500,6 +691,9 @@ const CourseLearningPage = () => {
           sections={courseData.sections}
           currentLectureId={currentLectureId || 0}
           onLectureClick={handleLectureClick}
+          onToggleComplete={(lessonId) => {
+          void markLectureCompleted(lessonId, true);
+          }}
         />
       </Box>
 

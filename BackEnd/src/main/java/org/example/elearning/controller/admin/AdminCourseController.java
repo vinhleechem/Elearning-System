@@ -97,7 +97,7 @@ public class AdminCourseController {
 
     @Operation(summary = "Lấy chi tiết khóa học theo slug")
     @ApiResponse(responseCode = "200", description = "Lấy thành công")
-    @GetMapping("/{slug}")
+    @GetMapping("/slug/{slug}")
     public ResponseEntity<StandardResponse<CourseResponse>> getCourseBySlug(@PathVariable String slug) {
         CourseResponse result = courseService.getCourseBySlug(slug);
         return ResponseEntity.ok(success("Lấy khóa học thành công", result));

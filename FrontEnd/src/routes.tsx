@@ -33,6 +33,7 @@ import PaymentFailedPage from "./pages/payment/PaymentFailedPage";
 import NotificationManagement from "./pages/admin/NotificationManagement";
 import RevenueDashboard from "./pages/admin/RevenueDashboard";
 import ReviewManagement from "./pages/admin/ReviewManagement";
+import AdminProgressManagement from "./pages/admin/AdminProgressManagement";
 import SetPasswordPage from "./pages/SetPasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
@@ -255,6 +256,10 @@ export const router = createBrowserRouter([
       {
         path: "reviews",
         element: <ReviewManagement />,
+      },
+      {
+        path: "progress",
+        element: <AdminProgressManagement />,
       },
       {
         path: "conversations",

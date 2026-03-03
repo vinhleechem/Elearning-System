@@ -22,4 +22,9 @@ public class EnrollmentResponse {
     private Integer totalLessons;
     private Integer completedLessons;
     private String slug;
+
+    // Thông tin học viên (phục vụ admin quản lý tiến độ)
+    private Long studentId;
+    private String studentName;
+    private String studentEmail;
 }

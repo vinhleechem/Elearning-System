@@ -86,7 +86,7 @@ export const courseService = {
 
   getCourseBySlug: async (slug: string): Promise<PublicCourseResponse> => {
     const response = await httpClient<PublicCourseResponse>(
-      `/courses/${slug}`,
+      `/courses/slug/${slug}`,
       {
         method: "GET",
       },
@@ -99,13 +99,30 @@ export const courseService = {
 
   getCourseById: async (id: number): Promise<PublicCourseResponse> => {
     const response = await httpClient<PublicCourseResponse>(
-      `/courses/${id}/info`,
+      `/courses/${id}`,
       {
         method: "GET",
       },
     );
     if (!response.data) {
       throw new Error(response.message || "Không tìm thấy khóa học");
+    }
+    return response.data;
+  },
+
+  getRelatedCourses: async (
+    id: number,
+  ): Promise<PublicCourseResponse[]> => {
+    const response = await httpClient<PublicCourseResponse[]>(
+      `/courses/${id}/related`,
+      {
+        method: "GET",
+      },
+    );
+    if (!response.data) {
+      throw new Error(
+        response.message || "Không lấy được danh sách khóa học liên quan",
+      );
     }
     return response.data;
   },
@@ -140,7 +157,7 @@ export const courseService = {
     if (params.search) query.set("search", params.search);
 
     const response = await httpClient<PaginatedResponse<PublicCourseResponse>>(
-      `/courses/my-courses?${query.toString()}`,
+      `/instructor/courses/my-courses?${query.toString()}`,
       {
         method: "GET",
         headers: {

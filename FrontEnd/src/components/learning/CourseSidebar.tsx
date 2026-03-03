@@ -13,12 +13,14 @@ interface CourseSidebarProps {
   sections: Section[];
   currentLectureId?: number;
   onLectureClick: (lectureId: number) => void;
+  onToggleComplete?: (lectureId: number) => void;
 }
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({
   sections,
   currentLectureId,
   onLectureClick,
+  onToggleComplete,
 }) => {
   const [expandedSections, setExpandedSections] = useState<number[]>(
     sections.map((s) => s.id)
@@ -41,17 +43,24 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   return (
     <Box
       sx={{
-        width: 400,
+        width: 380,
         height: "100%",
         bgcolor: "#fff",
         borderLeft: "1px solid #d1d7dc",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
+        boxShadow: "0 0 24px rgba(15,23,42,0.06)",
       }}
     >
-      <Box sx={{ p: 2, borderBottom: "1px solid #d1d7dc" }}>
-        <Typography variant="h6" fontWeight={700}>
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: "1px solid #d1d7dc",
+          bgcolor: "#f9fafb",
+        }}
+      >
+        <Typography variant="h6" fontWeight={800} fontSize={15}>
           Nội dung khóa học
         </Typography>
       </Box>
@@ -62,11 +71,11 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
             <ListItemButton
               onClick={() => toggleSection(section.id)}
               sx={{
-                bgcolor: "#f7f9fa",
+                bgcolor: "#f9fafb",
                 borderBottom: "1px solid #d1d7dc",
                 py: 1.5,
                 "&:hover": {
-                  bgcolor: "#e8e9eb",
+                  bgcolor: "#eef2ff",
                 },
               }}
             >
@@ -74,10 +83,35 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                 <Typography variant="body1" fontWeight={700} fontSize={14}>
                   {section.title}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {section.completedLectures} / {section.lectures.length} |{" "}
-                  {Math.floor(section.totalDuration / 60)} phút
-                </Typography>
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    mt: 0.5,
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 999,
+                    bgcolor: "#e5e7eb",
+                    fontSize: 11,
+                    color: "#4b5563",
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontSize: 11 }}>
+                    {section.completedLectures}/{section.lectures.length} bài
+                  </Typography>
+                  <Box
+                    sx={{
+                      width: 3,
+                      height: 3,
+                      borderRadius: "999px",
+                      bgcolor: "#9ca3af",
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ fontSize: 11 }}>
+                    {Math.floor(section.totalDuration / 60)} phút
+                  </Typography>
+                </Box>
               </Box>
               {expandedSections.includes(section.id) ? (
                 <ExpandLess />
@@ -101,14 +135,14 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                       py: 1.5,
                       bgcolor:
                         currentLectureId === lecture.id
-                          ? "#f7f9fa"
+                          ? "#eef2ff"
                           : "transparent",
                       borderLeft:
                         currentLectureId === lecture.id
                           ? "4px solid #3b82f6"
                           : "4px solid transparent",
                       "&:hover": {
-                        bgcolor: "#f7f9fa",
+                        bgcolor: "#f3f4ff",
                       },
                     }}
                   >
@@ -142,13 +176,54 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                         {lecture.title}
                       </Typography>
                     </Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontSize={12}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        ml: 1,
+                      }}
                     >
-                      {formatDuration(lecture.duration)}
-                    </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontSize={12}
+                      >
+                        {formatDuration(lecture.duration)}
+                      </Typography>
+                      <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleComplete?.(lecture.id);
+                        }}
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "999px",
+                          border: "1px solid",
+                          borderColor: lecture.isCompleted
+                            ? "rgba(34,197,94,0.4)"
+                            : "rgba(148,163,184,0.6)",
+                          bgcolor: lecture.isCompleted
+                            ? "rgba(34,197,94,0.12)"
+                            : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          "&:hover": {
+                            bgcolor: lecture.isCompleted
+                              ? "rgba(34,197,94,0.18)"
+                              : "rgba(226,232,240,0.7)",
+                          },
+                        }}
+                      >
+                        {lecture.isCompleted && (
+                          <Check sx={{ fontSize: 16, color: "#16a34a" }} />
+                        )}
+                      </Box>
+                    </Box>
                   </ListItemButton>
                 ))}
               </List>

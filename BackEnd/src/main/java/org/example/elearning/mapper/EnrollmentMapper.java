@@ -18,5 +18,8 @@ public interface EnrollmentMapper {
     @Mapping(source = "course.slug", target = "slug")
     @Mapping(target = "totalLessons", constant = "0")
     @Mapping(target = "completedLessons", constant = "0")
+    @Mapping(source = "user.userId", target = "studentId")
+    @Mapping(source = "user.fullName", target = "studentName")
+    @Mapping(source = "user.email", target = "studentEmail")
     EnrollmentResponse toResponse(EnrollmentEntity enrollment);
 }

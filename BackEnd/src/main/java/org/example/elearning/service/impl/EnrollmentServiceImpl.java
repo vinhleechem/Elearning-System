@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.elearning.dto.response.EnrollmentResponse;
+import org.example.elearning.dto.response.PaginatedResponse;
 import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.EnrollmentEntity;
 import org.example.elearning.entity.UserEntity;
@@ -16,6 +17,8 @@ import org.example.elearning.service.EnrollmentService;
 import org.example.elearning.service.UserService;
 import org.example.elearning.service.CourseService;
 import org.example.elearning.mapper.EnrollmentMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,6 +107,35 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Transactional(readOnly = true)
     public boolean existsByUserAndCourse(UserEntity user, CourseEntity course) {
         return enrollmentRepository.existsByUserAndCourse(user, course);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginatedResponse<EnrollmentResponse> getEnrollmentsForAdmin(
+            Pageable pageable,
+            Long courseId,
+            String search) {
+
+        Page<EnrollmentEntity> page;
+        if (courseId != null) {
+            page = enrollmentRepository.findByCourse_CourseId(courseId, pageable);
+        } else {
+            page = enrollmentRepository.findAll(pageable);
+        }
+
+        List<EnrollmentResponse> data = page.getContent().stream()
+                .map(this::mapToEnrollmentResponse)
+                .collect(Collectors.toList());
+
+        return new PaginatedResponse<>(
+                data,
+                new PaginatedResponse.Pagination(
+                        page.getNumber() + 1,
+                        page.getSize(),
+                        page.getTotalElements(),
+                        page.getTotalPages()
+                )
+        );
     }
 
     private EnrollmentResponse mapToEnrollmentResponse(EnrollmentEntity enrollment) {

@@ -17,7 +17,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -54,28 +53,24 @@ public class CourseEntity extends BaseEntity {
     @Nationalized
     String shortDescription;
 
-    @Lob
     @Nationalized
-    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
-    @Column(name = "description")
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "description", columnDefinition = "TEXT")
     String description;
 
-    @Lob
     @Nationalized
-    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
-    @Column(name = "what_you_learn")
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "what_you_learn", columnDefinition = "TEXT")
     String whatYouLearn;
 
-    @Lob
     @Nationalized
-    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
-    @Column(name = "requirements")
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "requirements", columnDefinition = "TEXT")
     String requirements;
 
-    @Lob
     @Nationalized
-    @Basic(fetch = FetchType.LAZY)  // Lazy load for performance
-    @Column(name = "target_audience")
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "target_audience", columnDefinition = "TEXT")
     String targetAudience;
 
     @Column(name = "thumbnail_url")

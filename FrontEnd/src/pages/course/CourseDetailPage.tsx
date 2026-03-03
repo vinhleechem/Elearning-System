@@ -16,134 +16,6 @@ import CourseRequirements from "../../components/courseDetail/CourseRequirements
 import type { CourseDetail } from "../../types/courseDetail";
 import { formatDate } from "../../libs/dateUtils";
 
-const mockData: CourseDetail = {
-  id: 0,
-  slug: "sample-course",
-  title: "Thành Thạo Docker Từ Cơ Bản Đến Nâng Cao",
-  subtitle:
-    "Thành thạo Docker trong thực tế: Xây dựng, quản lý và triển khai ứng dụng nhanh chóng và hiệu quả.",
-  badges: ["Xếp hạng cao nhất", "Thịnh hành & mới"],
-  categoryPath: ["CNTT & Phần mềm", "CNTT & Phần mềm khác", "Docker"],
-  rating: 5.0,
-  students: 1655,
-  lastUpdated: "10/2025",
-  language: "Tiếng Việt",
-  captions: ["Tiếng Việt"],
-  whatYouWillLearn: [
-    "Hiểu rõ khái niệm Docker và sự khác biệt giữa Container và Virtual Machine",
-    "Nắm vững kiến thức Docker: Docker CLI, Docker Host, Docker Registry và các khái niệm cốt lõi",
-    "Quản lý Docker Image: pull từ Docker Hub, inspect, tagging và build image với Dockerfile",
-    "Cài đặt Docker trên Windows (WSL, Docker Desktop) và Ubuntu, cấu hình môi trường làm việc",
-    "Thành thạo thao tác với Container: tạo, chạy, dừng, xoá, logs, port mapping, exec command",
-    "Hiểu layered architecture và multi-stage build để tối ưu image trong dự án thực tế",
-    "Quản lý dữ liệu với Docker Storage: volumes, bind mount, tmpfs mount",
-    "Làm chủ Docker Networking: bridge, host và none network",
-  ],
-  sections: [
-    {
-      id: 1,
-      title: "Giới thiệu",
-      lectures: [
-        { id: "11", title: "Chào mừng", duration: "5:12", previewable: true },
-        {
-          id: "12",
-          title: "Tại sao học Docker",
-          duration: "8:30",
-          previewable: false,
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Cài đặt và thiết lập",
-      lectures: [
-        {
-          id: "21",
-          title: "Cài Docker trên Windows",
-          duration: "12:45",
-          previewable: false,
-        },
-        {
-          id: "22",
-          title: "Cài Docker trên Ubuntu",
-          duration: "10:20",
-          previewable: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Docker cơ bản",
-      lectures: [
-        {
-          id: "31",
-          title: "Làm việc với Container",
-          duration: "15:30",
-          previewable: false,
-        },
-        {
-          id: "32",
-          title: "Quản lý Images",
-          duration: "18:45",
-          previewable: false,
-        },
-      ],
-    },
-  ],
-  requirements: ["Kiến thức JS cơ bản", "Đã cài Node.js >= 18"],
-  descriptionHtml: "<p>Khoá học tập trung vào thực hành và best practices.</p>",
-  instructor: {
-    name: "AI Coding",
-    title: "Senior Engineer",
-    avatarUrl: "/public/user/user-01.jpg",
-  },
-  previewUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  price: 779000,
-  oldPrice: 2499000,
-  discountPercentage: 64,
-  promotionEndDate: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString(), // 9 hours from now
-  isPurchasable: true,
-  reviewsSummary: {
-    average: 5.0,
-    count: 121,
-    distribution: [100, 15, 4, 1, 1],
-  },
-  reviews: [
-    {
-      id: "rv1",
-      user: "An Nguyen",
-      rating: 5,
-      date: "1 ngày trước",
-      comment: "Khoá học rất hữu ích!",
-    },
-    {
-      id: "rv2",
-      user: "Binh Tran",
-      rating: 4,
-      date: "3 ngày trước",
-      comment: "Giải thích rõ ràng.",
-    },
-  ],
-  related: [
-    {
-      id: "r1",
-      slug: "kubernetes-basics",
-      title: "Kubernetes từ cơ bản",
-      rating: 4.6,
-      price: 799000,
-      image: "/public/cards/card-01.jpg",
-    },
-    {
-      id: "r2",
-      slug: "devops-complete",
-      title: "DevOps hoàn chỉnh",
-      rating: 4.8,
-      price: 1299000,
-      image: "/public/cards/card-02.jpg",
-    },
-  ],
-};
-
 const CourseDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<CourseDetail | null>(null);
@@ -165,7 +37,7 @@ const CourseDetailPage = () => {
         const course = await courseService.getCourseBySlug(slug);
 
         // Fetch sections with lessons
-        let sections = mockData.sections; // Default to mock
+        let sections: CourseDetail["sections"] = [];
         try {
           const sectionsData = await sectionService.getSectionsByCourse(
             course.courseId,
@@ -178,10 +50,25 @@ const CourseDetailPage = () => {
             lectures: [], // TODO: Fetch lessons for each section when API is available
           }));
         } catch (sectionError) {
-          console.warn(
-            "Failed to fetch sections, using mock data:",
-            sectionError,
+          console.warn("Failed to fetch sections", sectionError);
+        }
+
+        // Fetch related courses (backend algorithm: same category/level)
+        let related: CourseDetail["related"] = [];
+        try {
+          const relatedApi = await courseService.getRelatedCourses(
+            course.courseId,
           );
+          related = relatedApi.map((c) => ({
+            id: String(c.courseId),
+            slug: c.slug,
+            title: c.title,
+            image: c.thumbnailUrl || "/images/courses/default-course.jpg",
+            price: c.price ?? 0,
+            rating: c.averageRating ?? 0,
+          }));
+        } catch (relatedError) {
+          console.warn("Failed to fetch related courses", relatedError);
         }
 
         // Map API response to CourseDetail
@@ -229,8 +116,9 @@ const CourseDetailPage = () => {
             count: course.totalReviews || 0,
             distribution: [0, 0, 0, 0, 0],
           },
-          reviews: mockData.reviews, // Use mock reviews for now
-          related: mockData.related, // Use mock related for now
+          // TODO: map real reviews khi backend hỗ trợ
+          reviews: [],
+          related,
         };
         setData(mappedData);
         setLoading(false);

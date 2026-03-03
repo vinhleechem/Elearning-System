@@ -38,11 +38,13 @@ public class LessonProgressEntity extends BaseEntity{
 
     // Thời gian đã xem (giây) - cho video
     @Column(name = "time_spent_seconds")
-    Integer timeSpentSeconds;
+    @Builder.Default
+    Integer timeSpentSeconds = 0;
 
     // Vị trí cuối cùng trong video (giây)
     @Column(name = "last_position_seconds")
-    Integer lastPositionSeconds;
+    @Builder.Default
+    Integer lastPositionSeconds = 0;
 
     // Lần cuối truy cập
     @Column(name = "last_accessed_at")

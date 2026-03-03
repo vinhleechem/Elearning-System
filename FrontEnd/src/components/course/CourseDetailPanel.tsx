@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useCartStore } from "../../store/cartStore";
 import { useWishlistStore } from "../../store/wishlistStore";
 import { useNavigate } from "react-router-dom";
+import { COLORS } from "../../constants";
 
 const CourseDetailPanel: React.FC<CourseDetailProps> = ({
   id,

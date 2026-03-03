@@ -62,7 +62,6 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
 
-
     private Specification<ConversationEntity> applyConversationFilters(
             Specification<ConversationEntity> baseSpec,
             Long courseId,

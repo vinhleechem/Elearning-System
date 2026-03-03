@@ -67,6 +67,11 @@ const navItems: NavItem[] = [
     path: "/admin/revenue",
   },
   {
+    icon: <TrendingUp />,
+    name: "Quản lý tiến độ",
+    path: "/admin/progress",
+  },
+  {
     icon: <RateReview />,
     name: "Quản lý đánh giá",
     path: "/admin/reviews",

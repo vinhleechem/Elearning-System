@@ -489,7 +489,7 @@ const AdminConversationList = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                                                {conversation.courseTitle}
+                                                {conversation.courseName}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
@@ -503,7 +503,7 @@ const AdminConversationList = () => {
                                                     whiteSpace: "nowrap",
                                                 }}
                                             >
-                                                {conversation.lastMessage || "Chưa có tin nhắn"}
+                                                {conversation.lastMessageContent || "Chưa có tin nhắn"}
                                             </Typography>
                                             {conversation.lastMessageAt && (
                                                 <Typography variant="caption" color="text.secondary">

@@ -39,7 +39,7 @@ export const adminUserService = {
     }
 
     const response = await httpClient<PaginatedResponse<UserResponse>>(
-      `/users?${query.toString()}`,
+      `/admin/users?${query.toString()}`,
       {
         method: "GET",
         headers: {
@@ -63,7 +63,7 @@ export const adminUserService = {
       passwordHash: string;
     },
   ): Promise<UserResponse> => {
-    const response = await httpClient<UserResponse>("/users", {
+    const response = await httpClient<UserResponse>("/admin/users", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -87,7 +87,7 @@ export const adminUserService = {
       avatarUrl?: string;
     },
   ): Promise<UserResponse> => {
-    const response = await httpClient<UserResponse>(`/users/${userId}`, {
+    const response = await httpClient<UserResponse>(`/admin/users/${userId}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -103,7 +103,7 @@ export const adminUserService = {
   },
 
   deleteUser: async (accessToken: string, userId: number): Promise<void> => {
-    const response = await httpClient<void>(`/users/${userId}`, {
+    const response = await httpClient<void>(`/admin/users/${userId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -120,7 +120,7 @@ export const adminUserService = {
     userId: number,
   ): Promise<UserResponse> => {
     const response = await httpClient<UserResponse>(
-      `/users/${userId}/toggle-status`,
+      `/admin/users/${userId}/toggle-status`,
       {
         method: "PATCH",
         headers: {
@@ -141,7 +141,7 @@ export const adminUserService = {
     userId: number,
     roleNames: string[],
   ): Promise<UserResponse> => {
-    const response = await httpClient<UserResponse>(`/users/${userId}/roles`, {
+    const response = await httpClient<UserResponse>(`/admin/users/${userId}/roles`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -165,7 +165,7 @@ export const adminUserService = {
     formData.append("file", file);
 
     const response = await httpClient<UserResponse>(
-      `/users/${userId}/avatar`,
+      `/admin/users/${userId}/avatar`,
       {
         method: "POST",
         headers: {
@@ -186,7 +186,7 @@ export const adminUserService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await httpClient<void>("/users/import", {
+    const response = await httpClient<void>("/admin/users/import", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -201,7 +201,7 @@ export const adminUserService = {
 
   exportUsers: async (accessToken: string): Promise<Blob> => {
     const response = await fetch(
-      `${import.meta.env.VITE_BASE_URL}/users/export`,
+      `${import.meta.env.VITE_BASE_URL}/admin/users/export`,
       {
         method: "GET",
         headers: {

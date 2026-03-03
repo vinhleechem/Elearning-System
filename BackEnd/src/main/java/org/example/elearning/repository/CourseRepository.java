@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.example.elearning.entity.CourseEntity;
+import org.example.elearning.entity.CategoryEntity;
 import org.example.elearning.enums.CourseStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,13 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
     List<CourseEntity> findAllByIsDeletedFalse();
 
     List<CourseEntity> findAllByCourseIdInAndStatusAndIsDeletedIsFalse(Collection<Long> courseIds, CourseStatus status);
+
+    // Related courses: cùng category, đã publish, chưa bị xóa, khác course hiện tại, ưu tiên rating cao rồi đến mới nhất
+    List<CourseEntity> findTop8ByCategoryAndStatusAndIsDeletedFalseAndCourseIdNotOrderByAverageRatingDescPublishedAtDesc(
+            CategoryEntity category,
+            CourseStatus status,
+            Long excludedCourseId
+    );
 }
 
 

@@ -39,6 +39,9 @@ public interface CourseService {
 
     List<CourseEntity> getCourseEntitiesByIds(List<Long> ids);
 
+    // Related courses
+    List<CourseResponse> getRelatedCourses(Long courseId);
+
     CourseResponse createCourseByInstructor(InstructorCourseRequest request);
 
     CourseResponse createCourseByAdmin(AdminCourseRequest request);

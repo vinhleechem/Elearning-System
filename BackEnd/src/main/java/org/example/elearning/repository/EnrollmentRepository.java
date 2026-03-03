@@ -4,6 +4,8 @@ import org.example.elearning.entity.CourseEntity;
 import org.example.elearning.entity.EnrollmentEntity;
 import org.example.elearning.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 
@@ -18,6 +20,10 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentEntity, Lo
     boolean existsByUserAndCourse(UserEntity user, CourseEntity course);
 
     List<EnrollmentEntity> findByUser(UserEntity user);
+
+    Page<EnrollmentEntity> findAll(Pageable pageable);
+
+    Page<EnrollmentEntity> findByCourse_CourseId(Long courseId, Pageable pageable);
 
     boolean existsByCourseAndUser(CourseEntity course, UserEntity user);
 

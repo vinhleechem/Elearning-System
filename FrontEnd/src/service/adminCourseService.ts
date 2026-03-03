@@ -67,7 +67,7 @@ export const adminCourseService = {
     }
 
     const response = await httpClient<PaginatedResponse<CourseResponse>>(
-      `/courses/admin/list?${query.toString()}`,
+      `/admin/courses?${query.toString()}`,
       {
         method: "GET",
         headers: {
@@ -88,7 +88,7 @@ export const adminCourseService = {
     courseId: number,
   ): Promise<CourseResponse> => {
     const response = await httpClient<CourseResponse>(
-      `/courses/admin/${courseId}`,
+      `/admin/courses/${courseId}`,
       {
         method: "GET",
         headers: {
@@ -124,7 +124,7 @@ export const adminCourseService = {
       hasCertificate?: boolean;
     },
   ): Promise<CourseResponse> => {
-    const response = await httpClient<CourseResponse>(`/courses/${courseId}`, {
+    const response = await httpClient<CourseResponse>(`/admin/courses/${courseId}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -160,7 +160,7 @@ export const adminCourseService = {
       hasCertificate?: boolean;
     },
   ): Promise<CourseResponse> => {
-    const response = await httpClient<CourseResponse>("/courses", {
+    const response = await httpClient<CourseResponse>("/admin/courses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -180,7 +180,7 @@ export const adminCourseService = {
     accessToken: string,
     courseId: number,
   ): Promise<void> => {
-    const response = await httpClient<void>(`/courses/${courseId}`, {
+    const response = await httpClient<void>(`/admin/courses/${courseId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -226,7 +226,7 @@ export const adminCourseService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await httpClient<void>("/courses/import", {
+    const response = await httpClient<void>("/admin/courses/import", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -241,7 +241,7 @@ export const adminCourseService = {
 
   exportCourses: async (accessToken: string): Promise<Blob> => {
     const API_BASE_URL = import.meta.env.VITE_BASE_URL;
-    const response = await fetch(`${API_BASE_URL}/courses/export`, {
+    const response = await fetch(`${API_BASE_URL}/admin/courses/export`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${accessToken}`,

@@ -209,6 +209,28 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getRelatedCourses(Long courseId) {
+        CourseEntity current = getCourseEntityById(courseId);
+
+        List<CourseEntity> relatedEntities = courseRepository
+                .findTop8ByCategoryAndStatusAndIsDeletedFalseAndCourseIdNotOrderByAverageRatingDescPublishedAtDesc(
+                        current.getCategory(),
+                        CourseStatus.PUBLISHED,
+                        current.getCourseId()
+                );
+
+        return relatedEntities.stream()
+                .map(course -> {
+                    CourseResponse response = courseMapper.toResponse(course);
+                    promotionService.applyBestPromotionToCourse(response, course);
+                    enrichCourseWithUserContext(response, course);
+                    return response;
+                })
+                .toList();
+    }
+
+    @Override
     public CourseResponse createCourseByInstructor(InstructorCourseRequest request) {
         InstructorEntity instructor = instructorService.getMyInfo();
 
