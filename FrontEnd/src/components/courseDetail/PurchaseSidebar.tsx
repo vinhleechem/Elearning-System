@@ -32,6 +32,7 @@ interface Props {
   sx?: SxProps<Theme>;
   isPurchased?: boolean;
   purchasedAt?: string;
+  thumbnailUrl?: string;
   // Promotion info
   promotionName?: string;
   promotionType?: string;
@@ -47,6 +48,7 @@ const PurchaseSidebar: React.FC<Props> = ({
   sx,
   isPurchased,
   purchasedAt,
+  thumbnailUrl,
   discountPercentage,
   promotionEndDate,
 }) => {
@@ -127,7 +129,7 @@ const PurchaseSidebar: React.FC<Props> = ({
       >
         <Box
           component="img"
-          src="/images/carousel/carousel-01.png"
+          src={thumbnailUrl || "/images/logo/logo.png"}
           alt="preview"
           sx={{ width: "100%", height: "100%", objectFit: "cover" }}
         />

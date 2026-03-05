@@ -14,7 +14,6 @@ public interface ReviewMapper {
     @Mapping(source = "user.fullName", target = "userName")
     @Mapping(source = "user.avatarUrl", target = "userAvatar")
     ReviewResponse toResponse(ReviewEntity review);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(ReviewEntity review,@MappingTarget UpdateReviewRequest reviewResponse);
 }

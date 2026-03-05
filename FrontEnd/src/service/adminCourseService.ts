@@ -26,7 +26,7 @@ export interface CourseResponse {
   thumbnailUrl?: string;
   previewVideoUrl?: string;
   level?: string;
-  status: "DRAFT" | "PUBLISHED" | "ACHIEVED";
+  status: "DRAFT" | "PUBLISHED" | "PENDING" | "REJECTED" | "ARCHIVED";
   price?: number;
   discountPrice?: number;
   language?: string;
@@ -53,7 +53,7 @@ export const adminCourseService = {
       page: number;
       size: number;
       search?: string;
-      status?: "DRAFT" | "PUBLISHED" | "ACHIEVED";
+      status?: "DRAFT" | "PUBLISHED" | "PENDING" | "REJECTED" | "ARCHIVED";
     },
   ): Promise<PaginatedResponse<CourseResponse>> => {
     const query = new URLSearchParams();
@@ -124,14 +124,17 @@ export const adminCourseService = {
       hasCertificate?: boolean;
     },
   ): Promise<CourseResponse> => {
-    const response = await httpClient<CourseResponse>(`/admin/courses/${courseId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+    const response = await httpClient<CourseResponse>(
+      `/admin/courses/${courseId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       },
-      body: JSON.stringify(data),
-    });
+    );
 
     if (!response.data) {
       throw new Error(response.message || "Cập nhật khóa học thất bại");
@@ -158,6 +161,7 @@ export const adminCourseService = {
       level?: string;
       language?: string;
       hasCertificate?: boolean;
+      status?: "DRAFT" | "PUBLISHED" | "PENDING" | "REJECTED" | "ARCHIVED";
     },
   ): Promise<CourseResponse> => {
     const response = await httpClient<CourseResponse>("/admin/courses", {
@@ -195,13 +199,7 @@ export const adminCourseService = {
   updateCourseStatus: async (
     accessToken: string,
     courseId: number,
-    status:
-      | "DRAFT"
-      | "PUBLISHED"
-      | "ACHIEVED"
-      | "PENDING"
-      | "REJECTED"
-      | "ARCHIVED",
+    status: "DRAFT" | "PUBLISHED" | "PENDING" | "REJECTED" | "ARCHIVED",
   ): Promise<CourseResponse> => {
     const response = await httpClient<CourseResponse>(
       `/courses/${courseId}/status`,

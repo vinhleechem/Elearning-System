@@ -107,4 +107,22 @@ export const instructorService = {
 
     return response.data;
   },
+
+  // GET /api/v1/instructors - Admin only
+  getAllInstructors: async (
+    accessToken: string,
+  ): Promise<InstructorResponse[]> => {
+    const response = await httpClient<InstructorResponse[]>(`/instructors`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.data) {
+      throw new Error("Không lấy được danh sách giảng viên");
+    }
+
+    return response.data;
+  },
 };

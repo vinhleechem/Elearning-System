@@ -80,8 +80,8 @@ const CourseDetailPage = () => {
           slug: course.slug,
           title: course.title,
           subtitle: course.shortDescription,
-          badges: ["Bán chạy nhất", "Mới cập nhật"], // Mock tags nếu không có
-          categoryPath: ["Phát triển", "Lập trình Web", "Frontend"], // Mock breadcrumb path
+          badges: [],
+          categoryPath: course.categoryName ? [course.categoryName] : [],
           rating: course.averageRating || 0,
           students: course.totalStudents || 0,
           lastUpdated: course.publishedAt ? formatDate(course.publishedAt) : "",
@@ -98,9 +98,10 @@ const CourseDetailPage = () => {
           instructor: {
             name: course.instructorName || "Unknown Instructor",
             title: "Instructor",
-            avatarUrl: "/public/user/user-01.jpg", // Placeholder
+            avatarUrl: undefined,
           },
           previewUrl: course.previewVideoUrl,
+          thumbnailUrl: course.thumbnailUrl,
           price: hasDiscount ? course.discountPrice! : course.price || 0,
           oldPrice: hasDiscount ? course.price : null,
           isPurchasable: course.status === "PUBLISHED",
@@ -183,7 +184,7 @@ const CourseDetailPage = () => {
                 title: data.title || "",
                 description: data.subtitle || "",
                 rating: data.rating || 0,
-                reviewCount: data.reviewsSummary?.count || 121,
+                reviewCount: data.reviewsSummary?.count || 0,
                 studentCount: data.students || 0,
                 lastUpdated: data.lastUpdated || new Date().toISOString(),
                 language: data.language || "English",
@@ -217,6 +218,7 @@ const CourseDetailPage = () => {
               ctaDisabled={!data.isPurchasable}
               isPurchased={data.isPurchased}
               purchasedAt={data.purchasedAt}
+              thumbnailUrl={data.thumbnailUrl}
               promotionEndDate={data.promotionEndDate}
               discountPercentage={data.discountPercentage}
             />
@@ -253,6 +255,7 @@ const CourseDetailPage = () => {
           ctaDisabled={!data.isPurchasable}
           isPurchased={data.isPurchased}
           purchasedAt={data.purchasedAt}
+          thumbnailUrl={data.thumbnailUrl}
           promotionEndDate={data.promotionEndDate}
           discountPercentage={data.discountPercentage}
         />

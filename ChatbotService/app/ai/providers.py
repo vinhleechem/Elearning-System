@@ -1,93 +1,88 @@
 """
-AI Provider - CHỈ SỬ DỤNG GEMINI
+AI Provider - Cloudflare Workers AI
 """
 
 from typing import List, Dict, Any
-import google.generativeai as genai
+import httpx
 from app.core.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class GeminiProvider:
-    """Google Gemini Provider - Provider duy nhất"""
-    
+class CloudflareProvider:
+    """Cloudflare Workers AI Provider - Miễn phí 10,000 neurons/ngày"""
+
+    # Model mặc định - Llama 3.3 70B chất lượng cao
+    DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+
     def __init__(self):
-        if not settings.GEMINI_API_KEY:
-            logger.error("❌ GEMINI_API_KEY is missing or empty!")
+        self.account_id = settings.CLOUDFLARE_ACCOUNT_ID
+        self.api_token = settings.CLOUDFLARE_API_TOKEN
+        self.model_name = settings.CLOUDFLARE_MODEL or self.DEFAULT_MODEL
+
+        if not self.account_id or not self.api_token:
+            logger.error("❌ CLOUDFLARE_ACCOUNT_ID hoặc CLOUDFLARE_API_TOKEN bị thiếu!")
         else:
-            logger.info(f"✅ GEMINI_API_KEY loaded (length: {len(settings.GEMINI_API_KEY)})")
-            
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model_name = 'gemini-2.5-flash'
-        logger.info(f"🔥 GeminiProvider initialized with model: {self.model_name}")
-        self.model = genai.GenerativeModel(self.model_name)  # Updated model
-    
+            logger.info(f"☁️ CloudflareProvider initialized với model: {self.model_name}")
+
+        self.base_url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run"
+        self.headers = {
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json",
+        }
+
     def generate_response(
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
-        max_tokens: int = 5000  # Increased from 1000 to 2000
+        max_tokens: int = 2048
     ) -> str:
         try:
-            # Convert messages to Gemini format
-            # Gemini sử dụng format khác, cần convert từ OpenAI format
-            prompt = self._convert_messages_to_prompt(messages)
-            
-            generation_config = genai.types.GenerationConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens
-            )
-            
-            response = self.model.generate_content(
-                prompt,
-                generation_config=generation_config
-            )
-            
-            # Debug: Check finish reason
-            if hasattr(response, 'candidates') and response.candidates:
-                candidate = response.candidates[0]
-                logger.info(f"🔍 Finish reason: {candidate.finish_reason}")
-                if hasattr(candidate, 'safety_ratings'):
-                    logger.info(f"🔍 Safety ratings: {candidate.safety_ratings}")
-            
-            # Check if response was blocked
-            if not response.text:
-                logger.warning("⚠️ Empty response from Gemini!")
-                if hasattr(response, 'prompt_feedback'):
-                    logger.warning(f"⚠️ Prompt feedback: {response.prompt_feedback}")
-                return "Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại với câu hỏi khác."
-            
-            logger.info(f"✅ Response length: {len(response.text)} characters")
-            return response.text
-        except Exception as e:
-            logger.error(f"❌ Gemini error: {e}")
+            url = f"{self.base_url}/{self.model_name}"
+
+            payload = {
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(url, headers=self.headers, json=payload)
+                response.raise_for_status()
+
+            data = response.json()
+
+            if not data.get("success"):
+                errors = data.get("errors", [])
+                logger.error(f"❌ Cloudflare API error: {errors}")
+                raise Exception(f"Cloudflare API error: {errors}")
+
+            result = data.get("result", {})
+            text = result.get("response", "")
+
+            if not text:
+                logger.warning("⚠️ Cloudflare trả về response rỗng!")
+                return "Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại."
+
+            logger.info(f"✅ Cloudflare response: {len(text)} ký tự")
+            return text
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"❌ Cloudflare HTTP error {e.response.status_code}: {e.response.text}")
             raise
-    
-    def _convert_messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:
-        """Convert message format to Gemini prompt"""
-        prompt_parts = []
-        for msg in messages:
-            role = msg["role"]
-            content = msg["content"]
-            if role == "system":
-                prompt_parts.append(f"System: {content}")
-            elif role == "user":
-                prompt_parts.append(f"User: {content}")
-            elif role == "assistant":
-                prompt_parts.append(f"Assistant: {content}")
-        return "\n\n".join(prompt_parts)
+        except Exception as e:
+            logger.error(f"❌ Cloudflare error: {e}")
+            raise
 
 
 class AIProviderFactory:
-    """Factory để tạo AI provider - CHỈ GEMINI"""
-    
+    """Factory để tạo AI provider - Cloudflare Workers AI"""
+
     @staticmethod
-    def create_provider(provider_name: str = None) -> GeminiProvider:
+    def create_provider(provider_name: str = None) -> CloudflareProvider:
         """
-        Create AI provider instance
-        CHỈ hỗ trợ Gemini
+        Tạo AI provider - luôn dùng Cloudflare Workers AI
         """
-        # Luôn trả về Gemini, bỏ qua provider_name
-        return GeminiProvider()
+        logger.info("☁️ Sử dụng Cloudflare Workers AI")
+        return CloudflareProvider()

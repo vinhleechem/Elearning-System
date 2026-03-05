@@ -14,9 +14,10 @@ class Settings(BaseSettings):
     PORT: int = 8001
     DEBUG: bool = True
     
-    # AI Provider - CHỈ GEMINI
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")  # REQUIRED
-    DEFAULT_AI_PROVIDER: str = "gemini"  # Luôn là gemini
+    # Cloudflare Workers AI
+    CLOUDFLARE_ACCOUNT_ID: str = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+    CLOUDFLARE_API_TOKEN: str = os.getenv("CLOUDFLARE_API_TOKEN", "")
+    CLOUDFLARE_MODEL: str = os.getenv("CLOUDFLARE_MODEL", "@cf/meta/llama-3.3-70b-instruct-fp8-fast")
     
     # Database
     DATABASE_URL: str = "postgresql://postgres:12345@localhost:5432/eLearning"
@@ -59,10 +60,10 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Verify API key is loaded
+# Log provider being used
 import logging
 logger = logging.getLogger(__name__)
-if settings.GEMINI_API_KEY:
-    logger.info(f"✅ Gemini API Key loaded: {settings.GEMINI_API_KEY[:10]}...{settings.GEMINI_API_KEY[-4:]}")
+if settings.CLOUDFLARE_ACCOUNT_ID and settings.CLOUDFLARE_API_TOKEN:
+    logger.info(f"✅ Cloudflare Workers AI configured (account: {settings.CLOUDFLARE_ACCOUNT_ID[:8]}...)")
 else:
-    logger.error("❌ GEMINI_API_KEY is EMPTY! Check your .env file!")
+    logger.error("❌ CLOUDFLARE_ACCOUNT_ID hoặc CLOUDFLARE_API_TOKEN đang trống!")

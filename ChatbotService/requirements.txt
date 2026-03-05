@@ -4,9 +4,6 @@ uvicorn[standard]>=0.32.0,<0.33.0
 pydantic>=2.10.0,<3.0.0
 pydantic-settings>=2.6.0,<3.0.0
 
-# AI Providers
-google-generativeai>=0.8.0,<0.9.0  # REQUIRED nếu dùng Gemini
-
 # Core dependencies (numpy compatible with Python 3.12)
 numpy>=1.26.0,<2.0.0
 
@@ -14,7 +11,6 @@ numpy>=1.26.0,<2.0.0
 langchain>=0.3.0,<0.4.0
 langchain-community>=0.3.0,<0.4.0
 langchain-openai>=0.2.0,<0.3.0
-langchain-google-genai>=2.0.0,<3.0.0
 chromadb>=0.5.0
 sentence-transformers>=3.3.0,<4.0.0
 

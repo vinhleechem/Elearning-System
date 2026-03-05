@@ -5,6 +5,7 @@ import org.example.elearning.dto.response.InstructorResponse;
 import org.example.elearning.entity.InstructorEntity;
 import org.example.elearning.entity.UserEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface InstructorService {
@@ -23,5 +24,7 @@ public interface InstructorService {
     InstructorResponse becomeInstructor();
 
     Optional<InstructorEntity> findInstructorByUser(UserEntity user);
+
+    List<InstructorResponse> getAllInstructors();
 }
 

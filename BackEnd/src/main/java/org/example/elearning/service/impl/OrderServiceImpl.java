@@ -148,9 +148,6 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.findById(order.getOrderId()).orElseThrow();
         orderItems = orderItemRepository.findByOrder(order);
 
-        // Send notification to all admins about new order
-        sendNewOrderNotification(order, user);
-
         return mapToOrderResponse(order, orderItems);
     }
 
@@ -257,6 +254,9 @@ public class OrderServiceImpl implements OrderService {
     public void updateOrderStatus(OrderEntity order, OrderStatus status) {
         order.setStatus(status);
         orderRepository.save(order);
+        if (status == OrderStatus.PAID) {
+            sendNewOrderNotification(order, order.getUser());
+        }
     }
 
     private void sendNewOrderNotification(OrderEntity order, UserEntity user) {
@@ -265,9 +265,10 @@ public class OrderServiceImpl implements OrderService {
         
         for (UserEntity admin : admins) {
             NotificationRequest notification = NotificationRequest.builder()
-                    .title("Đơn hàng mới")
-                    .message(String.format("%s đã đặt hàng với tổng giá trị %s VNĐ", 
-                            user.getFullName(), 
+                    .title("Đơn hàng đã thanh toán")
+                    .message(String.format("%s vừa thanh toán đơn hàng #%d với tổng giá trị %s VNĐ",
+                            user.getFullName(),
+                            order.getOrderId(),
                             order.getFinalAmount()))
                     .type("SYSTEM")
                     .userId(admin.getUserId())

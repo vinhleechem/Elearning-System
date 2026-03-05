@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 // ... imports
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PurchasedCourseCard from "../../components/learning/PurchasedCourseCard";
 import type { PurchasedCourse } from "../../types/purchasedCourse";
 
@@ -32,8 +32,13 @@ interface EnrollmentResponse {
 }
 
 const MyLearningPage = () => {
-  const [activeTab, setActiveTab] = useState(0);
-  const [purchasedCourses, setPurchasedCourses] = useState<PurchasedCourse[]>([]);
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<number>(
+    (location.state as any)?.tab ?? 0,
+  );
+  const [purchasedCourses, setPurchasedCourses] = useState<PurchasedCourse[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { enqueueSnackbar } = useToast();
@@ -47,7 +52,7 @@ const MyLearningPage = () => {
       setLoading(true);
       const response = await httpClient<EnrollmentResponse[]>("/enrollments");
       if (response.data) {
-        const mappedCourses: PurchasedCourse[] = response.data.map(item => ({
+        const mappedCourses: PurchasedCourse[] = response.data.map((item) => ({
           id: item.courseId,
           title: item.courseTitle,
           instructor: item.instructorName || "Unknown Instructor",
@@ -58,7 +63,7 @@ const MyLearningPage = () => {
           totalDuration: 0, // Not available in API yet
           lastAccessed: item.enrolledAt,
           slug: item.slug,
-          rating: 0 // Not available
+          rating: 0, // Not available
         }));
         setPurchasedCourses(mappedCourses);
       }
@@ -79,10 +84,10 @@ const MyLearningPage = () => {
   };
 
   const getFilteredCourses = () => {
-    // Logic: 
+    // Logic:
     // Tab 0 ("Tất cả"): Show all purchased courses
     // Tab 1 ("Danh sách của tôi"): Show all (or filter by some criterion? User asked "who bought ... will be in all courses")
-    // Usually "All Courses" tab shows everything. 
+    // Usually "All Courses" tab shows everything.
 
     switch (activeTab) {
       case 0: // Tất cả khóa học
@@ -141,7 +146,6 @@ const MyLearningPage = () => {
 
       <Box sx={{ bgcolor: "#fff", minHeight: "100vh", py: 4 }}>
         <Container maxWidth="xl" sx={{ px: { xs: 2, lg: 4 } }}>
-
           {loading ? (
             <Box sx={{ textAlign: "center", py: 4 }}>
               <Typography>Đang tải...</Typography>
@@ -180,9 +184,14 @@ const MyLearningPage = () => {
                             Hãy thực hiện từng mục tiêu học tập của bạn.
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 3 }}
+                        >
                           <Box sx={{ textAlign: "center" }}>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               0 tuần
                             </Typography>
                             <Box
@@ -247,7 +256,7 @@ const MyLearningPage = () => {
                     </Typography>
                     <Button
                       variant="contained"
-                      onClick={() => navigate('/')}
+                      onClick={() => navigate("/")}
                       sx={{
                         mt: 3,
                         bgcolor: "#3b82f6",

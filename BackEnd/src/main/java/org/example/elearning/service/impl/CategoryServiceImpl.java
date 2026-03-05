@@ -153,14 +153,8 @@ public class CategoryServiceImpl implements CategoryService {
                 String name = getCellValue(row, 0);
                 if (name == null || name.isEmpty()) continue;
 
-                String slug = getCellValue(row, 1);
-                if (slug == null || slug.isEmpty()) {
-                    slug = name.toLowerCase().replace(" ", "-");
-                }
-
-                if (categoryRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
-                    continue;
-                }
+                String rawSlug = getCellValue(row, 1);
+                String slug = generateUniqueSlug(rawSlug, name);
 
                 String parentIdStr = getCellValue(row, 2);
                 CategoryEntity parent = null;

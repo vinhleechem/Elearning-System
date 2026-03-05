@@ -78,12 +78,12 @@ public class CourseEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "level", length = 50)
-    CourseLevel level; // BEGINNER, INTERMEDIATE, ADVANCED
+    CourseLevel level;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     @Builder.Default
-    CourseStatus status = CourseStatus.DRAFT; // draft, published, archived
+    CourseStatus status = CourseStatus.DRAFT;
 
     @Column(name = "price", precision = 10, scale = 2)
     BigDecimal price;

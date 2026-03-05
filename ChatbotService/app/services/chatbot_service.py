@@ -23,7 +23,6 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 try:
-    from app.ai.gemini import GeminiAgent
     from app.ai.mcp_integration import get_mcp_manager
     HAS_MCP = True
 except ImportError:
@@ -357,27 +356,17 @@ class ChatbotService:
         self.rag_service = RAGService()
         self.memory = ConversationMemory(db)
         
-        # Initialize AI Provider - với hoặc không có MCP
+        # Initialize AI Provider - Cloudflare Workers AI
+        self.ai_provider = AIProviderFactory.create_provider()
         if settings.ENABLE_MCP and HAS_MCP:
-            # Sử dụng GeminiAgent với MCP (có thể gọi tools)
-            logger.info("🤖 Initializing Gemini Agent with MCP support...")
-            self.ai_provider = GeminiAgent()
-            
-            # Initialize MCP Manager và đăng ký tools
             self.mcp_manager = get_mcp_manager(db)
-            self.ai_provider.register_mcp_tools(self.mcp_manager)
-            
-            # MCP servers sẽ connect khi cần (lazy connection)
-            logger.info("✅ Gemini Agent with MCP initialized")
-            logger.info(f"🔧 Available MCP tools: {len(self.mcp_manager.get_available_tools())}")
+            logger.info(f"🔧 MCP initialized. Available tools: {len(self.mcp_manager.get_available_tools())}")
         else:
-            # Sử dụng GeminiProvider thông thường (không có function calling)
-            self.ai_provider = AIProviderFactory.create_provider()
             self.mcp_manager = None
-            if settings.ENABLE_MCP:
-                logger.warning("⚠️ MCP enabled but modules not available. Using standard provider.")
+            if not HAS_MCP:
+                logger.warning("⚠️ MCP modules not available. Using standard provider.")
             else:
-                logger.info("ℹ️ MCP disabled. Using standard Gemini provider.")
+                logger.info("ℹ️ MCP disabled. Using Cloudflare Workers AI.")
         
         # Initialize Advanced AI Orchestrator
         if HAS_ADVANCED_AI:
@@ -500,37 +489,14 @@ class ChatbotService:
             if message_analysis['intent']['intent'] in ['technical_support', 'payment', 'refund']:
                 temperature = 0.3  # More precise for technical/financial questions
             
-            # Use GeminiAgent with MCP if enabled, otherwise use standard provider
-            if HAS_MCP and self.mcp_manager and hasattr(self.ai_provider, 'generate_response') and asyncio.iscoroutinefunction(self.ai_provider.generate_response):
-                # GeminiAgent với MCP - có thể gọi tools
-                logger.info("🔧 Using Gemini Agent with MCP (function calling enabled)")
-                try:
-                    ai_response = await self.ai_provider.generate_response(
-                        messages=messages,
-                        use_tools=True,  # Cho phép gọi tools
-                        max_iterations=5
-                    )
-                except Exception as e:
-                    logger.warning(f"⚠️ MCP Agent failed, falling back to standard provider: {e}")
-                    # Fallback to standard provider
-                    provider = AIProviderFactory.create_provider()
-                    ai_response = provider.generate_response(
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_tokens
-                    )
-            else:
-                # Standard GeminiProvider - không có function calling
-                if ai_provider:
-                    provider = AIProviderFactory.create_provider(ai_provider)
-                else:
-                    provider = self.ai_provider
-                
-                ai_response = provider.generate_response(
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
+            # Generate response với Cloudflare Workers AI
+            logger.info("☁️ Using Cloudflare Workers AI")
+            provider = self.ai_provider
+            ai_response = provider.generate_response(
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
             
             # ===== STEP 6: Generate smart enhanced response =====
             user_context_enhanced = {
@@ -570,13 +536,7 @@ class ChatbotService:
                         )
                         
                         # Generate reflection
-                        if HAS_MCP and hasattr(self.ai_provider, 'generate_response') and asyncio.iscoroutinefunction(self.ai_provider.generate_response):
-                            reflection_response = await self.ai_provider.generate_response(
-                                messages=[{"role": "user", "content": reflection_prompt}],
-                                use_tools=False
-                            )
-                        else:
-                            reflection_response = self.ai_provider.generate_response(
+                        reflection_response = self.ai_provider.generate_response(
                                 messages=[{"role": "user", "content": reflection_prompt}],
                                 temperature=0.3,
                                 max_tokens=max_tokens

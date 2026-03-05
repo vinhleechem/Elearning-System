@@ -20,6 +20,8 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.example.elearning.dto.response.InstructorResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/instructors")
@@ -28,6 +30,17 @@ import lombok.experimental.FieldDefaults;
 @Tag(name = "Instructor", description = "APIs quản lý giảng viên")
 public class InstructorController {
     InstructorService instructorService;
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lấy danh sách tất cả giảng viên - ADMIN only")
+    public ApiResponse<List<InstructorResponse>> getAllInstructors() {
+        return ApiResponse.<List<InstructorResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Lấy danh sách giảng viên thành công")
+                .data(instructorService.getAllInstructors())
+                .build();
+    }
 
     @GetMapping("/{instructorId}")
     @Operation(summary = "Lấy thông tin giảng viên theo ID")

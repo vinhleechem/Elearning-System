@@ -23,6 +23,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
 
     List<OrderEntity> findByUserAndStatus(UserEntity user, OrderStatus status);
 
+    List<OrderEntity> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime cutoff);
+
     Page<OrderEntity> findByUser(UserEntity user, Pageable pageable);
     
     // Revenue Analytics Queries

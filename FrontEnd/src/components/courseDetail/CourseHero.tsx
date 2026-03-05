@@ -1,4 +1,4 @@
-import { Box, Typography, Rating, Chip, } from "@mui/material";
+import { Box, Typography, Rating, Chip } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LanguageIcon from "@mui/icons-material/Language";
 
@@ -32,9 +32,21 @@ export default function CourseHero({ data }: CourseHeroProps) {
     <Box sx={{ py: { xs: 3, md: 4 } }}>
       {/* Breadcrumb - Chỉ hiển thị categories nếu có */}
       {data.categories && data.categories.length > 0 && (
-        <Box sx={{ mb: 2, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
+        <Box
+          sx={{
+            mb: 2,
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
           {data.categories.map((category, index) => (
-            <Box key={index} component="span" sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              key={index}
+              component="span"
+              sx={{ display: "flex", alignItems: "center" }}
+            >
               <Typography
                 component="span"
                 sx={{
@@ -51,7 +63,13 @@ export default function CourseHero({ data }: CourseHeroProps) {
               {index < data.categories.length - 1 && (
                 <Typography
                   component="span"
-                  sx={{ mx: 1, color: "white", fontSize: "1rem", display: "flex", alignItems: "center" }}
+                  sx={{
+                    mx: 1,
+                    color: "white",
+                    fontSize: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
                 >
                   ›
                 </Typography>
@@ -98,12 +116,21 @@ export default function CourseHero({ data }: CourseHeroProps) {
             let bgcolor = "#eceb98"; // Default yellow-ish
             let color = "#1c1d1f";
 
-            if (badge.toLowerCase().includes("bestseller") || badge.toLowerCase().includes("bán chạy")) {
+            if (
+              badge.toLowerCase().includes("bestseller") ||
+              badge.toLowerCase().includes("bán chạy")
+            ) {
               bgcolor = "#fbbf24"; // Yellow
-            } else if (badge.toLowerCase().includes("new") || badge.toLowerCase().includes("mới")) {
+            } else if (
+              badge.toLowerCase().includes("new") ||
+              badge.toLowerCase().includes("mới")
+            ) {
               bgcolor = "#10b981"; // Green
               color = "white";
-            } else if (badge.toLowerCase().includes("hot") || badge.toLowerCase().includes("nổi bật")) {
+            } else if (
+              badge.toLowerCase().includes("hot") ||
+              badge.toLowerCase().includes("nổi bật")
+            ) {
               bgcolor = "#ec4899"; // Pink
               color = "white";
             }
@@ -171,13 +198,13 @@ export default function CourseHero({ data }: CourseHeroProps) {
               "&:hover": { color: "#60a5fa" },
             }}
           >
-            ({(data.reviewCount || 121).toLocaleString()} xếp hạng)
+            ({(data.reviewCount || 0).toLocaleString()} xếp hạng)
           </Typography>
         </Box>
         <Typography
           sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.875rem" }}
         >
-          {(data.studentCount || 1656).toLocaleString()} học viên
+          {(data.studentCount || 0).toLocaleString()} học viên
         </Typography>
       </Box>
 
@@ -196,7 +223,7 @@ export default function CourseHero({ data }: CourseHeroProps) {
               "&:hover": { color: "#60a5fa" },
             }}
           >
-            {data.instructor?.name || "AI Coding"}
+            {data.instructor?.name || "Giảng viên"}
           </Typography>
         </Typography>
       </Box>

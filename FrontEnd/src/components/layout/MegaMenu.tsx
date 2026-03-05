@@ -58,7 +58,7 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
             py: 2,
             color: "#1c1d1f",
             fontSize: "14px",
-            letterSpacing: "0.5px"
+            letterSpacing: "0.5px",
           }}
         >
           {title}
@@ -71,7 +71,10 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
               <Box
                 key={topic.label}
                 component="li"
-                onMouseEnter={() => setActiveTopicIndex(idx)}
+                onMouseEnter={() => {
+                  setActiveTopicIndex(idx);
+                  setActiveColumnIndex(0);
+                }}
               >
                 <Box
                   component={Link}
@@ -100,7 +103,7 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
                     fontSize="small"
                     sx={{
                       fontSize: "18px",
-                      color: active ? "#3b82f6" : "#6a6f73"
+                      color: active ? "#3b82f6" : "#6a6f73",
                     }}
                   />
                 </Box>
@@ -232,4 +235,3 @@ const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
 };
 
 export default MegaMenu;
-

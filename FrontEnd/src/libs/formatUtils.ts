@@ -9,7 +9,7 @@ export const formatCurrency = (value: number): string => {
       maximumFractionDigits: 0,
     })
       .format(value)
-      .replace(/\s/g, ".") + " ₫"
+      .replace(/\s/g, ".") + "₫"
   );
 };
 

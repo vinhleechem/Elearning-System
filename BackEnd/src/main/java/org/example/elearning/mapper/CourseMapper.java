@@ -27,6 +27,7 @@ public interface CourseMapper {
 
     List<CourseResponse> toResponseList(List<CourseEntity> entities);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "instructor", ignore = true)
     @Mapping(target = "category", ignore = true)
     CourseEntity toEntity(AdminCourseRequest request);

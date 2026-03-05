@@ -6,7 +6,6 @@ import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
 
 const Header: React.FC = () => {
-
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const handleToggle = () => {
@@ -16,8 +15,6 @@ const Header: React.FC = () => {
       toggleMobileSidebar();
     }
   };
-
-
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -80,7 +77,7 @@ const Header: React.FC = () => {
           </button>
 
           <Link to="/" className="lg:hidden">
-            <img src="/images/logo.png" alt="Logo" className="h-8" />
+            <img src="/images/logo/logo.png" alt="Logo" className="h-8" />
           </Link>
 
           {/* Search - Desktop only */}

@@ -15,7 +15,9 @@ import org.example.elearning.repository.InstructorRepository;
 import org.example.elearning.service.InstructorService;
 import org.example.elearning.service.UserService;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -114,6 +116,13 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
 
+
+    @Override
+    public List<InstructorResponse> getAllInstructors() {
+        return instructorRepository.findAll().stream()
+                .map(instructorMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 
     private InstructorEntity createDefaultInstructorProfile(UserEntity user) {
         InstructorEntity newInstructor = InstructorEntity.builder()

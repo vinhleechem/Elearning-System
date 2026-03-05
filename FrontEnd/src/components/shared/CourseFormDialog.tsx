@@ -21,6 +21,11 @@ import { FolderOpen, CloudUpload, Edit, Add } from "@mui/icons-material";
 import { useToast } from "../../hooks/useToast";
 import { useState, useEffect } from "react";
 import { fileUploadService } from "../../service/fileUploadService";
+import {
+  instructorService,
+  type InstructorResponse,
+} from "../../service/instructorService";
+import { useAuthStore } from "../../store/authStore";
 
 // Define a flexible type that covers both Admin and Instructor course responses
 export interface CourseData {
@@ -95,10 +100,26 @@ export const CourseFormDialog = ({
   onSubmit,
 }: CourseFormDialogProps) => {
   const { enqueueSnackbar } = useToast();
+  const { tokens } = useAuthStore();
 
   const [dialogTab, setDialogTab] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [instructors, setInstructors] = useState<InstructorResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch instructors when Admin opens dialog
+  useEffect(() => {
+    if (open && mode === "ADMIN" && tokens?.accessToken) {
+      instructorService
+        .getAllInstructors(tokens.accessToken)
+        .then(setInstructors)
+        .catch(() =>
+          enqueueSnackbar("Không tải được danh sách giảng viên", {
+            variant: "error",
+          }),
+        );
+    }
+  }, [open, mode]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<FormData>({
@@ -112,7 +133,7 @@ export const CourseFormDialog = ({
     targetAudience: "",
     thumbnailUrl: "",
     price: "",
-    level: "beginner",
+    level: "BEGINNER",
     language: "Tiếng Việt",
     status: "DRAFT",
     hasCertificate: false,
@@ -151,7 +172,7 @@ export const CourseFormDialog = ({
           targetAudience: "",
           thumbnailUrl: "",
           price: "",
-          level: "beginner",
+          level: "BEGINNER",
           language: "Tiếng Việt",
           status: "DRAFT",
           hasCertificate: false,
@@ -413,7 +434,7 @@ export const CourseFormDialog = ({
                   if (!cat) return "";
                   return (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography variant="body2">{cat.path}</Typography>
+                      <Typography variant="body2">{cat.name}</Typography>
                     </Box>
                   );
                 }}
@@ -422,45 +443,30 @@ export const CourseFormDialog = ({
                   <MenuItem
                     key={cat.id}
                     value={cat.id}
-                    disabled={cat.level !== 3}
+                    disabled={cat.hasChildren}
                     sx={{
-                      opacity: cat.level !== 3 ? 0.5 : 1,
-                      fontStyle: cat.level !== 3 ? "italic" : "normal",
+                      pl: cat.level === 1 ? 2 : cat.level === 2 ? 4 : 6,
+                      py: cat.hasChildren ? 0.5 : 0.75,
+                      opacity: "1 !important",
+                      pointerEvents: cat.hasChildren ? "none" : "auto",
                     }}
                   >
-                    <Box
+                    <Typography
+                      variant="body2"
+                      fontWeight={
+                        cat.level === 1 ? 700 : cat.level === 2 ? 600 : 400
+                      }
+                      color={
+                        cat.hasChildren ? "text.secondary" : "text.primary"
+                      }
+                      fontSize={cat.level === 1 ? "0.75rem" : "0.875rem"}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        pl: (cat.level - 1) * 2,
+                        textTransform: cat.level === 1 ? "uppercase" : "none",
+                        letterSpacing: cat.level === 1 ? "0.05em" : 0,
                       }}
                     >
-                      <FolderOpen
-                        sx={{
-                          fontSize: 16,
-                          color:
-                            cat.level !== 3
-                              ? "text.disabled"
-                              : "text.secondary",
-                        }}
-                      />
-                      <Typography
-                        variant="body2"
-                        fontWeight={cat.level === 1 ? 600 : 400}
-                      >
-                        {cat.name}
-                      </Typography>
-                      {cat.level !== 3 && (
-                        <Typography
-                          variant="caption"
-                          color="text.disabled"
-                          sx={{ ml: 1 }}
-                        >
-                          (Chỉ chọn cấp 3)
-                        </Typography>
-                      )}
-                    </Box>
+                      {cat.name}
+                    </Typography>
                   </MenuItem>
                 ))}
               </Select>
@@ -495,11 +501,11 @@ export const CourseFormDialog = ({
                   }
                   sx={{ borderRadius: "12px" }}
                 >
-                  <MenuItem value="1">Nguyễn Văn A</MenuItem>
-                  <MenuItem value="2">Trần Thị B</MenuItem>
-                  <MenuItem value="3">Lê Minh C</MenuItem>
-                  <MenuItem value="4">Phạm Thu D</MenuItem>
-                  <MenuItem value="5">Hoàng Văn E</MenuItem>
+                  {instructors.map((ins) => (
+                    <MenuItem key={ins.instructorId} value={ins.instructorId}>
+                      {ins.fullName}
+                    </MenuItem>
+                  ))}
                 </Select>
                 {fieldErrors.instructorId && (
                   <Box
@@ -572,9 +578,9 @@ export const CourseFormDialog = ({
                   }
                   sx={{ borderRadius: "12px" }}
                 >
-                  <MenuItem value="beginner">Beginner</MenuItem>
-                  <MenuItem value="intermediate">Intermediate</MenuItem>
-                  <MenuItem value="advanced">Advanced</MenuItem>
+                  <MenuItem value="BEGINNER">Beginner</MenuItem>
+                  <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
+                  <MenuItem value="ADVANCED">Advanced</MenuItem>
                 </Select>
                 {fieldErrors.level && (
                   <Box

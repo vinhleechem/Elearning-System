@@ -58,6 +58,7 @@ export interface CourseDetail {
   descriptionHtml?: string;
   instructor: InstructorInfo;
   previewUrl?: string;
+  thumbnailUrl?: string;
   price: number;
   oldPrice?: number | null;
   isPurchasable?: boolean;

@@ -82,7 +82,12 @@ const CourseManagement = () => {
   const [newStatus, setNewStatus] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false); // Imported
   const [isExporting, setIsExporting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [publishedCount, setPublishedCount] = useState(0);
+  const [draftCount, setDraftCount] = useState(0);
   const itemsPerPage = 10;
+
+  const triggerRefresh = () => setRefreshKey((k) => k + 1);
 
   // Flatten categories for dropdown
   const flattenCategories = (
@@ -153,7 +158,12 @@ const CourseManagement = () => {
             search: searchTerm || undefined,
             status:
               statusFilter !== "ALL"
-                ? (statusFilter as "DRAFT" | "PUBLISHED" | "ACHIEVED")
+                ? (statusFilter as
+                    | "DRAFT"
+                    | "PUBLISHED"
+                    | "PENDING"
+                    | "REJECTED"
+                    | "ARCHIVED")
                 : undefined,
           },
         );
@@ -163,6 +173,22 @@ const CourseManagement = () => {
         const totalElementsValue = pageResult.pagination?.totalElements ?? 0;
         setTotalPages(totalPagesValue);
         setTotalElements(totalElementsValue);
+
+        // Fetch per-status counts for stats cards
+        const [publishedResult, draftResult] = await Promise.all([
+          adminCourseService.getCourses(tokens.accessToken, {
+            page: 0,
+            size: 1,
+            status: "PUBLISHED",
+          }),
+          adminCourseService.getCourses(tokens.accessToken, {
+            page: 0,
+            size: 1,
+            status: "DRAFT",
+          }),
+        ]);
+        setPublishedCount(publishedResult.pagination?.totalElements ?? 0);
+        setDraftCount(draftResult.pagination?.totalElements ?? 0);
       } catch (error) {
         enqueueSnackbar("Không thể tải danh sách khóa học", {
           variant: "error",
@@ -174,7 +200,7 @@ const CourseManagement = () => {
     };
 
     void fetchCourses();
-  }, [tokens?.accessToken, page, searchTerm, statusFilter]);
+  }, [tokens?.accessToken, page, searchTerm, statusFilter, refreshKey]);
 
   const handleDeleteClick = (courseId: number) => {
     setCourseToDelete(courseId);
@@ -186,12 +212,12 @@ const CourseManagement = () => {
 
     try {
       await adminCourseService.deleteCourse(tokens.accessToken, courseToDelete);
-      setCourses(courses.filter((c) => c.courseId !== courseToDelete));
       setDeleteDialogOpen(false);
       setCourseToDelete(null);
       enqueueSnackbar("Xóa khóa học thành công", {
         variant: "success",
       });
+      triggerRefresh();
     } catch (error) {
       enqueueSnackbar("Xóa khóa học thất bại. Vui lòng thử lại.", {
         variant: "error",
@@ -273,26 +299,20 @@ const CourseManagement = () => {
         await adminCourseService.createCourse(tokens.accessToken, {
           ...courseData,
           instructorId: Number(data.instructorId),
+          status:
+            (data.status as
+              | "DRAFT"
+              | "PUBLISHED"
+              | "PENDING"
+              | "REJECTED"
+              | "ARCHIVED") || "DRAFT",
         });
         enqueueSnackbar("Tạo khóa học thành công", { variant: "success" });
       }
 
       setCreateDialogOpen(false);
       setEditingCourse(null);
-      // Reload courses
-      const pageResult = await adminCourseService.getCourses(
-        tokens.accessToken,
-        {
-          page: page - 1,
-          size: itemsPerPage,
-          search: searchTerm || undefined,
-          status:
-            statusFilter !== "ALL"
-              ? (statusFilter as "DRAFT" | "PUBLISHED" | "ACHIEVED")
-              : undefined,
-        },
-      );
-      setCourses(pageResult.data || []);
+      triggerRefresh();
     } catch (error: any) {
       console.error("Save course failed", error);
       throw error; // Re-throw to let CourseFormDialog handle the UI feedback
@@ -305,7 +325,11 @@ const CourseManagement = () => {
         return "success";
       case "DRAFT":
         return "warning";
-      case "ACHIEVED":
+      case "PENDING":
+        return "info";
+      case "REJECTED":
+        return "error";
+      case "ARCHIVED":
         return "default";
       default:
         return "default";
@@ -318,8 +342,12 @@ const CourseManagement = () => {
         return "Đã xuất bản";
       case "DRAFT":
         return "Bản nháp";
-      case "ACHIEVED":
-        return "Đã lưu trữ";
+      case "PENDING":
+        return "Chờ duyệt";
+      case "REJECTED":
+        return "Bị từ chối";
+      case "ARCHIVED":
+        return "Lưu trữ";
       default:
         return status;
     }
@@ -348,21 +376,7 @@ const CourseManagement = () => {
 
       enqueueSnackbar("Cập nhật trạng thái thành công", { variant: "success" });
       setStatusDialogOpen(false);
-
-      // Reload courses
-      const pageResult = await adminCourseService.getCourses(
-        tokens.accessToken,
-        {
-          page: page - 1,
-          size: itemsPerPage,
-          search: searchTerm || undefined,
-          status:
-            statusFilter !== "ALL"
-              ? (statusFilter as "DRAFT" | "PUBLISHED" | "ACHIEVED")
-              : undefined,
-        },
-      );
-      setCourses(pageResult.data || []);
+      triggerRefresh();
     } catch (error) {
       enqueueSnackbar("Cập nhật trạng thái thất bại", { variant: "error" });
       console.error("Update status failed", error);
@@ -380,22 +394,7 @@ const CourseManagement = () => {
     try {
       await adminCourseService.importCourses(tokens.accessToken, file);
       enqueueSnackbar("Import dữ liệu thành công!", { variant: "success" });
-      if (page === 1) {
-        const pageResult = await adminCourseService.getCourses(
-          tokens.accessToken,
-          {
-            page: 0,
-            size: itemsPerPage,
-            search: searchTerm || undefined,
-            status: statusFilter !== "ALL" ? (statusFilter as any) : undefined,
-          },
-        );
-        setCourses(pageResult.data || []);
-        setTotalPages(pageResult.pagination?.totalPages ?? 1);
-        setTotalElements(pageResult.pagination?.totalElements ?? 0);
-      } else {
-        setPage(1);
-      }
+      triggerRefresh();
     } catch (error: any) {
       enqueueSnackbar(error.message || "Import thất bại", { variant: "error" });
     } finally {
@@ -535,13 +534,13 @@ const CourseManagement = () => {
           },
           {
             label: "Đã xuất bản",
-            value: courses.filter((c) => c.status === "PUBLISHED").length,
+            value: publishedCount,
             color: "#10b981",
             icon: <Visibility />,
           },
           {
             label: "Bản nháp",
-            value: courses.filter((c) => c.status === "DRAFT").length,
+            value: draftCount,
             color: "#f59e0b",
             icon: <Edit />,
           },
@@ -655,7 +654,9 @@ const CourseManagement = () => {
                     <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
                     <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
                     <MenuItem value="DRAFT">Bản nháp</MenuItem>
-                    <MenuItem value="ACHIEVED">Đã lưu trữ</MenuItem>
+                    <MenuItem value="PENDING">Chờ duyệt</MenuItem>
+                    <MenuItem value="REJECTED">Bị từ chối</MenuItem>
+                    <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

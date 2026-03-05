@@ -55,7 +55,7 @@ public final class CourseSpecification {
 
     public static Specification<CourseEntity> filterByCategoryId(Long categoryId) {
         return (root, query, criteriaBuilder)
-                    -> criteriaBuilder.equal(root.get("category").get("categoryId"), categoryId);
+                    -> criteriaBuilder.equal(root.get("category").get("id"), categoryId);
     }
 
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Container,
@@ -17,6 +17,7 @@ import {
   Chip,
   IconButton,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -25,6 +26,8 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCart, useWishlist } from "../hooks";
 import { formatCurrency } from "../libs/utils";
 import { courseService } from "../service/courseService";
+import { categoryService } from "../service/categoryService";
+import type { CategoryTreeResponse } from "../service/categoryService";
 import { COLORS, PRICE_RANGE, LEVEL_MAP, GRID_CONFIGS } from "../constants";
 import type { PublicCourseResponse } from "../service/courseService";
 
@@ -34,24 +37,62 @@ const SearchResultsPage = () => {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const searchQuery = searchParams.get("search") || "";
+  const subcategoryName = searchParams.get("subcategory") || "";
 
   const [courses, setCourses] = useState<PublicCourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [totalResults, setTotalResults] = useState(0);
   const [sortBy, setSortBy] = useState("relevance");
+  const [resolvedCategoryId, setResolvedCategoryId] = useState<number | null>(
+    null,
+  );
+
+  // Resolve subcategory name -> categoryId
+  useEffect(() => {
+    if (!subcategoryName) {
+      setResolvedCategoryId(null);
+      return;
+    }
+    const flattenTree = (
+      nodes: CategoryTreeResponse[],
+    ): CategoryTreeResponse[] => {
+      const result: CategoryTreeResponse[] = [];
+      const walk = (list: CategoryTreeResponse[]) => {
+        list.forEach((n) => {
+          result.push(n);
+          if (n.children?.length) walk(n.children);
+        });
+      };
+      walk(nodes);
+      return result;
+    };
+    categoryService
+      .getCategoryTree()
+      .then((tree) => {
+        const all = flattenTree(tree);
+        const found = all.find(
+          (c) => c.name.toLowerCase() === subcategoryName.toLowerCase(),
+        );
+        setResolvedCategoryId(found?.id ?? null);
+      })
+      .catch(() => setResolvedCategoryId(null));
+  }, [subcategoryName]);
 
   // Filters
   const [priceRange, setPriceRange] = useState<number[]>(PRICE_RANGE.DEFAULT);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
 
-  useEffect(() => {
-    fetchSearchResults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, sortBy, priceRange, selectedLevels, selectedRatings]);
-
-  const fetchSearchResults = async () => {
-    setLoading(true);
+  const fetchSearchResults = useCallback(async () => {
+    // When a subcategory is needed but not yet resolved, wait
+    if (subcategoryName && resolvedCategoryId === null) return;
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    } else {
+      setFetching(true);
+    }
     try {
       // Build filter params
       const params: any = {
@@ -61,6 +102,10 @@ const SearchResultsPage = () => {
 
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
+      }
+
+      if (resolvedCategoryId) {
+        params.categoryId = resolvedCategoryId;
       }
 
       // Price range filter
@@ -87,12 +132,26 @@ const SearchResultsPage = () => {
       const result = await courseService.getPublicCourses(params);
       setCourses(result.data || []);
       setTotalResults(result.pagination?.totalElements || 0);
+      hasLoadedRef.current = true;
     } catch (error) {
       console.error("Failed to fetch search results:", error);
     } finally {
       setLoading(false);
+      setFetching(false);
     }
-  };
+  }, [
+    searchQuery,
+    subcategoryName,
+    resolvedCategoryId,
+    sortBy,
+    priceRange,
+    selectedLevels,
+    selectedRatings,
+  ]);
+
+  useEffect(() => {
+    fetchSearchResults();
+  }, [fetchSearchResults]);
 
   const SortOption = ({ label, value }: { label: string; value: string }) => (
     <Typography
@@ -365,9 +424,31 @@ const SearchResultsPage = () => {
             >
               <Typography variant="body2" sx={{ mr: "auto", fontWeight: 600 }}>
                 Tìm thấy{" "}
-                <span style={{ color: "#1976d2" }}>{totalResults}</span> kết quả
-                cho từ khóa "{searchQuery}"
+                <span style={{ color: "#1976d2" }}>{totalResults}</span> khóa
+                học
+                {subcategoryName ? (
+                  <>
+                    {" "}
+                    trong danh mục "<strong>{subcategoryName}</strong>"
+                    {!resolvedCategoryId && " (không tìm thấy danh mục)"}
+                  </>
+                ) : searchQuery ? (
+                  <>
+                    {" "}
+                    cho từ khóa "<strong>{searchQuery}</strong>"
+                  </>
+                ) : (
+                  ""
+                )}
               </Typography>
+
+              {fetching && (
+                <CircularProgress
+                  size={16}
+                  thickness={5}
+                  sx={{ mx: 1.5, color: "#1976d2" }}
+                />
+              )}
 
               <Box display="flex" alignItems="center">
                 <Typography variant="body2" color="text.secondary" mr={1}>
@@ -395,6 +476,9 @@ const SearchResultsPage = () => {
                 display: "grid",
                 gridTemplateColumns: GRID_CONFIGS.courseGrid,
                 gap: 2,
+                opacity: fetching ? 0.6 : 1,
+                transition: "opacity 0.2s ease",
+                pointerEvents: fetching ? "none" : "auto",
               }}
             >
               {loading
@@ -429,7 +513,7 @@ const SearchResultsPage = () => {
                           borderColor: "transparent",
                         },
                       }}
-                      onClick={() => navigate(`/course/${course.courseId}`)}
+                      onClick={() => navigate(`/course/${course.slug}`)}
                     >
                       {/* Badge */}
                       {course.discountPrice &&
@@ -649,12 +733,12 @@ const SearchResultsPage = () => {
                             justifyContent: "space-between",
                           }}
                         >
-                          <Box>
+                          <Box sx={{ minWidth: 0 }}>
                             <Typography
                               variant="h6"
                               fontWeight={700}
                               color="#2d2f31"
-                              sx={{ fontSize: "1.1rem" }}
+                              sx={{ fontSize: "1rem", whiteSpace: "nowrap" }}
                             >
                               {formatCurrency(
                                 course.discountPrice || course.price || 0,

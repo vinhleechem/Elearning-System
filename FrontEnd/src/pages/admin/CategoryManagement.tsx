@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -67,8 +67,6 @@ const CategoryManagement = () => {
   const { tokens } = useAuthStore();
   const { enqueueSnackbar } = useToast();
   const [rawCategories, setRawCategories] = useState<CategoryResponse[]>([]);
-  const [flatList, setFlatList] = useState<FlatCategory[]>([]);
-  const [filteredList, setFilteredList] = useState<FlatCategory[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -161,24 +159,19 @@ const CategoryManagement = () => {
     fetchCategories();
   }, [tokens?.accessToken]);
 
-  useEffect(() => {
-    // Kiểm tra xem có filter active không
+  // Compute flatList synchronously (useMemo) to avoid render flicker
+  const flatList = useMemo(() => {
     const hasActiveFilter =
       searchTerm.trim() !== "" ||
       filterLevel !== "ALL" ||
       filterStatus !== "ALL";
-
-    // Nếu có filter → flatten toàn bộ tree (forceExpand = true)
-    // Nếu không có filter → chỉ flatten nodes được expand
-    const flat = flattenTree(rawCategories, 0, [], hasActiveFilter);
-    setFlatList(flat);
+    return flattenTree(rawCategories, 0, [], hasActiveFilter);
   }, [rawCategories, expandedIds, searchTerm, filterLevel, filterStatus]);
 
-  // Filter & Search effect
-  useEffect(() => {
+  // Filter & Search (synchronous, no extra render cycle)
+  const filteredList = useMemo(() => {
     let filtered = flatList;
 
-    // Filter by search term
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -188,14 +181,10 @@ const CategoryManagement = () => {
       );
     }
 
-    // Filter by level - hiển thị từ level 1 đến level được chọn
     if (filterLevel !== "ALL") {
-      // Level 2 → hiển thị Level 1 + 2
-      // Level 3 → hiển thị Level 1 + 2 + 3
       filtered = filtered.filter((cat) => cat.level <= filterLevel);
     }
 
-    // Filter by status
     filtered =
       filterStatus === "ACTIVE"
         ? filtered.filter((cat) => cat.isActive)
@@ -203,7 +192,7 @@ const CategoryManagement = () => {
           ? filtered.filter((cat) => !cat.isActive)
           : filtered;
 
-    setFilteredList(filtered);
+    return filtered;
   }, [flatList, searchTerm, filterLevel, filterStatus]);
 
   // Tự động expand parent nodes khi filter level

@@ -320,7 +320,7 @@ const Header: React.FC<HeaderProps> = ({
         >
           <Box
             component="img"
-            src="/images/logo.png"
+            src="/images/logo/logo.png"
             alt="Vidi"
             sx={{ height: 32 }}
           />

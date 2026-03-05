@@ -148,16 +148,18 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index)}
-              className={`flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 lg:justify-center ${openSubmenu === index
-                ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                } cursor-pointer`}
+              className={`flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 lg:justify-center ${
+                openSubmenu === index
+                  ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              } cursor-pointer`}
             >
               <span
-                className={`flex h-5 w-5 items-center justify-center ${openSubmenu === index
-                  ? "text-white"
-                  : "text-gray-500 group-hover:text-gray-900"
-                  }`}
+                className={`flex h-5 w-5 items-center justify-center ${
+                  openSubmenu === index
+                    ? "text-white"
+                    : "text-gray-500 group-hover:text-gray-900"
+                }`}
               >
                 {nav.icon}
               </span>
@@ -166,10 +168,11 @@ const AppSidebar: React.FC = () => {
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronRight
-                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${openSubmenu === index
-                    ? "rotate-90 text-white"
-                    : "text-gray-400"
-                    }`}
+                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${
+                    openSubmenu === index
+                      ? "rotate-90 text-white"
+                      : "text-gray-400"
+                  }`}
                 />
               )}
             </button>
@@ -177,16 +180,18 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 to={nav.path}
-                className={`group flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isActive(nav.path)
-                  ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
+                className={`group flex w-full items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${
+                  isActive(nav.path)
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
               >
                 <span
-                  className={`flex h-5 w-5 items-center justify-center ${isActive(nav.path)
-                    ? "text-white"
-                    : "text-gray-500 group-hover:text-gray-900"
-                    }`}
+                  className={`flex h-5 w-5 items-center justify-center ${
+                    isActive(nav.path)
+                      ? "text-white"
+                      : "text-gray-500 group-hover:text-gray-900"
+                  }`}
                 >
                   {nav.icon}
                 </span>
@@ -212,29 +217,32 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}
-                      className={`flex items-center rounded-lg px-2 py-1.5 text-sm transition-colors duration-200 ${isActive(subItem.path)
-                        ? "bg-primary-50 text-primary-600"
-                        : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                      className={`flex items-center rounded-lg px-2 py-1.5 text-sm transition-colors duration-200 ${
+                        isActive(subItem.path)
+                          ? "bg-primary-50 text-primary-600"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
                     >
                       {subItem.name}
                       <span className="ml-auto flex items-center gap-1">
                         {subItem.new && (
                           <span
-                            className={`rounded px-1.5 py-0.5 text-xs font-medium ${isActive(subItem.path)
-                              ? "bg-primary-100 text-primary-600"
-                              : "bg-gray-100 text-gray-600"
-                              }`}
+                            className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                              isActive(subItem.path)
+                                ? "bg-primary-100 text-primary-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
                           >
                             new
                           </span>
                         )}
                         {subItem.pro && (
                           <span
-                            className={`rounded px-1.5 py-0.5 text-xs font-medium ${isActive(subItem.path)
-                              ? "bg-primary-100 text-primary-600"
-                              : "bg-gray-100 text-gray-600"
-                              }`}
+                            className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                              isActive(subItem.path)
+                                ? "bg-primary-100 text-primary-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
                           >
                             pro
                           </span>
@@ -252,39 +260,46 @@ const AppSidebar: React.FC = () => {
   );
   return (
     <aside
-      className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out ${isExpanded || isMobileOpen
-        ? "w-[290px]"
-        : isHovered
+      className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out ${
+        isExpanded || isMobileOpen
           ? "w-[290px]"
-          : "w-[90px]"
-        } ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+          : isHovered
+            ? "w-[290px]"
+            : "w-[90px]"
+      } ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`flex py-8 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
+        className={`flex py-8 ${
+          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+        }`}
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <img
                 className=""
-                src="/images/logo.png"
+                src="/images/logo/logo.png"
                 alt="Logo"
                 width={100}
                 height={28}
               />
               <img
                 className="hidden"
-                src="/images/logo.png"
+                src="/images/logo/logo.png"
                 alt="Logo"
                 width={100}
                 height={28}
               />
             </>
           ) : (
-            <img src="/images/logo.png" alt="Logo" width={32} height={32} />
+            <img
+              src="/images/logo/logo.png"
+              alt="Logo"
+              width={32}
+              height={32}
+            />
           )}
         </Link>
       </div>

@@ -59,6 +59,7 @@ dependencies {
 
     // Flyway for database migrations
     implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
