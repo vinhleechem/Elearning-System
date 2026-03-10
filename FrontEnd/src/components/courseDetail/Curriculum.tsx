@@ -1,20 +1,4 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Stack,
-  Button
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
+import React, { useState, useEffect } from "react";
 import type { SectionItem, LectureItem } from "../../types/courseDetail";
 
 interface Props {
@@ -30,161 +14,141 @@ const parseDurationToSeconds = (s?: string) => {
   return 0;
 };
 
-const formatSeconds = (secs: number) => {
-  if (!secs) return "";
+const formatSecondsToHM = (secs: number) => {
+  if (!secs) return "0 phút";
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
+
+const formatSecondsToMinText = (secs: number) => {
+  if (!secs) return "0 phút";
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   if (h > 0) return `${h} giờ ${m} phút`;
   return `${m} phút`;
 };
 
-const getSectionDuration = (section: SectionItem) => {
+const getSectionDurationBytes = (section: SectionItem) => {
   const secs = (section.lectures || []).reduce((sum, l: LectureItem) => sum + parseDurationToSeconds(l.duration), 0);
-  return formatSeconds(secs);
+  return formatSecondsToMinText(secs);
 };
 
 const Curriculum: React.FC<Props> = ({ sections = [] }) => {
-  const [expanded, setExpanded] = React.useState<number[]>([]);
+  const [expanded, setExpanded] = useState<number[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (sections.length > 0) {
       setExpanded([Number(sections[0].id)]);
     }
   }, [sections]);
 
   const totalLectures = sections.reduce((sum, s) => sum + (s.lectures?.length || 0), 0);
-  const allDuration = sections.reduce((sum, s) => sum + (s.lectures || []).reduce((sSum, l) => sSum + parseDurationToSeconds(l.duration), 0), 0);
+  const allDurationSecs = sections.reduce(
+    (sum, s) =>
+      sum +
+      (s.lectures || []).reduce(
+        (sSum, l) => sSum + parseDurationToSeconds(l.duration),
+        0
+      ),
+    0
+  );
 
-  const handleExpandAll = () => {
-    if (expanded.length === sections.length) {
-      setExpanded([]);
-    } else {
-      setExpanded(sections.map(s => Number(s.id)));
-    }
-  };
-
-  const handleChange = (panelId: number) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(prev =>
-      isExpanded ? [...prev, panelId] : prev.filter(id => id !== panelId)
+  const handleToggle = (panelId: number) => {
+    setExpanded((prev) =>
+      prev.includes(panelId) ? prev.filter((id) => id !== panelId) : [...prev, panelId]
     );
   };
 
   if (!sections.length) return null;
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" fontWeight={700} mb={2}>
-        Nội dung khóa học
-      </Typography>
+    <section>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          Nội dung khóa học
+        </h2>
+        <span className="text-sm font-medium text-slate-500">
+          {sections.length} chương • {totalLectures} bài giảng • {formatSecondsToHM(allDurationSecs)} tổng thời lượng
+        </span>
+      </div>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          {sections.length} phần • {totalLectures} bài giảng • {formatSeconds(allDuration)} tổng thời lượng
-        </Typography>
-        <Button
-          variant="text"
-          size="small"
-          onClick={handleExpandAll}
-          sx={{ p: 0, textTransform: 'none', color: '#5624d0', fontWeight: 700 }}
-        >
-          {expanded.length === sections.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả các phần'}
-        </Button>
-      </Box>
-
-      <Box sx={{ border: '1px solid #d1d7dc' }}>
-        {sections.map((section: SectionItem, _index: number) => (
-          <Accordion
-            key={section.id}
-            expanded={expanded.includes(Number(section.id))}
-            onChange={handleChange(Number(section.id))}
-            disableGutters
-            elevation={0}
-            sx={{
-              '&:before': { display: 'none' },
-              borderBottom: '1px solid #d1d7dc',
-              '&:last-child': { borderBottom: 'none' },
-              bgcolor: '#f7f9fa'
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              sx={{
-                px: 2,
-                py: 0,
-                minHeight: 48,
-                '& .MuiAccordionSummary-content': { margin: '12px 0' }
-              }}
+      <div className="space-y-3">
+        {sections.map((section: SectionItem, index: number) => {
+          const isExpanded = expanded.includes(Number(section.id));
+          return (
+            <div
+              key={section.id}
+              className={`border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden transition-all duration-300 ${isExpanded ? "shadow-sm" : ""}`}
             >
-              <Box sx={{ width: '100%' }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography fontWeight={700} variant="subtitle1" fontSize={15}>
-                    {section.title}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {section.lectures?.length || 0} bài giảng • {getSectionDuration(section)}
-                  </Typography>
-                </Stack>
-              </Box>
-            </AccordionSummary>
+              <button
+                onClick={() => handleToggle(Number(section.id))}
+                className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}>
+                    expand_more
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    Phần {index + 1}: {section.title}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 shrink-0 ml-4">
+                  {section.lectures?.length || 0} bài học • {getSectionDurationBytes(section)}
+                </span>
+              </button>
 
-            <AccordionDetails sx={{ px: 2, py: 2, bgcolor: 'white' }}>
-              <List dense disablePadding>
-                {(section.lectures || []).map((lecture: LectureItem) => (
-                  <ListItem
-                    key={lecture.id}
-                    sx={{ pl: 0, pr: 0, py: 0.5 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      {lecture.previewable ? (
-                        <PlayCircleOutlineIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
-                      ) : (
-                        <OndemandVideoIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
-                      )}
-                    </ListItemIcon>
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+              >
+                <div className="overflow-hidden">
+                  <div className="p-4 bg-white dark:bg-slate-900 space-y-3">
+                    {(section.lectures || []).length === 0 ? (
+                      <div className="text-sm text-slate-500 italic px-8 py-2">
+                        Chưa có bài giảng nào trong phần này.
+                      </div>
+                    ) : (
+                      (section.lectures || []).map((lecture: LectureItem) => (
+                        <div
+                          key={lecture.id}
+                          className="flex items-center justify-between text-sm group"
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <span className="material-symbols-outlined text-slate-400 text-sm shrink-0">
+                              {lecture.previewable ? "play_circle" : "smart_display"}
+                            </span>
+                            <span
+                              className={`truncate transition-colors ${lecture.previewable
+                                  ? "text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                                  : "text-slate-600 dark:text-slate-400"
+                                }`}
+                            >
+                              {lecture.title}
+                            </span>
+                          </div>
 
-                    <ListItemText
-                      primary={lecture.title}
-                      primaryTypographyProps={{
-                        variant: 'body2',
-                        color: lecture.previewable ? '#5624d0' : 'text.primary',
-                        sx: {
-                          textDecoration: lecture.previewable ? 'underline' : 'none',
-                          cursor: lecture.previewable ? 'pointer' : 'default',
-                          fontSize: 14
-                        }
-                      }}
-                      sx={{ flex: 1 }}
-                    />
-
-                    {lecture.previewable && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          mr: 2,
-                          color: '#5624d0',
-                          textDecoration: 'underline',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Xem trước
-                      </Typography>
+                          <div className="flex items-center gap-4 shrink-0 pl-4">
+                            {lecture.previewable && (
+                              <span className="text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline text-xs hidden sm:inline-block">
+                                Xem thử
+                              </span>
+                            )}
+                            <span className="text-slate-400 tabular-nums">
+                              {lecture.duration || ""}
+                            </span>
+                          </div>
+                        </div>
+                      ))
                     )}
-
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ minWidth: 40, textAlign: 'right' }}
-                    >
-                      {lecture.duration || ""}
-                    </Typography>
-                  </ListItem>
-                ))}
-              </List>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Box>
-    </Box>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 

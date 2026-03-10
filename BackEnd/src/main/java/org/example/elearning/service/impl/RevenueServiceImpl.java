@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -83,8 +84,11 @@ public class RevenueServiceImpl implements RevenueService {
         
         List<DailyRevenueResponse> dailyRevenues = new ArrayList<>();
         for (Object[] result : results) {
+            LocalDate date = result[0] instanceof Date
+                    ? ((Date) result[0]).toLocalDate()
+                    : (LocalDate) result[0];
             dailyRevenues.add(DailyRevenueResponse.builder()
-                    .date((LocalDate) result[0])
+                    .date(date)
                     .revenue((BigDecimal) result[1])
                     .orderCount(((Number) result[2]).longValue())
                     .build());

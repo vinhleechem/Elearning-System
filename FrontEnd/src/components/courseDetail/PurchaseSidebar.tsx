@@ -1,39 +1,19 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
-import type { SxProps, Theme } from "@mui/material";
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import CheckIcon from "@mui/icons-material/Check";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { IconButton } from "@mui/material";
+import React from "react";
+import SchoolIcon from "@mui/icons-material/School";
 import { useNavigate } from "react-router-dom";
 import { useCart, useWishlist } from "../../hooks";
-import { LoadingButton, PriceDisplay } from "../shared";
 import { useState, useEffect } from "react";
 import { formatDate } from "../../libs/dateUtils";
 import { formatCurrency } from "../../libs/utils";
-import { COLORS } from "../../constants";
 
 interface Props {
   courseId: number;
   price: number;
   oldPrice?: number | null;
   ctaDisabled?: boolean;
-  sx?: SxProps<Theme>;
   isPurchased?: boolean;
   purchasedAt?: string;
   thumbnailUrl?: string;
-  // Promotion info
   promotionName?: string;
   promotionType?: string;
   discountPercentage?: number;
@@ -45,7 +25,6 @@ const PurchaseSidebar: React.FC<Props> = ({
   price,
   oldPrice,
   ctaDisabled,
-  sx,
   isPurchased,
   purchasedAt,
   thumbnailUrl,
@@ -59,21 +38,16 @@ const PurchaseSidebar: React.FC<Props> = ({
   const inCart = isInCart(courseId);
 
   const handleWishlistClick = () => toggleWishlist(courseId);
-
   const handleAddToCart = () => checkAndAddToCart(courseId);
-
   const handleBuyNow = async () => {
     await checkAndAddToCart(courseId);
     goToCheckout();
   };
-
-  const handleGoToCourse = () => {
-    navigate(`/course/${courseId}/learn`);
-  };
+  const handleGoToCourse = () => navigate(`/course/${courseId}/learn`);
 
   const formattedDate = purchasedAt ? formatDate(purchasedAt) : "";
 
-  // Countdown timer logic
+  // Countdown timer
   const [timeLeft, setTimeLeft] = useState<{
     hours: number;
     minutes: number;
@@ -82,286 +56,183 @@ const PurchaseSidebar: React.FC<Props> = ({
 
   useEffect(() => {
     if (!promotionEndDate) return;
-
-    const calculateTimeLeft = () => {
-      const endDate = new Date(promotionEndDate);
-      const now = new Date();
-      const difference = endDate.getTime() - now.getTime();
-
-      if (difference > 0) {
-        const hours = Math.floor(difference / (1000 * 60 * 60));
-        const minutes = Math.floor(
-          (difference % (1000 * 60 * 60)) / (1000 * 60),
-        );
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        setTimeLeft({ hours, minutes, seconds });
+    const calculate = () => {
+      const diff = new Date(promotionEndDate).getTime() - Date.now();
+      if (diff > 0) {
+        setTimeLeft({
+          hours: Math.floor(diff / 3600000),
+          minutes: Math.floor((diff % 3600000) / 60000),
+          seconds: Math.floor((diff % 60000) / 1000),
+        });
       } else {
         setTimeLeft(null);
       }
     };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-
+    calculate();
+    const timer = setInterval(calculate, 1000);
     return () => clearInterval(timer);
   }, [promotionEndDate]);
 
+  const courseIncludes = [
+    { icon: "videocam", text: "9.5 giờ video bài giảng" },
+    { icon: "description", text: "Bài viết chuyên sâu" },
+    { icon: "download", text: "Tài liệu tải xuống" },
+    { icon: "all_inclusive", text: "Quyền truy cập vĩnh viễn" },
+    { icon: "workspace_premium", text: "Chứng chỉ hoàn thành" },
+  ];
+
+  // Compute discount percent for display
+  const discountPct =
+    discountPercentage ??
+    (oldPrice && oldPrice > price
+      ? Math.round(((oldPrice - price) / oldPrice) * 100)
+      : null);
+
   return (
-    <Card
-      sx={{
-        width: "100%",
-        maxWidth: 380,
-        ...sx,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: "divider",
-        boxShadow: "0 6px 18px rgba(15,15,15,0.06)",
-      }}
-    >
-      {/* Preview image with centered play button */}
-      <Box
-        sx={{
-          position: "relative",
-          height: 220,
-          bgcolor: "grey.900",
-          cursor: "pointer",
-        }}
-      >
-        <Box
-          component="img"
-          src={thumbnailUrl || "/images/logo/logo.png"}
-          alt="preview"
-          sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "rgba(0, 0, 0, 0.3)",
-            transition: "background-color 0.3s",
-            "&:hover": {
-              bgcolor: "rgba(0, 0, 0, 0.5)",
-            },
-          }}
-        >
-          <PlayCircleOutlineIcon
-            sx={{
-              color: "white",
-              fontSize: 80,
-              filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))",
-            }}
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+      {/* Video Thumbnail */}
+      <div className="aspect-video relative group cursor-pointer">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt="Course preview"
+            className="w-full h-full object-cover"
           />
-        </Box>
-      </Box>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-primary">
+            <SchoolIcon sx={{ fontSize: 48 }} />
+          </div>
+        )}
+        {/* Play overlay */}
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-white text-4xl fill-1">
+              play_arrow
+            </span>
+          </div>
+        </div>
+        <div className="absolute bottom-2 left-0 right-0 text-center">
+          <span className="text-white text-xs font-bold bg-black/40 px-3 py-1 rounded">
+            Xem trước khóa học
+          </span>
+        </div>
+      </div>
 
-      <CardContent>
+      {/* Body */}
+      <div className="p-6 space-y-5">
         {isPurchased ? (
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
-              <Box
-                sx={{
-                  bgcolor: "#8f2abd",
-                  color: "white",
-                  borderRadius: "50%",
-                  width: 24,
-                  height: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mr: 1.5,
-                  flexShrink: 0,
-                }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  i
-                </Typography>
-              </Box>
-              <Typography variant="body1" color="text.primary">
-                Bạn đã mua khóa học này vào {formattedDate}
-              </Typography>
-            </Box>
-
-            <Button
-              fullWidth
-              variant="outlined"
+          /* ── Already purchased ── */
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl">
+              <span className="material-symbols-outlined shrink-0">check_circle</span>
+              <p className="text-sm font-medium leading-relaxed">
+                Bạn đã mua khóa học này vào{" "}
+                <strong>{formattedDate}</strong>
+              </p>
+            </div>
+            <button
               onClick={handleGoToCourse}
-              sx={{
-                mt: 1,
-                textTransform: "none",
-                fontWeight: 700,
-                py: 1.5,
-              }}
-              color="secondary"
+              className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
             >
               Chuyển đến khóa học
-            </Button>
-          </Box>
+            </button>
+          </div>
         ) : (
+          /* ── Purchase flow ── */
           <>
-            <Box
-              sx={{ display: "flex", alignItems: "baseline", gap: 1, mb: 1 }}
-            >
-              <Typography variant="h5" fontWeight={900}>
+            {/* Price */}
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                 {formatCurrency(price)}
-              </Typography>
+              </span>
               {oldPrice && (
-                <>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      textDecoration: "line-through",
-                      color: "text.secondary",
-                    }}
-                  >
-                    {formatCurrency(oldPrice)}
-                  </Typography>
-                  {discountPercentage && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#2d2f31",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Giảm {discountPercentage}%
-                    </Typography>
-                  )}
-                </>
+                <span className="text-slate-400 line-through text-sm">
+                  {formatCurrency(oldPrice)}
+                </span>
               )}
-            </Box>
+              {discountPct && (
+                <span className="text-primary font-bold text-sm">
+                  Giảm {discountPct}%
+                </span>
+              )}
+            </div>
 
+            {/* Countdown */}
             {timeLeft && (
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 2 }}
-              >
-                <AccessTimeIcon sx={{ fontSize: 16, color: "#d1293d" }} />
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#d1293d", fontWeight: 700 }}
-                >
-                  {timeLeft.hours} giờ {timeLeft.minutes} phút còn lại với mức
-                  giá này!
-                </Typography>
-              </Box>
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm font-bold bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30">
+                <span className="material-symbols-outlined text-base">timer</span>
+                Còn lại {timeLeft.hours}h {timeLeft.minutes}m với giá này!
+              </div>
             )}
 
-            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
-              <Button
-                fullWidth
-                variant="contained"
+            {/* CTA buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={handleBuyNow}
                 disabled={ctaDisabled}
-                onClick={handleAddToCart}
-                sx={{
-                  flex: 1,
-                  textTransform: "none",
-                  background:
-                    "linear-gradient(180deg, #a435f0 0%, #8710d8 100%)",
-                  color: "#fff",
-                  fontWeight: 700,
-                  py: 1.5,
-                  borderRadius: 0,
-                  boxShadow: "none",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(180deg, #8710d8 0%, #6c0eb5 100%)",
-                    boxShadow: "none",
-                  },
-                  "&:disabled": {
-                    background: "#e0e0e0",
-                    color: "#9e9e9e",
-                  },
-                }}
+                className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-50"
               >
-                {inCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
-              </Button>
-              <IconButton
-                onClick={handleWishlistClick}
-                sx={{
-                  border: "2px solid",
-                  borderColor: COLORS.text.primary,
-                  borderRadius: "50%",
-                  color: inWishlist ? "#ec5252" : "#2d2f31",
-                  width: 48,
-                  height: 48,
-                  "&:hover": {
-                    borderColor: COLORS.text.primary,
-                    bgcolor: COLORS.background.gray,
-                  },
-                }}
-              >
-                {inWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-              </IconButton>
-            </Box>
+                Mua ngay
+              </button>
+              <div className="flex gap-3">
+                <button
+                  disabled={ctaDisabled}
+                  onClick={handleAddToCart}
+                  className="flex-1 py-3 border-2 border-slate-200 dark:border-slate-700 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-900 dark:text-white text-sm disabled:opacity-50"
+                >
+                  {inCart ? "Đã có trong giỏ" : "Thêm vào giỏ hàng"}
+                </button>
+                <button
+                  onClick={handleWishlistClick}
+                  className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-colors ${inWishlist
+                      ? "border-rose-500 text-rose-500 bg-rose-50 dark:bg-rose-500/10"
+                      : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-rose-300 hover:text-rose-500"
+                    }`}
+                >
+                  <span className={`material-symbols-outlined ${inWishlist ? "fill-1" : ""}`}>
+                    favorite
+                  </span>
+                </button>
+              </div>
+            </div>
 
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleBuyNow}
-              sx={{
-                textTransform: "none",
-                borderColor: COLORS.text.primary,
-                color: COLORS.text.primary,
-                fontWeight: 700,
-                py: 1.5,
-                borderRadius: 0,
-                borderWidth: 1,
-                "&:hover": {
-                  borderColor: COLORS.text.primary,
-                  bgcolor: COLORS.background.gray,
-                  borderWidth: 1,
-                },
-              }}
-            >
-              Mua ngay
-            </Button>
-
-            <Box sx={{ textAlign: "center", mt: 2 }}>
-              <Typography
-                variant="caption"
-                sx={{ mb: 0.5, display: "block", color: "text.secondary" }}
-              >
-                Đảm bảo hoàn tiền trong 30 ngày
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ display: "block", color: "text.secondary" }}
-              >
-                Quyền truy cập đầy đủ suốt đời
-              </Typography>
-            </Box>
+            {/* Guarantee */}
+            <p className="text-sm font-medium text-center text-slate-500 italic">
+              Đảm bảo hoàn tiền trong 30 ngày
+            </p>
           </>
         )}
 
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-            Khóa học này bao gồm:
-          </Typography>
-          <List dense disablePadding>
-            <ListItem sx={{ pl: 0 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                <CheckIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="9,5 giờ video theo yêu cầu" />
-            </ListItem>
-            <ListItem sx={{ pl: 0 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                <CheckIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="1 bài viết" />
-            </ListItem>
-            <ListItem sx={{ pl: 0 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                <CheckIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="8 tài nguyên có thể tải xuống" />
-            </ListItem>
-          </List>
-        </Box>
-      </CardContent>
-    </Card>
+        {/* Course includes */}
+        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest">
+            Khóa học bao gồm:
+          </h4>
+          {courseIncludes.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"
+            >
+              <span className="material-symbols-outlined text-primary text-lg">
+                {item.icon}
+              </span>
+              {item.text}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Business promo card */}
+      <div className="mx-6 mb-6 bg-gradient-to-br from-primary to-blue-700 rounded-xl p-5 text-white shadow-lg shadow-blue-500/20">
+        <h4 className="font-black text-lg mb-1">Dành cho Doanh Nghiệp?</h4>
+        <p className="text-sm text-blue-100 mb-4 leading-relaxed">
+          Đào tạo đội ngũ của bạn với các kỹ năng tiên tiến nhất để dẫn đầu thị trường.
+        </p>
+        <button className="w-full py-2 bg-white text-primary font-bold rounded-lg text-sm hover:bg-blue-50 transition-colors">
+          Xem gói Business
+        </button>
+      </div>
+    </div>
   );
 };
 

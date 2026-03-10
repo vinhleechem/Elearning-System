@@ -32,23 +32,7 @@ export default function EcommerceMetrics() {
 
     fetchStats();
 
-    // Connect to WebSocket for real-time updates
-    // TODO: Re-enable after fixing WebSocket authentication in backend
-    // if (user?.userId) {
-    //   webSocketService.connect(user.userId.toString(), (notification) => {
-    //     // Khi có notification về order mới hoặc user mới, refresh stats
-    //     if (
-    //       notification.type === "ORDER_CREATED" ||
-    //       notification.type === "USER_REGISTERED"
-    //     ) {
-    //       fetchStats();
-    //     }
-    //   });
-    // }
-
-    // return () => {
-    //   webSocketService.disconnect();
-    // };
+   
   }, [user]);
 
   const formatNumber = (num: number) => {

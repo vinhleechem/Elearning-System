@@ -15,7 +15,9 @@ public class PromotionRuleRequest {
     @NotNull(message = "Rule type is required")
     private PromotionRuleType ruleType;
 
-    private Long targetId; // Course ID hoặc Category ID
+    private Long courseId; // Course ID, dùng khi ruleType = COURSE
+
+    private Long categoryId; // Category ID, dùng khi ruleType = CATEGORY
 
     @NotNull(message = "Discount type is required")
     private DiscountType discountType;

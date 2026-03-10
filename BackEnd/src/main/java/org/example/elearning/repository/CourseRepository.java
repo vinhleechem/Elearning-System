@@ -21,7 +21,7 @@ import org.springframework.stereotype.Repository;
 public interface CourseRepository extends JpaRepository<CourseEntity, Long>, JpaSpecificationExecutor<CourseEntity> {
 
     @EntityGraph(attributePaths = {"instructor", "instructor.user"})
-    Optional<CourseEntity> findBySlug(String slug);
+    Optional<CourseEntity> findBySlugAndIsDeletedFalse(String slug);
 
     @EntityGraph(attributePaths = {"instructor", "instructor.user"})
     Optional<CourseEntity> findById(Long id);
@@ -29,8 +29,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
     @EntityGraph(attributePaths = {"instructor", "instructor.user"})
     Page<CourseEntity> findAll(Specification<CourseEntity> spec, Pageable pageable);
 
-    boolean existsBySlug(String slug);
-    
+
     @Query("SELECT COUNT(c) FROM CourseEntity c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
     Long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
@@ -38,7 +37,6 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long>, Jpa
 
     List<CourseEntity> findAllByCourseIdInAndStatusAndIsDeletedIsFalse(Collection<Long> courseIds, CourseStatus status);
 
-    // Related courses: cùng category, đã publish, chưa bị xóa, khác course hiện tại, ưu tiên rating cao rồi đến mới nhất
     List<CourseEntity> findTop8ByCategoryAndStatusAndIsDeletedFalseAndCourseIdNotOrderByAverageRatingDescPublishedAtDesc(
             CategoryEntity category,
             CourseStatus status,

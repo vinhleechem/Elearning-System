@@ -12,7 +12,8 @@ import java.math.BigDecimal;
 public class PromotionRuleResponse {
     private Long ruleId;
     private PromotionRuleType ruleType;
-    private Long targetId;
+    private Long courseId;
+    private Long categoryId;
     private String targetName; // Course name hoặc Category name
     private DiscountType discountType;
     private BigDecimal discountValue;

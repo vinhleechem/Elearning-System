@@ -1,7 +1,6 @@
 package org.example.elearning.repository;
 
 import org.example.elearning.entity.PromotionRuleEntity;
-import org.example.elearning.enums.PromotionRuleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,9 +17,10 @@ public interface PromotionRuleRepository extends JpaRepository<PromotionRuleEnti
     // Tìm rules áp dụng cho course cụ thể
     @Query("SELECT pr FROM PromotionRuleEntity pr " +
             "WHERE pr.isDeleted = false " +
-            "AND (pr.ruleType = :ruleType AND pr.targetId = :targetId " +
-            "OR pr.ruleType = 'ALL')")
-    List<PromotionRuleEntity> findApplicableRulesForTarget(
-            @Param("ruleType") PromotionRuleType ruleType,
-            @Param("targetId") Long targetId);
+            "AND (pr.ruleType = 'ALL' " +
+            "OR (pr.ruleType = 'COURSE' AND pr.course.courseId = :courseId) " +
+            "OR (pr.ruleType = 'CATEGORY' AND pr.category.id = :categoryId))")
+    List<PromotionRuleEntity> findApplicableRulesForCourse(
+            @Param("courseId") Long courseId,
+            @Param("categoryId") Long categoryId);
 }

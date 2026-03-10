@@ -1,5 +1,5 @@
-import type { UserResponse, UserStatusType } from "../types/auth";
-import { httpClient } from "./httpClient";
+import type { UserResponse } from "../types/auth";
+import { httpClient, type StandardApiResponse } from "./httpClient";
 
 type PaginatedResponse<T> = {
   data: T[];
@@ -14,28 +14,13 @@ type PaginatedResponse<T> = {
 export const adminUserService = {
   getUsers: async (
     accessToken: string,
-    params: {
-      page: number;
-      size: number;
-      search?: string;
-      userStatus?: UserStatusType;
-      deleted?: boolean;
-    },
+    params: { page: number; size: number; search?: string },
   ): Promise<PaginatedResponse<UserResponse>> => {
     const query = new URLSearchParams();
     query.set("page", params.page.toString());
     query.set("size", params.size.toString());
-
     if (params.search && params.search.trim() !== "") {
       query.set("search", params.search.trim());
-    }
-
-    if (params.userStatus) {
-      query.set("userStatus", params.userStatus);
-    }
-
-    if (params.deleted !== undefined) {
-      query.set("deleted", params.deleted.toString());
     }
 
     const response = await httpClient<PaginatedResponse<UserResponse>>(
@@ -164,8 +149,8 @@ export const adminUserService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await httpClient<UserResponse>(
-      `/admin/users/${userId}/avatar`,
+    const res = await fetch(
+      `${import.meta.env.VITE_BASE_URL}/admin/users/${userId}/avatar`,
       {
         method: "POST",
         headers: {
@@ -175,11 +160,16 @@ export const adminUserService = {
       },
     );
 
-    if (!response.data) {
-      throw new Error("Không nhận được dữ liệu người dùng sau khi cập nhật avatar");
+    const body = (await res.json()) as StandardApiResponse<UserResponse>;
+    if (!res.ok || body?.success === false) {
+      throw new Error(body?.message ?? "Cập nhật avatar người dùng thất bại");
     }
-
-    return response.data;
+    if (!body.data) {
+      throw new Error(
+        "Không nhận được dữ liệu người dùng sau khi cập nhật avatar",
+      );
+    }
+    return body.data;
   },
 
   importUsers: async (accessToken: string, file: File): Promise<void> => {
@@ -211,8 +201,7 @@ export const adminUserService = {
     );
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(errorBody || "Export users thất bại");
+      throw new Error("Export users thất bại");
     }
 
     return await response.blob();

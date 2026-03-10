@@ -42,6 +42,8 @@ public class CourseResponse {
     String language;
     Boolean hasCertificate;
     BigDecimal averageRating;
+    Integer totalStudents;
+    Integer totalReviews;
     LocalDateTime publishedAt;
     Boolean isPurchased;
     LocalDateTime purchasedAt;

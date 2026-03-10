@@ -220,6 +220,7 @@ public class ConversationServiceImpl implements ConversationService {
     // ========== INSTRUCTOR METHODS ==========
 
     @Override
+    @Transactional
     public ConversationResponse createConversation(Long userId, Long courseId) {
         // Find user
         UserEntity student = userRepository.findById(userId)
@@ -251,7 +252,6 @@ public class ConversationServiceImpl implements ConversationService {
             return conversationMapper.toResponse(existingConv.get());
         }
 
-        // Create new conversation
         ConversationEntity conversation = ConversationEntity.builder()
                 .student(student)
                 .instructor(instructor)

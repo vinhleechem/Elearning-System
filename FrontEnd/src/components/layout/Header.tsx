@@ -6,7 +6,15 @@ import Button from "@mui/material/Button";
 import InputBase from "@mui/material/InputBase";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
-import { ShoppingCartOutlined, FavoriteBorder } from "@mui/icons-material";
+import {
+  ShoppingCartOutlined,
+  FavoriteBorder,
+  PersonOutline,
+  PlayCircleOutline,
+  ChatBubbleOutline,
+  SettingsOutlined,
+  LogoutOutlined,
+} from "@mui/icons-material";
 import {
   Badge,
   Avatar,
@@ -16,13 +24,12 @@ import {
   IconButton,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import SchoolIcon from "@mui/icons-material/School";
 import { leftPages } from "../../libs/constants";
 import type { HeaderProps } from "../../types/header";
 import { useState, useRef, useEffect } from "react";
 import type { CartItemProps } from "../../types/cartItem";
 import MegaMenu from "./MegaMenu";
-import { megaMenuPrimaryTitle } from "../../data/megaMenu";
-import type { MegaMenuTopic } from "../../data/megaMenu";
 import { useWishlistStore } from "../../store/wishlistStore";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
@@ -31,46 +38,55 @@ import { categoryService } from "../../service/categoryService";
 import { conversationService } from "../../service/conversationService";
 import type { CategoryTreeResponse } from "../../service/categoryService";
 import NotificationBell from "../common/NotificationBell";
+import LearningDropdown from "../learning/LearningDropdown";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
-  borderRadius: "24px",
-  backgroundColor: "#f8f9fa",
-  border: "2px solid transparent",
-  marginLeft: 0,
-  marginRight: theme.spacing(2),
+  borderRadius: "9999px",
+  backgroundColor: "#f1f5f9",
+  border: "1px solid transparent",
+  marginLeft: theme.spacing(2),
+  marginRight: theme.spacing(3),
   width: "100%",
-  transition: "all 0.3s ease",
+  maxWidth: "500px",
+  transition: "all 0.2s ease-in-out",
+  display: "flex",
+  alignItems: "center",
   "&:hover": {
-    backgroundColor: "#fff",
-    border: "2px solid #e0e0e0",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    backgroundColor: "#e2e8f0",
   },
   "&:focus-within": {
-    backgroundColor: "#fff",
-    border: "2px solid #2563eb",
-    boxShadow: "0 4px 16px rgba(37,99,235,0.15)",
+    backgroundColor: "#ffffff",
+    border: "1px solid #3b82f6",
+    boxShadow: "0 4px 16px rgba(59, 130, 246, 0.15)",
   },
 }));
 
 const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
+  padding: theme.spacing(0, 2.5),
   height: "100%",
   position: "absolute",
   pointerEvents: "none",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  color: "#64748b",
+  zIndex: 1,
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
+  color: "#1e293b",
   width: "100%",
+  fontWeight: 500,
+  fontSize: "0.95rem",
   "& .MuiInputBase-input": {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create("width"),
+    padding: theme.spacing(1.2, 2, 1.2, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(5)})`,
     width: "100%",
+    "&::placeholder": {
+      color: "#94a3b8",
+      opacity: 1,
+    },
   },
 }));
 
@@ -93,9 +109,13 @@ const Header: React.FC<HeaderProps> = ({
   const cartOpen = Boolean(cartAnchorEl);
   const cartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [learningAnchorEl, setLearningAnchorEl] = useState<HTMLElement | null>(null);
+  const learningOpen = Boolean(learningAnchorEl);
+  const learningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isMegaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [megaMenuTopics, setMegaMenuTopics] = useState<MegaMenuTopic[]>([]);
+  const [categories, setCategories] = useState<CategoryTreeResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -171,6 +191,33 @@ const Header: React.FC<HeaderProps> = ({
     }, 200);
   };
 
+  const handleLearningMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
+    if (learningTimeoutRef.current) {
+      clearTimeout(learningTimeoutRef.current);
+    }
+    setLearningAnchorEl(event.currentTarget);
+  };
+
+  const handleLearningDropdownEnter = () => {
+    if (learningTimeoutRef.current) {
+      clearTimeout(learningTimeoutRef.current);
+    }
+  };
+
+  const handleLearningMouseLeave = () => {
+    learningTimeoutRef.current = setTimeout(() => {
+      setLearningAnchorEl(null);
+    }, 200);
+  };
+
+  const handleLearningClose = () => {
+    if (learningTimeoutRef.current) {
+      clearTimeout(learningTimeoutRef.current);
+      learningTimeoutRef.current = null;
+    }
+    setLearningAnchorEl(null);
+  };
+
   const handleCartClose = () => {
     if (cartTimeoutRef.current) {
       clearTimeout(cartTimeoutRef.current);
@@ -208,9 +255,9 @@ const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categories = await categoryService.getCategoryTree();
-        const topics = transformCategoriesToMegaMenu(categories);
-        setMegaMenuTopics(topics);
+        const data = await categoryService.getCategoryTree();
+        // Only keep active level-1 roots
+        setCategories(data.filter((c) => c.isActive));
       } catch (error) {
         console.error("Failed to load categories:", error);
       }
@@ -218,49 +265,6 @@ const Header: React.FC<HeaderProps> = ({
     loadCategories();
   }, []);
 
-  const transformCategoriesToMegaMenu = (
-    categories: CategoryTreeResponse[],
-  ): MegaMenuTopic[] => {
-    return categories
-      .filter((cat) => cat.level === 1 && cat.isActive)
-      .map((level1) => {
-        // Level 2 categories become columns
-        const level2Cats = level1.children?.filter((cat) => cat.isActive) || [];
-
-        // Build columns: each level2 is a column, items are level3 (or itself if no level3)
-        const columns = level2Cats.map((level2) => {
-          const level3Items =
-            level2.children
-              ?.filter((cat) => cat.isActive)
-              .map((level3) => level3.name) || [];
-
-          const items = level3Items.length > 0 ? level3Items : [level2.name];
-
-          return {
-            title: level2.name,
-            items,
-          };
-        });
-
-        // If no level2 exists, fallback
-        if (columns.length === 0) {
-          return {
-            label: level1.name,
-            columns: [
-              {
-                title: "Khóa học",
-                items: ["Đang cập nhật..."],
-              },
-            ],
-          };
-        }
-
-        return {
-          label: level1.name,
-          columns: columns,
-        };
-      });
-  };
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -274,57 +278,46 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <AppBar
       position="sticky"
-      color="secondary"
+      color="inherit"
       elevation={0}
       sx={{
         px: { xs: 2, md: 5 },
-        borderBottom: "1px solid #e5e5e5",
+        borderBottom: "1px solid",
+        borderColor: isScrolled ? "transparent" : "#e2e8f0",
         transition: "all 0.3s ease",
-        boxShadow: isScrolled ? "0 4px 20px rgba(0,0,0,0.08)" : "none",
-        backdropFilter: isScrolled ? "blur(10px)" : "none",
-        backgroundColor: isScrolled ? "rgba(255,255,255,0.95)" : "white",
+        boxShadow: isScrolled ? "0 4px 20px rgba(0,0,0,0.05)" : "none",
+        backdropFilter: isScrolled ? "blur(12px)" : "none",
+        backgroundColor: isScrolled ? "rgba(255,255,255,0.9)" : "white",
+        zIndex: 1100,
       }}
     >
-      <Toolbar disableGutters>
-        <Typography
-          variant="h6"
-          noWrap
-          component="a"
-          href="/"
+      <Toolbar disableGutters sx={{ minHeight: "72px !important" }}>
+        <Box
+          component={Link}
+          to="/"
           sx={{
             mr: 2,
-            display: { xs: "none", md: "flex" },
+            display: "flex",
             alignItems: "center",
             textDecoration: "none",
+            gap: 1,
+            flexGrow: { xs: 1, md: 0 }
           }}
         >
-          <Box
-            component="img"
-            src="/images/logo/logo.png"
-            alt="Vidi"
-            sx={{ height: 36 }}
-          />
-        </Typography>
-        <Typography
-          variant="h5"
-          noWrap
-          component="a"
-          href="/"
-          sx={{
-            mr: 2,
-            display: { xs: "flex", md: "none" },
-            flexGrow: 1,
-            alignItems: "center",
-            textDecoration: "none",
-          }}
-        >
-          <Box
-            component="img"
-            src="/images/logo/logo.png"
-            alt="Vidi"
-            sx={{ height: 32 }}
-          />
-        </Typography>
+          <SchoolIcon sx={{ color: "#2563eb", fontSize: { xs: 28, md: 32 } }} />
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 900,
+              color: "#0f172a",
+              letterSpacing: "-0.02em",
+              fontSize: { xs: "1.2rem", md: "1.4rem" },
+              display: "flex"
+            }}
+          >
+            vidi
+          </Typography>
+        </Box>
         {showLeftPages && !checkoutMode && (
           <Box
             sx={{ display: { xs: "none", md: "flex" }, position: "relative" }}
@@ -349,23 +342,24 @@ const Header: React.FC<HeaderProps> = ({
                   my: 2,
                   display: "block",
                   textTransform: "none",
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  color: "#334155",
                   px: 2,
                   borderRadius: "8px",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    backgroundColor: "rgba(37, 99, 235, 0.05)",
+                    color: "#2563eb",
                     transform: "translateY(-1px)",
                   },
                 }}
-                className="!text-dark-100 hover:!text-primary-main"
               >
                 Khám phá
               </Button>
               {isMegaMenuOpen && (
                 <MegaMenu
-                  title={megaMenuPrimaryTitle}
-                  topics={megaMenuTopics}
+                  categories={categories}
                   onHover={() => {
                     if (megaMenuTimeoutRef.current) {
                       clearTimeout(megaMenuTimeoutRef.current);
@@ -390,15 +384,17 @@ const Header: React.FC<HeaderProps> = ({
                   display: "block",
                   textTransform: "none",
                   fontWeight: 600,
+                  fontSize: "15px",
+                  color: "#334155",
                   px: 2,
                   borderRadius: "8px",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    backgroundColor: "rgba(37, 99, 235, 0.05)",
+                    color: "#2563eb",
                     transform: "translateY(-1px)",
                   },
                 }}
-                className="!text-dark-100 hover:!text-primary-main"
               >
                 {page}
               </Button>
@@ -412,7 +408,7 @@ const Header: React.FC<HeaderProps> = ({
                 <SearchIcon />
               </SearchIconWrapper>
               <StyledInputBase
-                placeholder="Tìm kiếm nội dung bất kỳ"
+                placeholder="Tìm kiếm khóa học..."
                 inputProps={{ "aria-label": "search" }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -439,9 +435,18 @@ const Header: React.FC<HeaderProps> = ({
                 display: { xs: "none", lg: "block" },
                 textTransform: "none",
                 fontWeight: 600,
+                fontSize: "15px",
+                color: "#334155",
+                px: 2,
+                borderRadius: "8px",
+                transition: "all 0.2s ease",
                 mr: 1,
+                "&:hover": {
+                  backgroundColor: "rgba(37, 99, 235, 0.05)",
+                  color: "#2563eb",
+                  transform: "translateY(-1px)",
+                },
               }}
-              className="!text-dark-100 hover:!text-primary-main"
             >
               Vidi Business
             </Button>
@@ -455,9 +460,18 @@ const Header: React.FC<HeaderProps> = ({
                 display: { xs: "none", lg: "block" },
                 textTransform: "none",
                 fontWeight: 600,
+                fontSize: "15px",
+                color: "#334155",
+                px: 2,
+                borderRadius: "8px",
+                transition: "all 0.2s ease",
                 mr: 1,
+                "&:hover": {
+                  backgroundColor: "rgba(37, 99, 235, 0.05)",
+                  color: "#2563eb",
+                  transform: "translateY(-1px)",
+                },
               }}
-              className="!text-dark-100 hover:!text-primary-main"
             >
               Giảng viên
             </Button>
@@ -466,21 +480,41 @@ const Header: React.FC<HeaderProps> = ({
 
         {showAuth && !checkoutMode && user && (
           <>
-            <Button
-              component={Link}
-              to="/my-courses/learning"
-              color="inherit"
-              sx={{
-                my: 2,
-                display: { xs: "none", lg: "block" },
-                textTransform: "none",
-                fontWeight: 600,
-                mr: 1,
-              }}
-              className="!text-dark-100 hover:!text-primary-main"
-            >
-              Học tập
-            </Button>
+            <Box sx={{ position: "relative" }}>
+              <Button
+                component={Link}
+                to="/my-courses/learning"
+                color="inherit"
+                onMouseEnter={handleLearningMouseEnter}
+                onMouseLeave={handleLearningMouseLeave}
+                sx={{
+                  my: 2,
+                  display: { xs: "none", lg: "block" },
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  color: "#334155",
+                  px: 2,
+                  borderRadius: "8px",
+                  transition: "all 0.2s ease",
+                  mr: 1,
+                  "&:hover": {
+                    backgroundColor: "rgba(37, 99, 235, 0.05)",
+                    color: "#2563eb",
+                    transform: "translateY(-1px)",
+                  },
+                }}
+              >
+                Học tập
+              </Button>
+              <LearningDropdown
+                anchorEl={learningAnchorEl}
+                open={learningOpen}
+                onClose={handleLearningClose}
+                onMouseEnter={handleLearningDropdownEnter}
+                onMouseLeave={handleLearningMouseLeave}
+              />
+            </Box>
 
             <IconButton
               component={Link}
@@ -580,12 +614,60 @@ const Header: React.FC<HeaderProps> = ({
               onClose={handleUserMenuClose}
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  overflow: "visible",
+                  filter: "drop-shadow(0px 8px 24px rgba(0,0,0,0.12))",
+                  mt: 1.5,
+                  minWidth: 200,
+                  borderRadius: "16px",
+                  p: 0.5,
+                  "& .MuiMenuItem-root": {
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: "8px",
+                    mx: 0.5,
+                    my: 0.25,
+                    typography: "body2",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                    color: "#475569",
+                    transition: "all 0.2s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    "&:hover": {
+                      backgroundColor: "#f8fafc",
+                      color: "#2563eb",
+                      "& .MuiSvgIcon-root": {
+                        color: "#2563eb",
+                      },
+                    },
+                  },
+                  "&::before": {
+                    content: '""',
+                    display: "block",
+                    position: "absolute",
+                    top: 0,
+                    right: 18,
+                    width: 12,
+                    height: 12,
+                    bgcolor: "background.paper",
+                    transform: "translateY(-50%) rotate(45deg)",
+                    zIndex: 0,
+                    borderTop: "1px solid #f1f5f9",
+                    borderLeft: "1px solid #f1f5f9",
+                  },
+                },
+              }}
             >
               <MenuItem
                 component={Link}
                 to="/profile"
                 onClick={handleUserMenuClose}
               >
+                <PersonOutline fontSize="small" sx={{ color: "#94a3b8" }} />
                 Hồ sơ cá nhân
               </MenuItem>
               <MenuItem
@@ -593,6 +675,7 @@ const Header: React.FC<HeaderProps> = ({
                 to="/my-courses"
                 onClick={handleUserMenuClose}
               >
+                <PlayCircleOutline fontSize="small" sx={{ color: "#94a3b8" }} />
                 Khóa học của tôi
               </MenuItem>
               {!hasRole("INSTRUCTOR") && (
@@ -600,23 +683,21 @@ const Header: React.FC<HeaderProps> = ({
                   component={Link}
                   to="/my-courses/messages"
                   onClick={handleUserMenuClose}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
                 >
-                  Tin nhắn
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1 }}>
+                    <ChatBubbleOutline fontSize="small" sx={{ color: "#94a3b8" }} />
+                    Tin nhắn
+                  </Box>
                   {unreadMessages > 0 && (
                     <Badge
                       badgeContent={unreadMessages}
                       color="error"
                       sx={{
-                        mr: 1,
                         "& .MuiBadge-badge": {
                           fontSize: "0.7rem",
-                          height: 18,
-                          minWidth: 18,
+                          height: 20,
+                          minWidth: 20,
+                          borderRadius: "10px",
                         },
                       }}
                     />
@@ -628,10 +709,20 @@ const Header: React.FC<HeaderProps> = ({
                 to="/settings"
                 onClick={handleUserMenuClose}
               >
+                <SettingsOutlined fontSize="small" sx={{ color: "#94a3b8" }} />
                 Cài đặt
               </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+              <Divider sx={{ my: "8px !important", mx: 2 }} />
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  color: "#ef4444 !important",
+                  "&:hover": { backgroundColor: "#fef2f2 !important" },
+                }}
+              >
+                <LogoutOutlined fontSize="small" sx={{ color: "#ef4444 !important" }} />
+                Đăng xuất
+              </MenuItem>
             </Menu>
           </>
         )}
@@ -645,13 +736,18 @@ const Header: React.FC<HeaderProps> = ({
                 my: 2,
                 display: "block",
                 textTransform: "none",
-                fontWeight: 700,
-                borderRadius: "12px",
+                fontWeight: 600,
+                fontSize: "15px",
+                borderRadius: "9999px",
                 px: 3,
                 transition: "all 0.2s ease",
+                borderColor: "#e2e8f0",
+                color: "#1e293b",
                 "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                  borderColor: "#cbd5e1",
+                  backgroundColor: "#f8fafc",
                 },
               }}
               variant="outlined"
@@ -666,14 +762,16 @@ const Header: React.FC<HeaderProps> = ({
                 my: 2,
                 display: "block",
                 textTransform: "none",
-                fontWeight: 700,
-                borderRadius: "12px",
+                fontWeight: 600,
+                fontSize: "15px",
+                borderRadius: "9999px",
                 px: 3,
-                background: "linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)",
+                background: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
                 transition: "all 0.2s ease",
                 "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 20px rgba(37, 99, 235, 0.4)",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 6px 20px rgba(37, 99, 235, 0.3)",
                 },
               }}
               variant="contained"
@@ -687,7 +785,7 @@ const Header: React.FC<HeaderProps> = ({
           <Button
             component={Link}
             to="/cart"
-            sx={{ ml: "auto", fontWeight: 700, textTransform: "none" }}
+            sx={{ ml: "auto", fontWeight: 600, color: "#475569", textTransform: "none" }}
             color="inherit"
           >
             Hủy

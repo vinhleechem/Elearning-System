@@ -25,6 +25,7 @@ import org.example.elearning.exception.exceptions.ResourceNotFoundException;
 import org.example.elearning.mapper.CourseMapper;
 import org.example.elearning.repository.CourseRepository;
 import org.example.elearning.repository.EnrollmentRepository;
+import org.example.elearning.repository.ReviewRepository;
 import org.example.elearning.repository.SectionRepository;
 import org.example.elearning.repository.LessonRepository;
 import org.example.elearning.service.CourseService;
@@ -73,6 +74,7 @@ public class CourseServiceImpl implements CourseService {
     CourseMapper courseMapper;
     UserService userService;
     EnrollmentRepository enrollmentRepository;
+    ReviewRepository reviewRepository;
     PromotionService promotionService;
     NotificationService notificationService;
     KafkaTemplate<String, String> kafkaTemplate;
@@ -129,6 +131,8 @@ public class CourseServiceImpl implements CourseService {
                 .map(course -> {
                     CourseResponse response = courseMapper.toResponse(course);
                     promotionService.applyBestPromotionToCourse(response, course);
+                    response.setTotalStudents((int) enrollmentRepository.countByCourseAndIsDeletedFalse(course));
+                    response.setTotalReviews((int) reviewRepository.countByCourseAndIsDeletedFalse(course));
                     return response;
                 })
                 .toList();
@@ -154,7 +158,12 @@ public class CourseServiceImpl implements CourseService {
         Page<CourseEntity> page = courseRepository.findAll(spec, pageable);
 
         var courseResponses = page.getContent().stream()
-                .map(courseMapper::toResponse)
+                .map(courseEntity -> {
+                    CourseResponse response = courseMapper.toResponse(courseEntity);
+                    response.setTotalStudents((int) enrollmentRepository.countByCourseAndIsDeletedFalse(courseEntity));
+                    response.setTotalReviews((int) reviewRepository.countByCourseAndIsDeletedFalse(courseEntity));
+                    return response;
+                })
                 .toList();
 
         return new PaginatedResponse<>(courseResponses, new PaginatedResponse.Pagination(
@@ -167,9 +176,13 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public CourseResponse getCourseBySlug(String slug) {
-        CourseEntity entity = courseRepository.findBySlug(slug)
+        CourseEntity entity = courseRepository.findBySlugAndIsDeletedFalse(slug)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
         CourseResponse response = courseMapper.toResponse(entity);
+
+        // Enrich counts
+        response.setTotalStudents((int) enrollmentRepository.countByCourseAndIsDeletedFalse(entity));
+        response.setTotalReviews((int) reviewRepository.countByCourseAndIsDeletedFalse(entity));
 
         // Apply best promotion
         promotionService.applyBestPromotionToCourse(response, entity);
@@ -471,7 +484,7 @@ public class CourseServiceImpl implements CourseService {
         return SlugUtils.generateUniqueSlug(
                 customSlug,  // ← null for instructor, custom for admin
                 title,
-                slug -> courseRepository.findBySlug(slug).isPresent()
+                slug -> courseRepository.findBySlugAndIsDeletedFalse(slug).isPresent()
         );
     }
 

@@ -37,18 +37,19 @@ public interface PromotionMapper {
 
     // Map PromotionRule
     @Mapping(target = "targetName", expression = "java(getTargetName(rule))")
+    @Mapping(target = "courseId", expression = "java(rule.getCourse() != null ? rule.getCourse().getCourseId() : null)")
+    @Mapping(target = "categoryId", expression = "java(rule.getCategory() != null ? rule.getCategory().getId() : null)")
     PromotionRuleResponse toRuleResponse(PromotionRuleEntity rule);
 
     default String getTargetName(PromotionRuleEntity rule) {
         if (rule.getRuleType() == null) {
             return null;
         }
-        
         switch (rule.getRuleType()) {
             case COURSE:
-                return rule.getTargetId() != null ? "Course ID: " + rule.getTargetId() : null;
+                return rule.getCourse() != null ? rule.getCourse().getTitle() : null;
             case CATEGORY:
-                return rule.getTargetId() != null ? "Category ID: " + rule.getTargetId() : null;
+                return rule.getCategory() != null ? rule.getCategory().getName() : null;
             case ALL:
             default:
                 return "Tất cả";

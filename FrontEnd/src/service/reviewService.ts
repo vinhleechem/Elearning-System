@@ -34,6 +34,15 @@ export interface PaginatedReviewResponse {
     };
 }
 
+// Spring Page format returned directly from backend
+interface SpringPageReviewResponse {
+    content: ReviewResponse[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+}
+
 export const reviewService = {
     // Get reviews by course
     getReviewsByCourse: async (
@@ -41,14 +50,24 @@ export const reviewService = {
         page: number = 0,
         size: number = 10
     ): Promise<PaginatedReviewResponse> => {
-        const response = await httpClient<PaginatedReviewResponse>(
+        const response = await httpClient<SpringPageReviewResponse>(
             `/reviews/course/${courseId}?page=${page}&size=${size}`,
             { method: "GET" }
         );
         if (!response.data) {
             throw new Error(response.message || "Không lấy được danh sách đánh giá");
         }
-        return response.data;
+        // Backend returns Spring Page inside StandardResponse.data
+        const page_data = response.data;
+        return {
+            data: page_data.content || [],
+            pagination: {
+                pageNo: (page_data.number ?? 0) + 1,
+                pageSize: page_data.size ?? size,
+                totalElements: page_data.totalElements ?? 0,
+                totalPages: page_data.totalPages ?? 0,
+            }
+        };
     },
 
     // Get my review for a course

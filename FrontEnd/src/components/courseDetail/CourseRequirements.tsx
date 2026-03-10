@@ -1,6 +1,3 @@
-import { Box, Typography, List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-
 interface Props {
     requirements: string[];
 }
@@ -9,24 +6,16 @@ const CourseRequirements: React.FC<Props> = ({ requirements }) => {
     if (!requirements || requirements.length === 0) return null;
 
     return (
-        <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} mb={2}>
+        <section>
+            <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
                 Yêu cầu
-            </Typography>
-            <List disablePadding>
+            </h2>
+            <ul className="list-disc list-inside space-y-2 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                 {requirements.map((req, index) => (
-                    <ListItem key={index} sx={{ pl: 0, py: 0.5, alignItems: 'flex-start' }}>
-                        <ListItemIcon sx={{ minWidth: 24, mt: 1 }}>
-                            <FiberManualRecordIcon sx={{ fontSize: 8, color: 'text.primary' }} />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={req.replace(/^[•\-\.\s]+/, "")}
-                            primaryTypographyProps={{ variant: 'body2', color: 'text.primary', fontSize: '0.95rem' }}
-                        />
-                    </ListItem>
+                    <li key={index}>{req.replace(/^[•\-\.\s]+/, "")}</li>
                 ))}
-            </List>
-        </Box>
+            </ul>
+        </section>
     );
 };
 

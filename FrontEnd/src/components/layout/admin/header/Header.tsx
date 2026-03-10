@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
+import { School as SchoolIcon } from "@mui/icons-material";
 import { useSidebar } from "../../../../context/SidebarContext";
 import { ThemeToggleButton } from "../../../common/ThemeToggleButton";
 import NotificationDropdown from "./NotificationDropdown";
@@ -76,8 +77,11 @@ const Header: React.FC = () => {
             )}
           </button>
 
-          <Link to="/" className="lg:hidden">
-            <img src="/images/logo/logo.png" alt="Logo" className="h-8" />
+          <Link to="/" className="flex items-center gap-1 lg:hidden">
+            <SchoolIcon sx={{ color: "#2563eb", fontSize: 28 }} />
+            <span className="text-xl font-black tracking-tighter text-gray-900">
+              vidi
+            </span>
           </Link>
 
           {/* Search - Desktop only */}

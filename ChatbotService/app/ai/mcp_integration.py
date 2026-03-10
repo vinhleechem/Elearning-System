@@ -230,7 +230,6 @@ class MCPManager:
     def get_available_tools(self) -> List[Dict[str, Any]]:
         """
         Lấy danh sách tools có sẵn
-        Format theo Gemini Function Calling spec
         """
         tools = []
         

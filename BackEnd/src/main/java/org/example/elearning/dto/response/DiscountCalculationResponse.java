@@ -19,6 +19,7 @@ public class DiscountCalculationResponse {
     @Builder
     public static class DiscountDetail {
         private String type; // PROMOTION, VOUCHER
+        private Long referenceId; // ID của promotion hoặc voucher
         private String name;
         private String description;
         private BigDecimal amount;

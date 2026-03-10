@@ -1,8 +1,8 @@
-import { Container, Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
+import { reviewService } from "../../service/reviewService";
 import CourseHero from "../../components/courseDetail/CourseHero";
 import WhatYouWillLearn from "../../components/courseDetail/WhatYouWillLearn";
 import Curriculum from "../../components/courseDetail/Curriculum";
@@ -34,7 +34,11 @@ const CourseDetailPage = () => {
       setError(null);
 
       try {
-        const course = await courseService.getCourseBySlug(slug);
+        // If the param is a pure number, treat it as a courseId (legacy link fallback)
+        const isNumericId = /^\d+$/.test(slug);
+        const course = isNumericId
+          ? await courseService.getCourseById(Number(slug))
+          : await courseService.getCourseBySlug(slug);
 
         // Fetch sections with lessons
         let sections: CourseDetail["sections"] = [];
@@ -63,7 +67,7 @@ const CourseDetailPage = () => {
             id: String(c.courseId),
             slug: c.slug,
             title: c.title,
-            image: c.thumbnailUrl || "/images/courses/default-course.jpg",
+            image: c.thumbnailUrl || "",
             price: c.price ?? 0,
             rating: c.averageRating ?? 0,
           }));
@@ -88,17 +92,23 @@ const CourseDetailPage = () => {
           language: course.language || "Tiếng Việt",
           captions: [],
           whatYouWillLearn: course.whatYouLearn
-            ? course.whatYouLearn.split("\n")
+            ? course.whatYouLearn.split("\n").map(s => s.trim()).filter(Boolean)
             : [],
           sections: sections,
           requirements: course.requirements
-            ? course.requirements.split("\n")
+            ? course.requirements.split("\n").map(s => s.trim()).filter(Boolean)
             : [],
           descriptionHtml: course.description,
           instructor: {
             name: course.instructorName || "Unknown Instructor",
             title: "Instructor",
             avatarUrl: undefined,
+            stats: {
+              rating: course.averageRating || 0,
+              reviews: course.totalReviews || 0,
+              students: course.totalStudents || 0,
+              courses: 1
+            }
           },
           previewUrl: course.previewVideoUrl,
           thumbnailUrl: course.thumbnailUrl,
@@ -117,10 +127,35 @@ const CourseDetailPage = () => {
             count: course.totalReviews || 0,
             distribution: [0, 0, 0, 0, 0],
           },
-          // TODO: map real reviews khi backend hỗ trợ
-          reviews: [],
+          reviews: [],  // will be filled below
           related,
         };
+
+        // Fetch real reviews for this course
+        try {
+          const reviewsData = await reviewService.getReviewsByCourse(course.courseId, 0, 100);
+          const fetchedReviews = reviewsData.data || [];
+
+          mappedData.reviews = fetchedReviews.map((r) => ({
+            id: r.reviewId,
+            user: r.userName,
+            rating: r.rating,
+            comment: r.comment || "",
+            date: formatDate(r.createdAt),
+          }));
+
+          // Compute distribution: index 0 = 5 stars, index 4 = 1 star
+          const dist = [0, 0, 0, 0, 0];
+          fetchedReviews.forEach((r) => {
+            const star = Math.round(r.rating);
+            if (star >= 1 && star <= 5) {
+              dist[5 - star] += 1;
+            }
+          });
+          mappedData.reviewsSummary.distribution = dist;
+        } catch (reviewErr) {
+          console.warn("Failed to fetch reviews", reviewErr);
+        }
         setData(mappedData);
         setLoading(false);
       } catch (error) {
@@ -137,48 +172,30 @@ const CourseDetailPage = () => {
 
   if (loading)
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-12 text-slate-500">
         Đang tải khóa học...
-      </Container>
+      </div>
     );
   if (error)
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-12 text-slate-500">
         Lỗi: {error}
-      </Container>
+      </div>
     );
   if (!data)
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-12 text-slate-500">
         Không tìm thấy khóa học
-      </Container>
+      </div>
     );
 
   return (
-    <>
-      {/* Hero Section với gradient background */}
-      <Box
-        sx={{
-          background:
-            "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-          color: "#fff",
-          position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background:
-              "radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
-            pointerEvents: "none",
-          },
-        }}
-      >
-        <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
-          {/* Course Info - chiếm 60% chiều rộng */}
-          <Box sx={{ maxWidth: { xs: "100%", md: "60%" }, pr: { md: 4 } }}>
+    <div className="bg-background-light dark:bg-background-dark min-h-screen">
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Content: Course Details */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Hero Section */}
             <CourseHero
               data={{
                 title: data.title || "",
@@ -190,7 +207,7 @@ const CourseDetailPage = () => {
                 language: data.language || "English",
                 instructor: {
                   name: data.instructor?.name || "Unknown Instructor",
-                  avatar: data.instructor?.avatarUrl || "/default-avatar.png",
+                  avatar: data.instructor?.avatarUrl || "",
                 },
                 categories: data.categoryPath || [],
                 badges: data.badges || [],
@@ -198,69 +215,63 @@ const CourseDetailPage = () => {
                 originalPrice: data.oldPrice || 0,
               }}
             />
-          </Box>
 
-          {/* PurchaseSidebar - absolute positioned ở góc phải */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 32,
-              right: { xs: 16, md: 32 },
-              width: { xs: 340, md: 340 },
-              display: { xs: "none", md: "block" },
-              zIndex: 10,
-            }}
-          >
-            <PurchaseSidebar
-              courseId={data.id}
-              price={data.price}
-              oldPrice={data.oldPrice}
-              ctaDisabled={!data.isPurchasable}
-              isPurchased={data.isPurchased}
-              purchasedAt={data.purchasedAt}
-              thumbnailUrl={data.thumbnailUrl}
-              promotionEndDate={data.promotionEndDate}
-              discountPercentage={data.discountPercentage}
-            />
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Main Content với gradient background */}
-      <Box
-        sx={{
-          background: "linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)",
-        }}
-      >
-        <Container maxWidth="xl" sx={{ py: 6 }}>
-          <Box sx={{ maxWidth: { xs: "100%", md: "60%" } }}>
+            {/* What you'll learn */}
             <WhatYouWillLearn items={data.whatYouWillLearn} />
-            <Curriculum sections={data.sections} />
-            <CourseRequirements requirements={data.requirements || []} />
-            <Description html={data.descriptionHtml} />
-            <Instructor instructor={data.instructor} />
-            <StudentFeedback summary={data.reviewsSummary} />
-            <Reviews items={data.reviews} />
-            <RelatedCourses courses={data.related} />
-          </Box>
-        </Container>
-      </Box>
 
-      {/* Mobile PurchaseSidebar */}
-      <Box sx={{ display: { xs: "block", md: "none" }, p: 2 }}>
-        <PurchaseSidebar
-          courseId={data.id}
-          price={data.price}
-          oldPrice={data.oldPrice}
-          ctaDisabled={!data.isPurchasable}
-          isPurchased={data.isPurchased}
-          purchasedAt={data.purchasedAt}
-          thumbnailUrl={data.thumbnailUrl}
-          promotionEndDate={data.promotionEndDate}
-          discountPercentage={data.discountPercentage}
-        />
-      </Box>
-    </>
+            {/* Course Content / Curriculum */}
+            <Curriculum sections={data.sections} />
+
+            {/* Requirements */}
+            <CourseRequirements requirements={data.requirements || []} />
+
+            {/* Description */}
+            <Description html={data.descriptionHtml} />
+
+            {/* Instructor Profile */}
+            <Instructor instructor={data.instructor} />
+
+            {/* Reviews Section */}
+            <section className="mt-16 pt-16 border-t border-slate-200 dark:border-slate-800">
+              <StudentFeedback
+                summary={data.reviewsSummary}
+                isPurchased={data.isPurchased}
+                courseId={data.id}
+                onReviewSuccess={() => window.location.reload()}
+              />
+              <Reviews items={data.reviews} />
+              {data.reviews && data.reviews.length > 0 && (
+                <div className="mt-8 text-center">
+                  <button className="px-6 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-white">
+                    Xem thêm đánh giá
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Related Courses */}
+            <RelatedCourses courses={data.related} />
+          </div>
+
+          {/* Right Content: Sticky Sidebar */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <PurchaseSidebar
+                courseId={data.id}
+                price={data.price}
+                oldPrice={data.oldPrice}
+                ctaDisabled={!data.isPurchasable}
+                isPurchased={data.isPurchased}
+                purchasedAt={data.purchasedAt}
+                thumbnailUrl={data.thumbnailUrl}
+                promotionEndDate={data.promotionEndDate}
+                discountPercentage={data.discountPercentage}
+              />
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
   );
 };
 

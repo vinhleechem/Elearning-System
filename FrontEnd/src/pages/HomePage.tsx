@@ -1,398 +1,435 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Container } from "@mui/material";
-import CourseList from "../components/course/CourseList";
-import SliderBanner from "../components/banner/SliderBanner";
-import PaymentSuccessDialog from "../components/payment/PaymentSuccessDialog";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Stack,
+  Card,
+  Avatar,
+  AvatarGroup,
+  IconButton,
+} from "@mui/material";
 import SchoolIcon from "@mui/icons-material/School";
-import PeopleIcon from "@mui/icons-material/People";
-import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import CourseList from "../components/course/CourseList";
+import PaymentSuccessDialog from "../components/payment/PaymentSuccessDialog";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import DevicesIcon from "@mui/icons-material/Devices";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import confetti from "canvas-confetti";
 
+/* ─── Data ─────────────────────────────────────── */
+const WHY_VIDI = [
+  {
+    icon: <SchoolIcon sx={{ fontSize: 32 }} />,
+    title: "Giảng viên chuyên nghiệp",
+    desc: "Học hỏi trực tiếp từ các chuyên gia hàng đầu và có kinh nghiệm thực chiến trong ngành.",
+    color: "#3b82f6",
+  },
+  {
+    icon: <AccessTimeIcon sx={{ fontSize: 32 }} />,
+    title: "Học theo tốc độ của bạn",
+    desc: "Không áp lực thời gian, bạn có thể tự do sắp xếp lịch học phù hợp với cuộc sống cá nhân.",
+    color: "#3b82f6",
+  },
+  {
+    icon: <DevicesIcon sx={{ fontSize: 32 }} />,
+    title: "Đa nền tảng",
+    desc: "Truy cập toàn bộ tài liệu và video bài giảng trên mọi thiết bị di động, tablet hay máy tính.",
+    color: "#3b82f6",
+  },
+  {
+    icon: <WorkspacePremiumIcon sx={{ fontSize: 32 }} />,
+    title: "Chứng chỉ uy tín",
+    desc: "Nhận chứng chỉ hoàn thành khóa học có giá trị, giúp bạn nổi bật trong mắt nhà tuyển dụng.",
+    color: "#3b82f6",
+  },
+];
+
+/* ─── Component ─────────────────────────────────── */
 const HomePage: React.FC = () => {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
 
-    // Check for payment success param
-    useEffect(() => {
-        const paymentSuccess = searchParams.get("payment_success");
-        if (paymentSuccess === "true") {
-            setShowPaymentSuccess(true);
-            // Clean up URL params
-            searchParams.delete("payment_success");
-            searchParams.delete("orderId");
-            setSearchParams(searchParams, { replace: true });
-        }
-    }, [searchParams, setSearchParams]);
+  /* payment-success callback */
+  useEffect(() => {
+    if (searchParams.get("payment_success") === "true") {
+      setPaymentOrderId(searchParams.get("orderId"));
+      setShowPaymentSuccess(true);
+      searchParams.delete("payment_success");
+      searchParams.delete("orderId");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
-    useEffect(() => {
-        // Confetti effect on page load
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+  /* confetti for payment success */
+  useEffect(() => {
+    if (!showPaymentSuccess) return;
+    const duration = 3000;
+    const end = Date.now() + duration;
 
-        function randomInRange(min: number, max: number) {
-            return Math.random() * (max - min) + min;
-        }
+    const frame = () => {
+      confetti({
+        particleCount: 2,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ["#2563eb", "#93c5fd"]
+      });
+      confetti({
+        particleCount: 2,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ["#2563eb", "#93c5fd"]
+      });
 
-        const interval: any = setInterval(function () {
-            const timeLeft = animationEnd - Date.now();
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
+  }, [showPaymentSuccess]);
 
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
+  return (
+    <Box sx={{ bgcolor: "#fff", minHeight: "100vh" }}>
 
-            const particleCount = 50 * (timeLeft / duration);
+      {/* ═══════════════════════════════════════
+          1. HERO SECTION
+      ═══════════════════════════════════════ */}
+      <Box
+        sx={{
+          pt: { xs: 4, md: 8 },
+          pb: { xs: 8, md: 12 },
+          background: "radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.08) 0%, transparent 40%)",
+          overflow: "hidden",
+          position: "relative"
+        }}
+      >
+        <Container maxWidth="xl">
+          <Grid container spacing={8} alignItems="center">
+            {/* HERO LEFT */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ maxWidth: 620 }}>
+                <Typography
+                  sx={{
+                    display: "inline-block",
+                    bgcolor: "rgba(37, 99, 235, 0.08)",
+                    color: "#2563eb",
+                    px: 2, py: 0.8,
+                    borderRadius: "100px",
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    mb: 4
+                  }}
+                >
+                  Nền tảng học tập 4.0
+                </Typography>
 
-            // Left side
-            confetti({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-            });
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontSize: { xs: "2.8rem", sm: "3.5rem", md: "4.2rem" },
+                    fontWeight: 900,
+                    lineHeight: 1.1,
+                    color: "#0f172a",
+                    mb: 4,
+                    letterSpacing: "-0.02em"
+                  }}
+                >
+                  Đầu tư vào bản thân — <Box component="span" sx={{ color: "#2563eb" }}>khoản đầu tư tốt nhất</Box>
+                </Typography>
 
-            // Right side
-            confetti({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-            });
-        }, 250);
+                <Typography
+                  sx={{
+                    fontSize: "1.15rem",
+                    color: "#64748b",
+                    lineHeight: 1.7,
+                    mb: 5,
+                    maxWidth: 520
+                  }}
+                >
+                  Tham gia cùng hàng ngàn học viên đã thay đổi sự nghiệp của họ thông qua nền tảng học tập hiện đại, linh hoạt và chất lượng của chúng tôi.
+                </Typography>
 
-        return () => clearInterval(interval);
-    }, []);
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 6 }}>
+                  <Button
+                    component={Link} to="/register"
+                    variant="contained"
+                    sx={{
+                      bgcolor: "#2563eb",
+                      color: "white",
+                      px: 5, py: 2,
+                      borderRadius: "14px",
+                      fontWeight: 800,
+                      fontSize: "1rem",
+                      textTransform: "none",
+                      boxShadow: "0 10px 25px rgba(37, 99, 235, 0.25)",
+                      "&:hover": {
+                        bgcolor: "#1d4ed8",
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 15px 30px rgba(37, 99, 235, 0.35)",
+                      },
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    }}
+                  >
+                    Đăng ký miễn phí
+                  </Button>
+                  <Button
+                    component={Link} to="/courses"
+                    variant="outlined"
+                    sx={{
+                      borderColor: "#e2e8f0",
+                      color: "#0f172a",
+                      px: 5, py: 2,
+                      borderRadius: "14px",
+                      fontWeight: 700,
+                      fontSize: "1rem",
+                      textTransform: "none",
+                      bgcolor: "white",
+                      "&:hover": {
+                        borderColor: "#cbd5e1",
+                        bgcolor: "#f8fafc",
+                        transform: "translateY(-2px)",
+                      },
+                      transition: "all 0.3s"
+                    }}
+                  >
+                    Khám phá khóa học
+                  </Button>
+                </Stack>
 
-    return (
-        <div className="bg-gradient-to-b from-white to-gray-50 min-h-screen overflow-x-hidden relative">
-            {/* Hero Section */}
-            <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-16 pb-24 overflow-hidden">
-                {/* Animated Background Elements */}
-                <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-                <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <AvatarGroup max={4} sx={{ "& .MuiAvatar-root": { width: 38, height: 38, border: "2px solid #fff" } }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Avatar key={i} src={`https://i.pravatar.cc/100?img=${i + 10}`} />
+                    ))}
+                  </AvatarGroup>
+                  <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
+                    <Box component="span" sx={{ color: "#0f172a", fontWeight: 800 }}>10,000+</Box> học viên đang học tập mỗi ngày
+                  </Typography>
+                </Stack>
+              </Box>
+            </Grid>
 
-                <Container maxWidth="xl" className="relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        {/* Left Content */}
-                        <div className="space-y-8 animate-fade-in-up">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full text-sm font-semibold shadow-lg">
-                                <TrendingUpIcon className="text-xl" />
-                                <span>Nền tảng học tập #1 Việt Nam</span>
-                            </div>
+            {/* HERO RIGHT */}
+            <Grid size={{ xs: 12, md: 6 }} sx={{ display: { xs: "none", md: "block" } }}>
+              <Box sx={{ position: "relative" }}>
+                {/* Decorative Blobs */}
+                <Box sx={{ position: "absolute", top: -60, right: -60, width: 300, height: 300, bgcolor: "rgba(37, 99, 235, 0.05)", borderRadius: "50%", filter: "blur(60px)", zIndex: 0 }} />
+                <Box sx={{ position: "absolute", bottom: -40, left: -40, width: 250, height: 250, bgcolor: "rgba(37, 99, 235, 0.1)", borderRadius: "50%", filter: "blur(50px)", zIndex: 0 }} />
 
-                            <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight">
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
-                                    Học tập thông minh
-                                </span>
-                                <br />
-                                <span className="text-gray-900">Thành công vượt trội</span>
-                            </h1>
+                <Box
+                  component="img"
+                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop"
+                  alt="Students working together"
+                  sx={{
+                    width: "100%",
+                    height: "540px",
+                    objectFit: "cover",
+                    borderRadius: "32px",
+                    boxShadow: "0 30px 60px rgba(0,0,0,0.12)",
+                    position: "relative",
+                    zIndex: 1,
+                    transition: "transform 0.5s ease",
+                    "&:hover": { transform: "scale(1.02)" }
+                  }}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
 
-                            <p className="text-xl text-gray-600 leading-relaxed max-w-xl">
-                                Khám phá hàng ngàn khóa học chất lượng cao từ các chuyên gia hàng đầu.
-                                Nâng cao kỹ năng, thay đổi sự nghiệp của bạn ngay hôm nay.
-                            </p>
+      {/* ═══════════════════════════════════════
+          2. FEATURED COURSES
+      ═══════════════════════════════════════ */}
+      <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: "#fff" }}>
+        <Container maxWidth="xl">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              mb: 6,
+              gap: 2,
+              flexWrap: "wrap"
+            }}
+          >
+            <Box>
+              <Typography variant="h3" sx={{ fontWeight: 900, color: "#0f172a", mb: 1, letterSpacing: "-0.01em" }}>
+                Các khóa học nổi bật
+              </Typography>
+              <Typography variant="body1" sx={{ color: "#64748b" }}>
+                Bắt đầu hành trình chinh phục kỹ năng mới ngay hôm nay
+              </Typography>
+            </Box>
+            <Button
+              component={Link} to="/courses"
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                color: "#2563eb",
+                fontWeight: 800,
+                textTransform: "none",
+                "&:hover": { bgcolor: "rgba(37, 99, 235, 0.05)" }
+              }}
+            >
+              Xem tất cả
+            </Button>
+          </Box>
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Link to="/courses">
-                                    <button className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 w-full sm:w-auto">
-                                        <span className="flex items-center justify-center gap-2">
-                                            Khám phá ngay
-                                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                            </svg>
-                                        </span>
-                                    </button>
-                                </Link>
-                                <Link to="/register">
-                                    <button className="group px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all border-2 border-gray-200 w-full sm:w-auto">
-                                        <span className="flex items-center justify-center gap-2">
-                                            <PlayCircleFilledWhiteIcon className="text-blue-600" />
-                                            Xem demo
-                                        </span>
-                                    </button>
-                                </Link>
-                            </div>
+          <CourseList />
+        </Container>
+      </Box>
 
-                            {/* Social Proof */}
-                            <div className="flex items-center gap-6 pt-4">
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <img
-                                            key={i}
-                                            className="w-12 h-12 rounded-full border-4 border-white shadow-md"
-                                            src={`https://i.pravatar.cc/100?img=${i}`}
-                                            alt={`Student ${i}`}
-                                        />
-                                    ))}
-                                    <div className="w-12 h-12 rounded-full border-4 border-white bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                        +5k
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1 text-yellow-500">
-                                        {[1, 2, 3, 4, 5].map((i) => (
-                                            <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-                                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                                            </svg>
-                                        ))}
-                                    </div>
-                                    <p className="text-sm text-gray-600 font-medium mt-1">
-                                        <span className="font-bold text-gray-900">5,000+</span> học viên hài lòng
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+      {/* ═══════════════════════════════════════
+          3. WHY CHOOSE US
+      ═══════════════════════════════════════ */}
+      <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "#fff" }}>
+        <Container maxWidth="xl">
+          <Box sx={{ textAlign: "center", mb: 6 }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, color: "#0f172a", mb: 2, letterSpacing: "-0.01em" }}>
+              Tại sao chọn vidi?
+            </Typography>
+            <Typography variant="body1" sx={{ color: "#64748b", maxWidth: 600, mx: "auto" }}>
+              Nâng tầm kỹ năng của bạn với những lợi ích vượt trội từ nền tảng học tập chuyên nghiệp của chúng tôi.
+            </Typography>
+          </Box>
 
-                        {/* Right Content - Hero Image/Slider */}
-                        <div className="relative">
-                            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-2xl opacity-20"></div>
-                            <div className="relative bg-white p-3 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-500">
-                                <SliderBanner />
-                            </div>
+          <Grid container spacing={4}>
+            {WHY_VIDI.map((item, idx) => (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    p: 5,
+                    height: "100%",
+                    borderRadius: "24px",
+                    border: "1px solid #f1f5f9",
+                    textAlign: "center",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      borderColor: "#2563eb",
+                      boxShadow: "0 20px 40px rgba(0,0,0,0.04)",
+                      transform: "translateY(-8px)"
+                    }
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 72, height: 72,
+                      borderRadius: "20px",
+                      bgcolor: "rgba(37, 99, 235, 0.1)",
+                      color: "#2563eb",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      mx: "auto", mb: 3
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: "#0f172a" }}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#64748b", lineHeight: 1.6 }}>
+                    {item.desc}
+                  </Typography>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
 
-                            {/* Floating Stats Cards */}
-                            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-float">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
-                                        <EmojiEventsIcon className="text-white text-2xl" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">500+</p>
-                                        <p className="text-sm text-gray-500">Khóa học</p>
-                                    </div>
-                                </div>
-                            </div>
+      {/* ═══════════════════════════════════════
+          4. CTA BANNER
+      ═══════════════════════════════════════ */}
+      <Box sx={{ py: { xs: 4, md: 6 }, px: 2 }}>
+        <Container maxWidth="xl">
+          <Box
+            sx={{
+              borderRadius: "40px",
+              background: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
+              p: { xs: 4, md: 8 },
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+            {/* Background Decorations */}
+            <Box sx={{ position: "absolute", top: -80, right: -40, width: 300, height: 300, bgcolor: "rgba(255,255,255,0.1)", borderRadius: "50%", filter: "blur(60px)" }} />
+            <Box sx={{ position: "absolute", bottom: -80, left: -40, width: 250, height: 250, bgcolor: "rgba(0,0,0,0.05)", borderRadius: "50%", filter: "blur(60px)" }} />
 
-                            <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-float animation-delay-2000">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
-                                        <PeopleIcon className="text-white text-2xl" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">10k+</p>
-                                        <p className="text-sm text-gray-500">Học viên</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Container>
-            </section>
+            <Grid container spacing={6} alignItems="center">
+              <Grid size={{ xs: 12, lg: 8 }}>
+                <Typography variant="h3" sx={{ color: "white", fontWeight: 900, mb: 3, letterSpacing: "-0.01em" }}>
+                  Sẵn sàng để bắt đầu?
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.85)", fontSize: "1.2rem", maxWidth: 600, lineHeight: 1.6 }}>
+                  Tham gia cộng đồng học tập của chúng tôi ngay hôm nay và nhận ưu đãi 50% cho khóa học đầu tiên.
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, lg: 4 }}>
+                <Stack direction={{ xs: "column", sm: "row", lg: "column" }} spacing={2}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                      bgcolor: "white",
+                      color: "#2563eb",
+                      px: 4, py: 2.2,
+                      borderRadius: "16px",
+                      fontWeight: 800,
+                      fontSize: "1rem",
+                      textTransform: "none",
+                      "&:hover": {
+                        bgcolor: "#f8fafc",
+                        transform: "scale(1.02)",
+                      },
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    Bắt đầu ngay
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{
+                      borderColor: "rgba(255,255,255,0.4)",
+                      color: "white",
+                      px: 4, py: 2.2,
+                      borderRadius: "16px",
+                      fontWeight: 700,
+                      fontSize: "1rem",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "white",
+                        bgcolor: "rgba(255,255,255,0.1)",
+                      }
+                    }}
+                  >
+                    Liên hệ tư vấn
+                  </Button>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Box>
+        </Container>
+      </Box>
 
-            {/* Trust Badges */}
-            <section className="py-12 bg-white border-y border-gray-100">
-                <Container maxWidth="xl">
-                    <p className="text-center text-sm text-gray-500 uppercase tracking-wider font-semibold mb-8">
-                        Được tin tưởng bởi các tổ chức hàng đầu
-                    </p>
-                    <div className="flex flex-wrap justify-center items-center gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" className="h-8" alt="Google" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="h-10" alt="Apple" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" className="h-8" alt="Amazon" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" className="h-10" alt="IBM" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg" className="h-10" alt="VW" />
-                    </div>
-                </Container>
-            </section>
-
-            {/* Popular Courses Section */}
-            <section className="py-10 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-                {/* Decorative elements */}
-                <div className="absolute top-0 left-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-
-                <Container maxWidth="xl" className="relative z-10">
-                    {/* Section Header */}
-                    <div className="text-center mb-16">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-6">
-                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <span className="text-sm font-semibold text-gray-700">Khóa học được yêu thích nhất</span>
-                        </div>
-
-                        <h2 className="text-4xl lg:text-5xl font-bold mb-6">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                                Khóa học nổi bật
-                            </span>
-                        </h2>
-
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-                            Được bình chọn và đánh giá cao nhất bởi cộng đồng học viên.
-                            Cập nhật kiến thức mới nhất mỗi ngày.
-                        </p>
-
-                        <Link
-                            to="/courses"
-                            className="inline-flex items-center gap-2 text-blue-600 hover:text-purple-600 font-semibold text-lg group transition-colors"
-                        >
-                            <span>Xem tất cả khóa học</span>
-                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </Link>
-                    </div>
-
-                    {/* Course List */}
-                    <div className="relative">
-                        <CourseList />
-                    </div>
-                </Container>
-            </section>
-
-            {/* Features Section */}
-            <section className="py-16 bg-white">
-                <Container maxWidth="xl">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-                            Tại sao chọn chúng tôi?
-                        </h2>
-                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Trải nghiệm học tập đẳng cấp với công nghệ hiện đại
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Feature 1 */}
-                        <div className="group p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <SchoolIcon className="text-white text-2xl" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Giảng viên chuyên nghiệp</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Học từ các chuyên gia hàng đầu với kinh nghiệm thực tế tại các tập đoàn lớn
-                            </p>
-                        </div>
-
-                        {/* Feature 2 */}
-                        <div className="group p-6 bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <CheckCircleIcon className="text-white text-2xl" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Chứng chỉ uy tín</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Nhận chứng chỉ được công nhận để thăng tiến trong sự nghiệp của bạn
-                            </p>
-                        </div>
-
-                        {/* Feature 3 */}
-                        <div className="group p-6 bg-gradient-to-br from-pink-50 to-white rounded-xl border border-pink-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                            <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <PeopleIcon className="text-white text-2xl" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Cộng đồng sôi động</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Kết nối và học hỏi cùng hàng ngàn học viên đam mê trên toàn quốc
-                            </p>
-                        </div>
-                    </div>
-                </Container>
-            </section>
-
-            {/* Office Location Section */}
-            <section className="py-16 bg-white">
-                <Container maxWidth="xl">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-                            Ghé thăm văn phòng của chúng tôi
-                        </h2>
-                        <p className="text-lg text-gray-600">
-                            Chúng tôi luôn sẵn sàng chào đón bạn tại trụ sở chính
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                        {/* Map */}
-                        <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
-                            <div className="relative bg-white p-1.5 rounded-xl shadow-lg">
-                                <iframe
-                                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=Trường+Đại+học+FPT+TP.+HCM&zoom=15"
-                                    width="100%"
-                                    height="320"
-                                    style={{ border: 0, borderRadius: '8px' }}
-                                    allowFullScreen
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    title="Office Location"
-                                ></iframe>
-                            </div>
-                        </div>
-
-                        {/* Contact Info */}
-                        <div className="space-y-6">
-                            <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-100">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1">Địa chỉ văn phòng</h3>
-                                        <p className="text-sm text-gray-600 leading-relaxed">
-                                            Lô E2a-7, Đường D1, Khu Công nghệ cao<br />
-                                            P. Long Thạnh Mỹ, TP. Thủ Đức, TP.HCM
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1">Liên hệ</h3>
-                                        <p className="text-sm text-gray-600 leading-relaxed">
-                                            <span className="block">📞 Hotline: (028) 3864 5124</span>
-                                            <span className="block">📧 contact@elearning.edu.vn</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Container>
-            </section>
-            {/* CTA Section */}
-            <section className="py-24 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
-                <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-                <Container maxWidth="xl" className="relative z-10">
-                    <div className="text-center text-white">
-                        <h2 className="text-4xl lg:text-6xl font-bold mb-6">
-                            Bắt đầu hành trình của bạn
-                        </h2>
-                        <p className="text-xl lg:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto">
-                            Tham gia cùng hàng ngàn học viên đã thay đổi cuộc đời họ
-                        </p>
-                        <Link to="/register">
-                            <button className="px-12 py-5 bg-white text-purple-600 font-bold text-lg rounded-full shadow-2xl hover:shadow-3xl hover:bg-gray-50 transition-all transform hover:-translate-y-1 hover:scale-105">
-                                Đăng ký miễn phí ngay
-                            </button>
-                        </Link>
-                        <p className="mt-6 text-sm text-blue-100">
-                            ✓ Không cần thẻ tín dụng  ✓ Hủy bất cứ lúc nào  ✓ Truy cập ngay lập tức
-                        </p>
-                    </div>
-                </Container>
-            </section>
-
-            {/* Payment Success Dialog */}
-            <PaymentSuccessDialog
-                open={showPaymentSuccess}
-                onClose={() => setShowPaymentSuccess(false)}
-            />
-        </div>
-    );
+      {/* ═════ Payment Success Dialog ═════ */}
+      <PaymentSuccessDialog
+        open={showPaymentSuccess}
+        orderId={paymentOrderId}
+        onClose={() => setShowPaymentSuccess(false)}
+      />
+    </Box>
+  );
 };
 
 export default HomePage;

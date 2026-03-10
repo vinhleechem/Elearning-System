@@ -27,6 +27,8 @@
     "@stomp/stompjs": "^7.2.1",
     "apexcharts": "^5.3.5",
     "axios": "^1.13.2",
+    "baseline-browser-mapping": "^2.10.0",
+    "caniuse-lite": "^1.0.30001777",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
     "dexie": "^4.2.1",

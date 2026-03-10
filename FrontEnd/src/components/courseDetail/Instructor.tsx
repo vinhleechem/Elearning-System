@@ -1,5 +1,3 @@
-import { Box, Typography, Avatar, Stack, Button } from "@mui/material";
-import StarIcon from "@mui/icons-material/Star";
 import type { InstructorInfo } from "../../types/courseDetail";
 
 interface Props {
@@ -8,82 +6,64 @@ interface Props {
 
 const Instructor: React.FC<Props> = ({ instructor }) => {
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" fontWeight={700} mb={3}>
+    <section className="p-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">
         Giảng viên
-      </Typography>
+      </h2>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Avatar + stats */}
+        <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg ring-4 ring-primary/10">
+            <img
+              className="w-full h-full object-cover"
+              src={
+                instructor.avatarUrl ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor.name || "GV")}&background=2463eb&color=fff&size=200`
+              }
+              alt={instructor.name}
+            />
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
+              <span className="material-symbols-outlined text-xs fill-1">star</span>
+              {instructor.stats?.rating?.toFixed(1) || "5.0"} Rating
+            </div>
+            <div className="text-xs text-slate-500">{(instructor.stats?.students || 0).toLocaleString()} Học viên</div>
+          </div>
+        </div>
 
-      <Stack direction="row" spacing={3} alignItems="flex-start">
-        <Avatar
-          src={instructor.avatarUrl}
-          alt={instructor.name}
-          sx={{
-            width: 120,
-            height: 120,
-            fontSize: '3rem',
-            fontWeight: 700,
-            bgcolor: 'primary.main',
-            color: 'white'
-          }}
-        >
-          {instructor.name.charAt(0)}
-        </Avatar>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            color="primary.main"
-            sx={{ mb: 0.5, textDecoration: 'underline', cursor: 'pointer' }}
-          >
-            {instructor.name}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {instructor.title}
-          </Typography>
-
-          <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-              <Typography variant="body2" fontWeight={600}>4.9 xếp hạng giảng viên</Typography>
-            </Stack>
-
-            <Typography variant="body2">
-              <strong>1 249</strong> đánh giá
-            </Typography>
-
-            <Typography variant="body2">
-              <strong>12 436</strong> học viên
-            </Typography>
-
-            <Typography variant="body2">
-              <strong>3</strong> khóa học
-            </Typography>
-          </Stack>
-
-          <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.6, mb: 2 }}>
-            Mình từng học KỸ sư tại trường tại Đại Học Bách khoa Hà Nội trong 2 năm. Sau đó mình đi du
-            học và tốt nghiệp thạc sĩ vật lý hạt nhân tại trường đại học MEPhI - một trong những ngôi trường
-            tốt nhất tại liên bang Nga. Sau đó, mình có cơ hội làm việc trong lĩnh vực công nghệ thông tin,
-            bên cạnh đó với lĩnh vực này và hiện tại mình đang là Senior AI Engineer.
-          </Typography>
-
-          <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.6, mb: 2 }}>
-            Mình đã có nhiều năm kinh nghiệm làm việc với Python và trí tuệ nhân tạo (AI). Các lĩnh vực
-            chuyên môn chính của mình bao gồm: AI tạo ảnh (Computer Vision), xử lý ngôn ngữ tự...
-          </Typography>
-
-          <Button
-            variant="text"
-            size="small"
-            sx={{ p: 0, textTransform: 'none', color: 'primary.main', fontWeight: 600 }}
-          >
-            Hiển thêm
-          </Button>
-        </Box>
-      </Stack>
-    </Box>
+        {/* Info */}
+        <div className="space-y-3 flex-1">
+          <div>
+            <h3 className="text-xl font-black text-primary cursor-pointer hover:underline">
+              {instructor.name}
+            </h3>
+            <p className="text-slate-500 font-medium text-sm mt-0.5">
+              {instructor.title || "Chuyên gia / Giảng viên"}
+            </p>
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+            Với nhiều năm kinh nghiệm trong lĩnh vực chuyên môn, giảng viên
+            đã giúp hàng nghìn học viên nắm vững kiến thức và kỹ năng thực
+            tế, áp dụng trực tiếp vào công việc và phát triển sự nghiệp.
+          </p>
+          <div className="flex gap-3 pt-1">
+            <a
+              href="#"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-600 dark:text-slate-400"
+            >
+              <span className="material-symbols-outlined text-lg">language</span>
+            </a>
+            <a
+              href="#"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-600 dark:text-slate-400"
+            >
+              <span className="material-symbols-outlined text-lg">link</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Drawer,
   Box,
@@ -13,7 +13,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ChatBox from "./ChatBox";
 import { conversationService } from "../../service/conversationService";
 import type { ConversationResponse } from "../../service/conversationService";
-import { useToast } from "../../hooks/useToast";
+import toast from "react-hot-toast";
 import { formatLastSeen } from "../../libs/dateUtils";
 
 interface ChatDrawerProps {
@@ -35,43 +35,45 @@ const ChatDrawer = ({
     null,
   );
   const [loading, setLoading] = useState(false);
-  const { enqueueSnackbar } = useToast();
   const lastFetchedCourseId = useRef<number | null>(null);
 
-  const fetchOrCreateConversation = useCallback(async () => {
-    setLoading(true);
-    try {
-      // For students: get or create conversation for this course
-      if (currentUserType === "STUDENT") {
-        const response =
-          await conversationService.getOrCreateConversation(courseId);
-        setConversation(response);
-        lastFetchedCourseId.current = courseId;
-      } else {
-        // For instructors: get conversations for this course
-        const response = await conversationService.getMyConversations(0, 1, {
-          courseId,
-        });
-        if (response.data && response.data.length > 0) {
-          setConversation(response.data[0]);
-          lastFetchedCourseId.current = courseId;
-        }
-      }
-    } catch (error: any) {
-      enqueueSnackbar(error.message || "Lỗi khi tải conversation", {
-        variant: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [courseId, currentUserType, enqueueSnackbar]);
-
   useEffect(() => {
-    // Only fetch if drawer is open, courseId exists, and courseId is different from last fetch
-    if (open && courseId && lastFetchedCourseId.current !== courseId) {
-      fetchOrCreateConversation();
-    }
-  }, [open, courseId, fetchOrCreateConversation]);
+    if (!open || !courseId || lastFetchedCourseId.current === courseId) return;
+
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (currentUserType === "STUDENT") {
+          const response =
+            await conversationService.getOrCreateConversation(courseId);
+          if (!cancelled) {
+            setConversation(response);
+            lastFetchedCourseId.current = courseId;
+          }
+        } else {
+          const response = await conversationService.getMyConversations(0, 1, {
+            courseId,
+          });
+          if (!cancelled && response.data && response.data.length > 0) {
+            setConversation(response.data[0]);
+            lastFetchedCourseId.current = courseId;
+          }
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          toast.error(error.message || "Lỗi khi tải conversation");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, courseId, currentUserType]);
 
   const otherUser =
     currentUserType === "STUDENT"

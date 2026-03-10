@@ -429,9 +429,8 @@ const RevenueDashboard: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={(entry: any) =>
-                        `${entry.categoryName}: ${entry.percentage.toFixed(1)}%`
-                      }
+                      label={(entry: any) => `${entry.percentage.toFixed(1)}%`}
+                      labelLine={true}
                     >
                       {categoryRevenue.map((_entry, index) => (
                         <Cell
@@ -441,14 +440,20 @@ const RevenueDashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) =>
-                        formatCurrency(Number(value) || 0)
-                      }
+                      formatter={(value: any, _name: any, props: any) => [
+                        formatCurrency(Number(value) || 0),
+                        props.payload?.categoryName,
+                      ]}
                       contentStyle={{
                         borderRadius: "12px",
                         border: "1px solid",
                         borderColor: theme.palette.divider,
                       }}
+                    />
+                    <Legend
+                      formatter={(value: any) => (
+                        <span style={{ fontSize: "0.8rem" }}>{value}</span>
+                      )}
                     />
                   </PieChart>
                 </ResponsiveContainer>

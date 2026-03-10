@@ -9,7 +9,9 @@ import org.example.elearning.dto.response.CartItemResponse;
 import org.example.elearning.dto.response.CourseResponse;
 import org.example.elearning.dto.response.PromotionDetailResponse;
 import org.example.elearning.dto.response.PromotionResponse;
+import org.example.elearning.entity.CategoryEntity;
 import org.example.elearning.entity.CourseEntity;
+import org.example.elearning.repository.CategoryRepository;
 import org.example.elearning.entity.PromotionEntity;
 import org.example.elearning.entity.PromotionRuleEntity;
 import org.example.elearning.enums.DiscountType;
@@ -47,6 +49,7 @@ public class PromotionServiceImpl implements PromotionService {
     PromotionRepository promotionRepository;
     PromotionMapper promotionMapper;
     CourseRepository courseRepository;
+    CategoryRepository categoryRepository;
     PromotionRuleMapper promotionRuleMapper;
 
 
@@ -58,6 +61,7 @@ public class PromotionServiceImpl implements PromotionService {
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
             PromotionRuleEntity rule = promotionRuleMapper.toEntity(ruleRequest);
             rule.setPromotion(promotion);
+            resolveRuleTargets(rule, ruleRequest);
             promotion.getRules().add(rule);
         }
 
@@ -78,6 +82,7 @@ public class PromotionServiceImpl implements PromotionService {
         for (PromotionRuleRequest ruleRequest : request.getRules()) {
             PromotionRuleEntity rule = promotionRuleMapper.toEntity(ruleRequest);
             rule.setPromotion(promotion);
+            resolveRuleTargets(rule, ruleRequest);
             promotion.getRules().add(rule);
         }
 
@@ -286,15 +291,27 @@ public class PromotionServiceImpl implements PromotionService {
         }
     }
 
+    private void resolveRuleTargets(PromotionRuleEntity rule, PromotionRuleRequest ruleRequest) {
+        if (ruleRequest.getRuleType() == PromotionRuleType.COURSE && ruleRequest.getCourseId() != null) {
+            CourseEntity course = courseRepository.findById(ruleRequest.getCourseId())
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.COURSE_NOT_FOUND.getMessage()));
+            rule.setCourse(course);
+        } else if (ruleRequest.getRuleType() == PromotionRuleType.CATEGORY && ruleRequest.getCategoryId() != null) {
+            CategoryEntity category = categoryRepository.findById(ruleRequest.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            rule.setCategory(category);
+        }
+    }
+
     private boolean isRuleApplicable(PromotionRuleEntity rule, CourseEntity course) {
         if (rule.getRuleType() == PromotionRuleType.ALL) {
             return true;
         }
         if (rule.getRuleType() == PromotionRuleType.COURSE) {
-            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCourseId());
+            return rule.getCourse() != null && rule.getCourse().getCourseId().equals(course.getCourseId());
         }
         if (rule.getRuleType() == PromotionRuleType.CATEGORY) {
-            return rule.getTargetId() != null && rule.getTargetId().equals(course.getCategory().getId());
+            return rule.getCategory() != null && rule.getCategory().getId().equals(course.getCategory().getId());
         }
         return false;
     }

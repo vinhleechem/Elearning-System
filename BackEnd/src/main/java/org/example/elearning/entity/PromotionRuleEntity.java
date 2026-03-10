@@ -7,6 +7,8 @@ import org.example.elearning.enums.DiscountType;
 import org.example.elearning.enums.PromotionRuleType;
 
 import java.math.BigDecimal;
+import org.example.elearning.entity.CourseEntity;
+import org.example.elearning.entity.CategoryEntity;
 
 @Entity
 @Getter
@@ -31,8 +33,13 @@ public class PromotionRuleEntity extends BaseEntity {
     @Column(name = "rule_type", nullable = false)
     PromotionRuleType ruleType;
 
-    @Column(name = "target_id")
-    Long targetId; // ID của course hoặc category (tùy vào ruleType)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    CourseEntity course; // nullable, chỉ dùng khi ruleType = COURSE
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    CategoryEntity category; // nullable, chỉ dùng khi ruleType = CATEGORY
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)

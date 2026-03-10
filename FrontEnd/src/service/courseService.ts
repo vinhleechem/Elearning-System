@@ -15,6 +15,7 @@ export interface PublicCourseResponse {
   instructorId: number;
   instructorName?: string;
   categoryId: number;
+  categoryName?: string;
   title: string;
   slug: string;
   shortDescription?: string;

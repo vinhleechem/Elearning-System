@@ -6,7 +6,9 @@ import {
   Chip,
   Rating,
   Typography,
+  IconButton,
 } from "@mui/material";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -33,7 +35,6 @@ const Course: React.FC<CourseProps> = ({
   isPurchased,
   slug,
 }) => {
-  const [ratingValue] = useState<number | null>(rating);
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
   const [panelSide, setPanelSide] = useState<"left" | "right">("right");
@@ -202,12 +203,12 @@ const Course: React.FC<CourseProps> = ({
                   color: "warning.main",
                 }}
               >
-                {rating}
+                {(rating || 0).toFixed(1)}
               </Typography>
               <Rating
                 size="small"
                 name="course-rating"
-                value={ratingValue}
+                value={rating || 0}
                 readOnly
                 precision={0.1}
                 sx={{
@@ -227,39 +228,54 @@ const Course: React.FC<CourseProps> = ({
               </Typography>
             </Box>
 
-            {/* Price */}
+            {/* Price & Cart */}
             <Box
               display="flex"
               alignItems="center"
-              gap={1}
+              justifyContent="space-between"
               sx={{ mt: "auto", pt: 1.5 }}
             >
-              <Typography
-                sx={{
-                  fontSize: "1.375rem",
-                  fontWeight: 800,
-                  color: "primary.main",
-                }}
-              >
-                {formatCurrency(price)}
-              </Typography>
-              {oldPrice && (
+              <Box display="flex" alignItems="center" gap={1}>
                 <Typography
                   sx={{
-                    fontSize: "0.9375rem",
-                    textDecoration: "line-through",
-                    color: "text.disabled",
+                    fontSize: "1.25rem",
+                    fontWeight: 900,
+                    color: "#0f172a",
                   }}
                 >
-                  {formatCurrency(oldPrice)}
+                  {formatCurrency(price)}
                 </Typography>
-              )}
+                {oldPrice && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.85rem",
+                      textDecoration: "line-through",
+                      color: "text.disabled",
+                    }}
+                  >
+                    {formatCurrency(oldPrice)}
+                  </Typography>
+                )}
+              </Box>
+
+              <IconButton
+                size="small"
+                sx={{
+                  bgcolor: "#f1f5f9",
+                  color: "#2563eb",
+                  borderRadius: "10px",
+                  "&:hover": { bgcolor: "#2563eb", color: "white" }
+                }}
+              >
+                <AddShoppingCartIcon sx={{ fontSize: 18 }} />
+              </IconButton>
             </Box>
           </CardContent>
         </Card>
       </Link>
       {/* Hover Detail Panel - Render via Portal */}
-      {showPanel &&
+      {
+        showPanel &&
         createPortal(
           <CourseDetailPanel
             id={id}
@@ -277,8 +293,9 @@ const Course: React.FC<CourseProps> = ({
             isPurchased={isPurchased}
           />,
           document.body,
-        )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

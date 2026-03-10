@@ -1,6 +1,9 @@
 package org.example.elearning.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.example.elearning.dto.request.CategoryRequest;
 import org.example.elearning.dto.response.CategoryResponse;
@@ -71,13 +74,40 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getCategoryTree() {
-        // Lấy toàn bộ root categories + children (recursive)
-        List<CategoryEntity> roots = categoryRepository.findByParentIsNullAndIsDeletedFalse();
-        return roots.stream()
-                .map(categoryMapper::toResponse)
-                .toList();
+        // Load tất cả categories trong 1 query duy nhất (tránh N+1)
+        List<CategoryEntity> all = categoryRepository.findAllForTree();
+
+        // Build flat DTO map keyed by id
+        Map<Long, CategoryResponse> dtoMap = new HashMap<>();
+        for (CategoryEntity cat : all) {
+            CategoryResponse dto = CategoryResponse.builder()
+                    .id(cat.getId())
+                    .name(cat.getName())
+                    .slug(cat.getSlug())
+                    .level(cat.getLevel())
+                    .isActive(cat.getIsActive())
+                    .parentId(cat.getParent() != null ? cat.getParent().getId() : null)
+                    .children(new ArrayList<>())
+                    .build();
+            dtoMap.put(cat.getId(), dto);
+        }
+
+        // Gắn children vào parent, collect roots
+        List<CategoryResponse> roots = new ArrayList<>();
+        for (CategoryEntity cat : all) {
+            CategoryResponse dto = dtoMap.get(cat.getId());
+            if (cat.getParent() == null) {
+                roots.add(dto);
+            } else {
+                CategoryResponse parentDto = dtoMap.get(cat.getParent().getId());
+                if (parentDto != null) {
+                    parentDto.getChildren().add(dto);
+                }
+            }
+        }
+        return roots;
     }
 
     @Override

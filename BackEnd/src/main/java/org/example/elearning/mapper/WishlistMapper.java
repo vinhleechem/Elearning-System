@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface WishlistMapper {
     @Mapping(source = "wishlistId", target = "wishlistId")
     @Mapping(source = "course.courseId", target = "courseId")
+    @Mapping(source = "course.slug", target = "courseSlug")
     @Mapping(source = "course.title", target = "courseTitle")
     @Mapping(source = "course.thumbnailUrl", target = "courseImage")
     @Mapping(source = "course.price", target = "price")

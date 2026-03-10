@@ -14,12 +14,18 @@ import {
   MenuItem,
   Stack,
   InputBase,
+  Divider,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import SendIcon from "@mui/icons-material/Send";
-import { Image as ImageIcon, Close as CloseIcon } from "@mui/icons-material";
+import {
+  Image as ImageIcon,
+  Close as CloseIcon,
+  FilterList as FilterListIcon,
+  Sort as SortIcon
+} from "@mui/icons-material";
 import { fileUploadService } from "../../../service/fileUploadService";
 import {
   conversationService,
@@ -48,13 +54,9 @@ const InstructorMessagesPage = () => {
   const [showUnread, setShowUnread] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
 
-  const [conversations, setConversations] = useState<ConversationResponse[]>(
-    [],
-  );
+  const [conversations, setConversations] = useState<ConversationResponse[]>([]);
   const [messages, setMessages] = useState<MessageResponse[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<
-    number | null
-  >(null);
+  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -71,7 +73,6 @@ const InstructorMessagesPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Cleanup preview URL on unmount
     return () => {
       if (previewImage) URL.revokeObjectURL(previewImage);
     };
@@ -92,12 +93,6 @@ const InstructorMessagesPage = () => {
         enqueueSnackbar("Chỉ hỗ trợ định dạng ảnh", { variant: "error" });
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        enqueueSnackbar("Dung lượng ảnh phải nhỏ hơn 5MB", {
-          variant: "error",
-        });
-        return;
-      }
       setSelectedImage(file);
       setPreviewImage(URL.createObjectURL(file));
     }
@@ -110,39 +105,17 @@ const InstructorMessagesPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    if (e.clipboardData.files.length > 0) {
-      const file = e.clipboardData.files[0];
-      if (file.type.startsWith("image/")) {
-        e.preventDefault();
-        if (file.size > 5 * 1024 * 1024) {
-          enqueueSnackbar("Dung lượng ảnh phải nhỏ hơn 5MB", {
-            variant: "error",
-          });
-          return;
-        }
-        setSelectedImage(file);
-        setPreviewImage(URL.createObjectURL(file));
-      }
-    }
-  };
-
   useEffect(() => {
     if (user?.userId) {
       if (!webSocketService.isConnected()) {
         webSocketService.connect(user.userId.toString());
       }
-
       const handleNotification = (notif: any) => {
         if (notif.type === "INFO") {
-          // Filter: only process if notification is for current user
-          if (notif.userId && notif.userId !== user.userId) {
-            return; // Ignore notifications for other users
-          }
-          refreshConversations(); // Use silent refresh instead of loadConversations
+          if (notif.userId && notif.userId !== user.userId) return;
+          refreshConversations();
         }
       };
-
       webSocketService.addNotificationListener(handleNotification);
       return () => {
         webSocketService.removeNotificationListener(handleNotification);
@@ -153,41 +126,23 @@ const InstructorMessagesPage = () => {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation);
-
       webSocketService.subscribeToConversation(
         selectedConversation,
         (message: MessageResponse) => {
           setMessages((prev) => {
-            // Check for duplicate
-            if (prev.some((m) => m.messageId === message.messageId))
-              return prev;
-            // Add new message and sort
-            const updated = [...prev, message];
-            return updated.sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime(),
-            );
+            if (prev.some((m) => m.messageId === message.messageId)) return prev;
+            return [...prev, message].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
           });
-
-          // Scroll to bottom when receiving new message
           setShouldScrollToBottom(true);
-
           if (message.senderId !== user?.userId) {
-            conversationService
-              .markAsRead(selectedConversation)
-              .then(() => {
-                // Dispatch custom event to notify sidebar to update badge
-                window.dispatchEvent(new Event("conversation:markAsRead"));
-              })
-              .catch(() => {});
-            // Refresh conversation list when receiving message from student (silent)
+            conversationService.markAsRead(selectedConversation).then(() => {
+              window.dispatchEvent(new Event("conversation:markAsRead"));
+            }).catch(() => { });
             refreshConversations();
           }
         },
       );
     }
-
     return () => {
       if (selectedConversation) {
         webSocketService.unsubscribeFromConversation(selectedConversation);
@@ -195,7 +150,6 @@ const InstructorMessagesPage = () => {
     };
   }, [selectedConversation, user?.userId]);
 
-  // Only scroll to bottom when flag is set (new message or initial load)
   useEffect(() => {
     if (shouldScrollToBottom) {
       scrollToBottom();
@@ -207,8 +161,7 @@ const InstructorMessagesPage = () => {
     if (messagesContainerRef.current) {
       setTimeout(() => {
         if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop =
-            messagesContainerRef.current.scrollHeight;
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
       }, 100);
     }
@@ -218,35 +171,23 @@ const InstructorMessagesPage = () => {
     try {
       const token = tokens?.accessToken;
       if (!token) return;
-
-      const response = await courseService.getMyCourses({
-        page: 0,
-        size: 100,
-        token,
-      });
-
+      const response = await courseService.getMyCourses({ page: 0, size: 100, token });
       setCourses(response.data || []);
-    } catch (error: any) {
-      console.error("Error loading courses:", error);
+    } catch (error) {
+      console.error(error);
     }
   };
 
   const handleConversationClick = async (conversationId: number) => {
     setSelectedConversation(conversationId);
-
-    // Mark as read and notify sidebar immediately
-    const conversation = conversations.find(
-      (c) => c.conversationId === conversationId,
-    );
+    const conversation = conversations.find(c => c.conversationId === conversationId);
     if (conversation && conversation.instructorUnreadCount > 0) {
       try {
         await conversationService.markAsRead(conversationId);
-        // Dispatch event to update sidebar badge instantly
         window.dispatchEvent(new Event("conversation:markAsRead"));
-        // Refresh conversation list to update UI
         refreshConversations();
       } catch (error) {
-        console.error("Failed to mark as read:", error);
+        console.error(error);
       }
     }
   };
@@ -258,60 +199,41 @@ const InstructorMessagesPage = () => {
         keyword: searchTerm || undefined,
         courseId: selectedCourseId || undefined,
       });
-
       let filtered = response.data || [];
-
-      if (showUnread) {
-        filtered = filtered.filter((c) => c.instructorUnreadCount > 0);
-      }
-
+      if (showUnread) filtered = filtered.filter((c) => c.instructorUnreadCount > 0);
       filtered.sort((a, b) => {
         const dateA = new Date(a.lastMessageAt || a.createdAt).getTime();
         const dateB = new Date(b.lastMessageAt || b.createdAt).getTime();
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
       });
-
       setConversations(filtered);
     } catch (error: any) {
-      console.error("Error loading conversations:", error);
-      enqueueSnackbar(error.message || "Lỗi khi tải conversations", {
-        variant: "error",
-      });
+      enqueueSnackbar("Lỗi khi tải cuộc trò chuyện", { variant: "error" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Silent refresh without showing loading spinner
   const refreshConversations = async () => {
     try {
       const response = await conversationService.getMyConversations(0, 50, {
         keyword: searchTerm || undefined,
         courseId: selectedCourseId || undefined,
       });
-
       let filtered = response.data || [];
-
-      if (showUnread) {
-        filtered = filtered.filter((c) => c.instructorUnreadCount > 0);
-      }
-
+      if (showUnread) filtered = filtered.filter((c) => (c.instructorUnreadCount || 0) > 0);
       filtered.sort((a, b) => {
         const dateA = new Date(a.lastMessageAt || a.createdAt).getTime();
         const dateB = new Date(b.lastMessageAt || b.createdAt).getTime();
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
       });
-
       setConversations(filtered);
-    } catch (error: any) {
-      console.error("Error refreshing conversations:", error);
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const loadMessages = async (
-    conversationId: number,
-    reset: boolean = true,
-  ) => {
+  const loadMessages = async (conversationId: number, reset: boolean = true) => {
     if (reset) {
       setLoadingMessages(true);
       setCurrentPage(0);
@@ -319,51 +241,19 @@ const InstructorMessagesPage = () => {
     } else {
       setLoadingMore(true);
     }
-
     try {
       const pageToLoad = reset ? 0 : currentPage + 1;
-      const response = await messageService.getMessages(
-        conversationId,
-        pageToLoad,
-        50,
-      );
+      const response = await messageService.getMessages(conversationId, pageToLoad, 50);
       const incomingMessages = response.data || [];
-
-      // Backend returns DESC, sort to ASC for display
-      const sortedMessages = [...incomingMessages].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
-
-      setMessages((prev) => {
-        if (reset) {
-          return sortedMessages;
-        } else {
-          // Pagination: prepend older messages
-          const existingIds = new Set(prev.map((m) => m.messageId));
-          const newMessages = sortedMessages.filter(
-            (m) => !existingIds.has(m.messageId),
-          );
-          return [...newMessages, ...prev];
-        }
-      });
-
+      const sortedMessages = [...incomingMessages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setMessages((prev) => reset ? sortedMessages : [...sortedMessages, ...prev]);
       setHasMore((response.data?.length || 0) === 50);
-      if (!reset) {
-        setCurrentPage(pageToLoad);
-      }
-
+      if (!reset) setCurrentPage(pageToLoad);
       if (reset) {
-        await conversationService.markAsRead(conversationId);
-        await loadConversations();
-        // Scroll to bottom only on initial load
         setShouldScrollToBottom(true);
       }
     } catch (error: any) {
-      console.error("Error loading messages:", error);
-      enqueueSnackbar(error.message || "Lỗi khi tải tin nhắn", {
-        variant: "error",
-      });
+      enqueueSnackbar("Lỗi khi tải tin nhắn", { variant: "error" });
     } finally {
       setLoadingMessages(false);
       setLoadingMore(false);
@@ -371,765 +261,320 @@ const InstructorMessagesPage = () => {
   };
 
   const handleSendMessage = async () => {
-    if ((!messageInput.trim() && !selectedImage) || !selectedConversation)
-      return;
-
+    if ((!messageInput.trim() && !selectedImage) || !selectedConversation) return;
     setSending(true);
     try {
       let imageUrl = undefined;
-
-      // Upload image if selected
-      if (selectedImage) {
-        try {
-          imageUrl = await fileUploadService.uploadFile(selectedImage);
-        } catch (uploadError) {
-          console.error("Upload failed", uploadError);
-          enqueueSnackbar("Không thể tải ảnh lên", { variant: "error" });
-          setSending(false);
-          return;
-        }
-      }
-
+      if (selectedImage) imageUrl = await fileUploadService.uploadFile(selectedImage);
       await messageService.sendMessage({
         conversationId: selectedConversation,
         content: messageInput.trim(),
         imageUrl,
       });
-
-      // WebSocket will handle adding the message to the list
       setMessageInput("");
       clearImage();
-
-      // Update last message in conversation list
-      loadConversations();
+      refreshConversations();
     } catch (error: any) {
-      enqueueSnackbar(error.message || "Lỗi khi gửi tin nhắn", {
-        variant: "error",
-      });
+      enqueueSnackbar("Lỗi khi gửi tin nhắn", { variant: "error" });
     } finally {
       setSending(false);
     }
   };
 
-  const selectedConvData = conversations.find(
-    (c) => c.conversationId === selectedConversation,
-  );
+  const selectedConvData = conversations.find((c) => c.conversationId === selectedConversation);
 
   return (
-    <Box
-      sx={{
-        height: "100%",
-        display: "flex",
-        gap: 2,
-        p: 2.5,
-        bgcolor: "#f8f9fb",
-      }}
-    >
-      {/* Conversation List */}
+    <Box sx={{ height: "calc(100vh - 0px)", display: "flex", p: 2.5, gap: 2.5, bgcolor: "#f8fafc" }}>
+      {/* ─── CONVERSATION LIST ─── */}
       <Paper
         elevation={0}
         sx={{
-          width: 360,
+          width: 380,
           display: "flex",
           flexDirection: "column",
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "white",
+          borderRadius: "20px",
+          border: "1px solid #e2e8f0",
           overflow: "hidden",
+          bgcolor: "white",
         }}
       >
-        {/* Header */}
-        <Box
-          sx={{
-            p: 3,
-            bgcolor: "#2563eb",
-            color: "white",
-          }}
-        >
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-            💬 Tin nhắn
-          </Typography>
+        <Box sx={{ p: 3, bgcolor: "#0f172a", color: "white" }}>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
+            <Box
+              sx={{
+                p: 1,
+                bgcolor: "rgba(255,255,255,0.1)",
+                borderRadius: "10px",
+                display: "flex",
+              }}
+            >
+              <MailOutlineIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: "-0.01em" }}>
+              Tin nhắn
+            </Typography>
+          </Stack>
+
           <TextField
             fullWidth
             size="small"
-            placeholder="Tìm kiếm cuộc trò chuyện..."
+            placeholder="Tìm theo tên học viên..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "rgba(255,255,255,0.7)" }} />
+                  <SearchIcon sx={{ color: "rgba(255,255,255,0.6)", fontSize: 20 }} />
                 </InputAdornment>
               ),
               sx: {
-                bgcolor: "rgba(255,255,255,0.15)",
+                bgcolor: "rgba(255,255,255,0.08)",
                 color: "white",
-                borderRadius: 2,
-                "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "& input::placeholder": {
-                  color: "rgba(255,255,255,0.7)",
-                  opacity: 1,
-                },
-                "& input": {
-                  color: "white",
-                },
+                borderRadius: "12px",
+                "& fieldset": { border: "none" },
+                "& input::placeholder": { color: "rgba(255,255,255,0.5)", opacity: 1 },
               },
             }}
           />
         </Box>
 
-        {/* Filters */}
-        <Box
-          sx={{
-            p: 2.5,
-            bgcolor: "#f8fafc",
-            borderBottom: 1,
-            borderColor: "divider",
-          }}
-        >
+        <Box sx={{ p: 2, borderBottom: "1px solid #f1f5f9", bgcolor: "#fff" }}>
           <Stack spacing={2}>
-            {/* Row 1: Course Filter */}
             <Box>
-              <Typography
-                variant="caption"
-                fontWeight={600}
-                sx={{
-                  color: "text.secondary",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                  mb: 1,
-                  display: "block",
-                }}
-              >
-                Khóa học
+              <Typography variant="caption" fontWeight={700} color="#64748b" sx={{ mb: 1, display: "block" }}>
+                LỌC THEO KHÓA HỌC
               </Typography>
               <Select
                 value={selectedCourseId || "all"}
-                onChange={(e) =>
-                  setSelectedCourseId(
-                    e.target.value === "all" ? null : Number(e.target.value),
-                  )
-                }
+                onChange={(e) => setSelectedCourseId(e.target.value === "all" ? null : Number(e.target.value))}
                 fullWidth
                 size="small"
                 sx={{
-                  bgcolor: "white",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "divider",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "primary.main",
-                  },
+                  borderRadius: "10px",
+                  bgcolor: "#f8fafc",
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" },
                 }}
               >
-                <MenuItem value="all">
-                  <Typography variant="body2">📚 Tất cả khóa học</Typography>
-                </MenuItem>
+                <MenuItem value="all">📚 Tất cả khóa học</MenuItem>
                 {courses.map((course) => (
-                  <MenuItem key={course.courseId} value={course.courseId}>
-                    <Typography variant="body2" noWrap>
-                      {course.title}
-                    </Typography>
-                  </MenuItem>
+                  <MenuItem key={course.courseId} value={course.courseId}>{course.title}</MenuItem>
                 ))}
               </Select>
             </Box>
 
-            {/* Row 2: Filters and Sort */}
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              justifyContent="space-between"
-            >
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
               <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={showUnread}
-                    onChange={(e) => setShowUnread(e.target.checked)}
-                    sx={{
-                      color: "primary.main",
-                      "&.Mui-checked": {
-                        color: "primary.main",
-                      },
-                      p: 0.5, // Reduce padding inside checkbox
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    fontWeight={500}
-                    sx={{ whiteSpace: "nowrap" }}
-                  >
-                    Chưa đọc
-                  </Typography>
-                }
-                sx={{ mr: 0, ml: -0.5 }} // Adjust margin to alignment
+                control={<Checkbox size="small" checked={showUnread} onChange={(e) => setShowUnread(e.target.checked)} />}
+                label={<Typography variant="body2" fontWeight={600} color="#475569">Chưa đọc</Typography>}
               />
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  fontWeight={500}
-                  color="text.secondary"
-                  sx={{ whiteSpace: "nowrap" }}
-                >
-                  Sắp xếp:
-                </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <SortIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                 <Select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
                   size="small"
-                  variant="outlined"
-                  sx={{
-                    minWidth: 120, // Reduced from 140
-                    bgcolor: "white",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "divider",
-                    },
-                    fontSize: "0.875rem",
-                  }}
+                  variant="standard"
+                  disableUnderline
+                  sx={{ fontSize: "0.85rem", fontWeight: 700, color: "#2563eb" }}
                 >
-                  <MenuItem value="newest">
-                    <Typography variant="body2">Mới nhất</Typography>
-                  </MenuItem>
-                  <MenuItem value="oldest">
-                    <Typography variant="body2">Cũ nhất</Typography>
-                  </MenuItem>
+                  <MenuItem value="newest">Mới nhất</MenuItem>
+                  <MenuItem value="oldest">Cũ nhất</MenuItem>
                 </Select>
-              </Box>
+              </Stack>
             </Stack>
           </Stack>
         </Box>
 
-        {/* Conversation List */}
-        <Box sx={{ flexGrow: 1, overflow: "auto", bgcolor: "white" }}>
+        <Box sx={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-              <CircularProgress />
-            </Box>
+            <Box sx={{ p: 4, textAlign: "center" }}><CircularProgress size={24} /></Box>
           ) : conversations.length === 0 ? (
-            <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
-              <Typography variant="body2">
-                Không có cuộc trò chuyện nào
-              </Typography>
+            <Box sx={{ p: 6, textAlign: "center" }}>
+              <Typography variant="body2" color="#94a3b8">Không tìm thấy hội thoại</Typography>
             </Box>
           ) : (
-            conversations.map((conv) => (
-              <Box
-                key={conv.conversationId}
-                onClick={() => handleConversationClick(conv.conversationId)}
-                sx={{
-                  p: 2,
-                  display: "flex",
-                  gap: 1.5,
-                  cursor: "pointer",
-                  bgcolor:
-                    selectedConversation === conv.conversationId
-                      ? "#f0f9ff"
-                      : "transparent",
-                  borderLeft: 3,
-                  borderLeftColor:
-                    selectedConversation === conv.conversationId
-                      ? "#2563eb"
-                      : "transparent",
-                  transition: "all 0.15s ease",
-                  "&:hover": {
-                    bgcolor:
-                      selectedConversation === conv.conversationId
-                        ? "#f0f9ff"
-                        : "#f8fafc",
-                  },
-                  borderBottom: "1px solid",
-                  borderBottomColor: "divider",
-                }}
-              >
-                <Badge
-                  badgeContent={conv.instructorUnreadCount}
-                  color="error"
-                  overlap="circular"
+            conversations.map((conv) => {
+              const isActive = selectedConversation === conv.conversationId;
+              return (
+                <Box
+                  key={conv.conversationId}
+                  onClick={() => handleConversationClick(conv.conversationId)}
                   sx={{
-                    "& .MuiBadge-badge": {
-                      fontSize: "0.7rem",
-                      height: 18,
-                      minWidth: 18,
-                      fontWeight: 600,
-                    },
+                    p: 2,
+                    display: "flex",
+                    gap: 2,
+                    cursor: "pointer",
+                    bgcolor: isActive ? "#eff6ff" : "transparent",
+                    borderLeft: "4px solid",
+                    borderLeftColor: isActive ? "#2563eb" : "transparent",
+                    borderBottom: "1px solid #f1f5f9",
+                    transition: "all 0.2s",
+                    "&:hover": { bgcolor: isActive ? "#eff6ff" : "#f8fafc" },
                   }}
                 >
-                  <Avatar
-                    src={conv.studentAvatar}
-                    alt={conv.studentName}
-                    sx={{ width: 44, height: 44 }}
+                  <Badge
+                    badgeContent={conv.instructorUnreadCount}
+                    color="error"
+                    sx={{ "& .MuiBadge-badge": { fontWeight: 800, scale: "0.9" } }}
                   >
-                    {conv.studentName.charAt(0)}
-                  </Avatar>
-                </Badge>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    variant="subtitle2"
-                    fontWeight={conv.instructorUnreadCount > 0 ? 700 : 600}
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      mb: 0.5,
-                    }}
-                  >
-                    {conv.studentName}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      display: "block",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: 600,
-                      color: "#2563eb",
-                      mb: 0.5,
-                    }}
-                  >
-                    📚 {conv.courseName}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: conv.instructorUnreadCount > 0 ? 500 : 400,
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {conv.lastMessageContent || conv.lastMessageIsImage ? (
-                      <>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: "text.primary",
-                          }}
-                        >
-                          {conv.lastMessageSenderType === "INSTRUCTOR"
-                            ? "Bạn: "
-                            : `${conv.studentName}: `}
-                        </Typography>
-                        {conv.lastMessageIsImage &&
-                        (!conv.lastMessageContent ||
-                          conv.lastMessageContent.trim() === "")
-                          ? "[Hình ảnh]"
-                          : conv.lastMessageContent}
-                      </>
-                    ) : (
-                      "Chưa có tin nhắn"
-                    )}
-                  </Typography>
+                    <Avatar
+                      src={conv.studentAvatar}
+                      sx={{ width: 48, height: 48, borderRadius: "14px", border: "2px solid #fff", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                    >
+                      {conv.studentName.charAt(0)}
+                    </Avatar>
+                  </Badge>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ color: "#1e293b", maxWidth: "120px" }}>
+                        {conv.studentName}
+                      </Typography>
+                      <Typography variant="caption" color="#94a3b8">
+                        {conv.lastMessageAt && formatChatTime(conv.lastMessageAt)}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" fontWeight={700} color="#2563eb" display="block" noWrap sx={{ mb: 0.5 }}>
+                      {conv.courseName}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color={conv.instructorUnreadCount > 0 ? "#0f172a" : "#64748b"}
+                      fontWeight={conv.instructorUnreadCount > 0 ? 700 : 500}
+                      noWrap
+                    >
+                      {conv.lastMessageContent || (conv.lastMessageIsImage ? "[Hình ảnh]" : "Chưa có tin nhắn")}
+                    </Typography>
+                  </Box>
                 </Box>
-                {conv.lastMessageAt && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontSize: "0.7rem",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {formatDistanceToNow(new Date(conv.lastMessageAt), {
-                      addSuffix: true,
-                      locale: vi,
-                    })}
-                  </Typography>
-                )}
-              </Box>
-            ))
+              );
+            })
           )}
         </Box>
       </Paper>
 
-      {/* Chat Window */}
-      {selectedConversation && selectedConvData ? (
-        <Paper
-          elevation={0}
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            flexDirection: "column",
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-            bgcolor: "white",
-            overflow: "hidden",
-          }}
-        >
-          {/* Chat Header */}
-          <Box
-            sx={{
-              p: 2.5,
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              borderBottom: 1,
-              borderColor: "divider",
-              bgcolor: "white",
-            }}
-          >
-            <Avatar
-              src={selectedConvData.studentAvatar}
-              alt={selectedConvData.studentName}
-              sx={{ width: 48, height: 48 }}
-            >
-              {selectedConvData.studentName.charAt(0)}
-            </Avatar>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6" fontWeight={700} color="text.primary">
-                {selectedConvData.studentName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                📚 {selectedConvData.courseName}
-              </Typography>
+      {/* ─── CHAT WINDOW ─── */}
+      <Paper
+        elevation={0}
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: "20px",
+          border: "1px solid #e2e8f0",
+          overflow: "hidden",
+          bgcolor: "white",
+        }}
+      >
+        {selectedConversation && selectedConvData ? (
+          <>
+            <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 2, borderBottom: "1px solid #f1f5f9" }}>
+              <Avatar src={selectedConvData.studentAvatar} sx={{ width: 44, height: 44, borderRadius: "12px" }} />
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800} color="#1e293b">{selectedConvData.studentName}</Typography>
+                <Typography variant="caption" fontWeight={600} color="#2563eb">{selectedConvData.courseName}</Typography>
+              </Box>
             </Box>
-          </Box>
 
-          {/* Messages Area */}
-          <Box
-            ref={messagesContainerRef}
-            onScroll={(e) => {
-              const target = e.currentTarget;
-              // Load more when scrolling to top
-              if (
-                target.scrollTop === 0 &&
-                hasMore &&
-                !loadingMore &&
-                !loadingMessages &&
-                selectedConversation
-              ) {
-                const scrollHeightBefore = target.scrollHeight;
-                loadMessages(selectedConversation, false).then(() => {
-                  // Preserve scroll position after prepending messages
-                  setTimeout(() => {
-                    if (messagesContainerRef.current) {
-                      const scrollHeightAfter =
-                        messagesContainerRef.current.scrollHeight;
-                      messagesContainerRef.current.scrollTop =
-                        scrollHeightAfter - scrollHeightBefore;
-                    }
-                  }, 100);
-                });
-              }
-            }}
-            sx={{
-              flexGrow: 1,
-              p: 3,
-              overflow: "auto",
-              bgcolor: "#f5f7fa",
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-            }}
-          >
-            {loadingMessages ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "100%",
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            ) : messages.length === 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "100%",
-                  flexDirection: "column",
-                }}
-              >
-                <Typography variant="body1" color="text.secondary">
-                  Chưa có tin nhắn nào
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                {loadingMore && (
-                  <Box
-                    sx={{ display: "flex", justifyContent: "center", py: 2 }}
-                  >
-                    <CircularProgress size={24} />
-                  </Box>
-                )}
-                {(() => {
-                  // Deduplicate messages before rendering
-                  const uniqueMessages = Array.from(
-                    new Map(
-                      messages.map((msg) => [msg.messageId, msg]),
-                    ).values(),
-                  );
-
-                  return uniqueMessages.map((msg, index) => {
-                    const isOwn = msg.senderId === user?.userId;
-                    const showAvatar =
-                      index === 0 ||
-                      uniqueMessages[index - 1].senderType !== msg.senderType;
-
+            <Box ref={messagesContainerRef} sx={{ flex: 1, overflowY: "auto", p: 3, bgcolor: "#fafafa" }}>
+              {loadingMessages ? (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}><CircularProgress size={24} /></Box>
+              ) : (
+                <Stack spacing={2.5}>
+                  {messages.map((msg, idx) => {
+                    const isMe = msg.senderId === user?.userId;
                     return (
-                      <Box
-                        key={msg.messageId}
-                        sx={{
-                          display: "flex",
-                          justifyContent: isOwn ? "flex-end" : "flex-start",
-                          mb: 2,
-                          gap: 1,
-                        }}
-                      >
-                        {!isOwn && (
-                          <Avatar
-                            src={msg.senderAvatar}
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              visibility: showAvatar ? "visible" : "hidden",
-                            }}
-                          >
-                            {msg.senderName.charAt(0)}
-                          </Avatar>
-                        )}
-                        <Box
-                          sx={{
-                            maxWidth: "70%",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: isOwn ? "flex-end" : "flex-start",
-                          }}
-                        >
-                          {showAvatar && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ mb: 0.5, px: 1 }}
-                            >
-                              {msg.senderName}
-                            </Typography>
-                          )}
+                      <Box key={msg.messageId} sx={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                        <Box sx={{ maxWidth: "70%" }}>
                           <Paper
-                            elevation={1}
+                            elevation={0}
                             sx={{
-                              p: msg.imageUrl ? 0 : 1.5,
-                              overflow: "hidden",
-                              borderRadius: 2,
-                              bgcolor: isOwn ? "primary.main" : "white",
-                              color: isOwn ? "white" : "text.primary",
-                              borderTopLeftRadius:
-                                !isOwn && showAvatar ? 0 : 16,
-                              borderTopRightRadius:
-                                isOwn && showAvatar ? 0 : 16,
+                              p: 1.8,
+                              borderRadius: isMe ? "18px 18px 0 18px" : "18px 18px 18px 0",
+                              bgcolor: isMe ? "#2563eb" : "#fff",
+                              color: isMe ? "white" : "#1e293b",
+                              border: isMe ? "none" : "1px solid #e2e8f0",
+                              boxShadow: isMe ? "0 4px 12px rgba(37, 99, 235, 0.2)" : "0 2px 4px rgba(0,0,0,0.02)",
                             }}
                           >
                             {msg.imageUrl && (
                               <Box
                                 component="img"
                                 src={msg.imageUrl}
-                                sx={{
-                                  width: "100%",
-                                  maxWidth: 300,
-                                  maxHeight: 300,
-                                  objectFit: "cover",
-                                  cursor: "pointer",
-                                  display: "block",
-                                }}
-                                onClick={() =>
-                                  window.open(msg.imageUrl, "_blank")
-                                }
+                                sx={{ width: "100%", borderRadius: "12px", mb: 1, cursor: "pointer" }}
+                                onClick={() => window.open(msg.imageUrl, "_blank")}
                               />
                             )}
-                            {msg.content && (
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  whiteSpace: "pre-wrap",
-                                  p: msg.imageUrl ? 1.5 : 0,
-                                }}
-                              >
-                                {msg.content}
-                              </Typography>
-                            )}
+                            <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                              {msg.content}
+                            </Typography>
                           </Paper>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ mt: 0.5, px: 1 }}
-                          >
+                          <Typography variant="caption" sx={{ mt: 0.5, display: "block", textAlign: isMe ? "right" : "left", color: "#94a3b8", fontSize: "0.7rem" }}>
                             {formatChatTime(msg.createdAt)}
-                            {msg.isRead && isOwn && " • Đã đọc"}
                           </Typography>
                         </Box>
                       </Box>
                     );
-                  });
-                })()}
-              </>
-            )}
-          </Box>
+                  })}
+                </Stack>
+              )}
+            </Box>
 
-          {/* Message Input */}
-          <Box
-            sx={{
-              p: 2,
-              borderTop: 1,
-              borderColor: "divider",
-              bgcolor: "white",
-            }}
-          >
-            <Stack direction="row" spacing={1} alignItems="flex-end">
-              <input
-                type="file"
-                hidden
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleFileSelect}
-              />
-              <IconButton
-                onClick={() => fileInputRef.current?.click()}
-                sx={{
-                  mb: 1,
-                  color: selectedImage ? "primary.main" : "text.secondary",
-                }}
-              >
-                <ImageIcon />
-              </IconButton>
-
-              <Box
-                sx={{
-                  flex: 1,
-                  bgcolor: "#f0f2f5",
-                  borderRadius: "20px",
-                  p: previewImage ? 1.5 : "8px 16px",
-                  minHeight: "40px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  transition: "height 0.2s",
-                }}
-              >
-                {previewImage && (
-                  <Box
-                    sx={{ position: "relative", width: "fit-content", mb: 1 }}
+            <Box sx={{ p: 2.5, borderTop: "1px solid #f1f5f9" }}>
+              {previewImage && (
+                <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
+                  <Box component="img" src={previewImage} sx={{ height: 80, borderRadius: "12px", border: "2px solid #2563eb" }} />
+                  <IconButton
+                    size="small"
+                    onClick={clearImage}
+                    sx={{ position: "absolute", top: -8, right: -8, bgcolor: "#ef4444", color: "white", "&:hover": { bgcolor: "#dc2626" } }}
                   >
-                    <Box
-                      component="img"
-                      src={previewImage}
-                      sx={{ height: 60, borderRadius: 2, display: "block" }}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={clearImage}
-                      sx={{
-                        position: "absolute",
-                        top: -6,
-                        right: -6,
-                        bgcolor: "white",
-                        boxShadow: 1,
-                        "&:hover": { bgcolor: "#f5f5f5" },
-                        p: 0.2,
-                      }}
-                    >
-                      <CloseIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Box>
-                )}
-
-                <InputBase
-                  fullWidth
-                  multiline
-                  maxRows={4}
-                  placeholder={
-                    selectedImage ? "Thêm chú thích..." : "Nhập tin nhắn..."
-                  }
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  onPaste={handlePaste}
-                  disabled={sending}
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+              )}
+              <Stack direction="row" spacing={1.5} alignItems="flex-end">
+                <Box sx={{ flex: 1, bgcolor: "#f8fafc", borderRadius: "12px", border: "1px solid #e2e8f0", p: 1, display: "flex", alignItems: "flex-end" }}>
+                  <IconButton size="small" onClick={() => fileInputRef.current?.click()}>
+                    <ImageIcon sx={{ color: "#94a3b8" }} />
+                  </IconButton>
+                  <input type="file" hidden ref={fileInputRef} onChange={handleFileSelect} accept="image/*" />
+                  <InputBase
+                    fullWidth
+                    multiline
+                    maxRows={4}
+                    placeholder="Viết tin nhắn..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    sx={{ ml: 1, mr: 1, fontSize: "0.95rem" }}
+                  />
+                </Box>
+                <IconButton
+                  disabled={sending || (!messageInput.trim() && !selectedImage)}
+                  onClick={handleSendMessage}
                   sx={{
-                    fontSize: "0.95rem",
-                    color: "text.primary",
+                    bgcolor: "#2563eb",
+                    color: "white",
+                    p: 1.5,
+                    "&:hover": { bgcolor: "#1d4ed8" },
+                    "&.Mui-disabled": { bgcolor: "#f1f5f9", color: "#cbd5e1" }
                   }}
-                />
-              </Box>
-
-              <IconButton
-                color="primary"
-                onClick={handleSendMessage}
-                disabled={(!messageInput.trim() && !selectedImage) || sending}
-                sx={{
-                  mb: 0.5,
-                  bgcolor:
-                    !messageInput.trim() && !selectedImage
-                      ? "action.disabledBackground"
-                      : "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
-                  "&:disabled": { bgcolor: "action.disabledBackground" },
-                  width: 48,
-                  height: 48,
-                }}
-              >
-                {sending ? (
-                  <CircularProgress size={24} sx={{ color: "white" }} />
-                ) : (
-                  <SendIcon />
-                )}
-              </IconButton>
-            </Stack>
+                >
+                  {sending ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                </IconButton>
+              </Stack>
+            </Box>
+          </>
+        ) : (
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 4 }}>
+            <Box sx={{ p: 3, bgcolor: "#eff6ff", borderRadius: "30px", mb: 3 }}>
+              <MailOutlineIcon sx={{ fontSize: 48, color: "#3b82f6" }} />
+            </Box>
+            <Typography variant="h6" fontWeight={800} color="#1e293b">Vui lòng chọn một hội thoại</Typography>
+            <Typography variant="body2" color="#64748b" sx={{ mt: 1 }}>Bắt đầu kết nối với học viên của bạn ngay hôm nay.</Typography>
           </Box>
-        </Paper>
-      ) : (
-        <Paper
-          elevation={0}
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-            bgcolor: "#fafafa",
-          }}
-        >
-          <Box sx={{ textAlign: "center", color: "text.secondary", p: 4 }}>
-            <MailOutlineIcon
-              sx={{ fontSize: 64, mb: 2, opacity: 0.2, color: "#2563eb" }}
-            />
-            <Typography
-              variant="h6"
-              fontWeight={600}
-              gutterBottom
-              color="text.primary"
-            >
-              Chọn một cuộc trò chuyện
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Chọn tin nhắn từ danh sách bên trái để bắt đầu
-            </Typography>
-          </Box>
-        </Paper>
-      )}
+        )}
+      </Paper>
     </Box>
   );
 };

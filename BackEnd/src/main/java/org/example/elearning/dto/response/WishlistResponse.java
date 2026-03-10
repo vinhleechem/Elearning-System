@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class WishlistResponse {
     private Long wishlistId;
     private Long courseId;
+    private String courseSlug;
     private String courseTitle;
     private String courseImage;
     private BigDecimal price;

@@ -32,6 +32,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long>, Jpa
 
     Page<ReviewEntity> findByUserFullNameContainingIgnoreCaseOrCourseTitleContainingIgnoreCase(
             String userName, String courseTitle, Pageable pageable);
+
+    long countByCourseAndIsDeletedFalse(CourseEntity course);
 }
 
 

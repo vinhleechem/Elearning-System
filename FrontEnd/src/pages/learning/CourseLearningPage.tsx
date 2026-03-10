@@ -28,7 +28,7 @@ import type {
   Section as SectionType,
   Lecture,
 } from "../../types/lecture";
-import { Chat as ChatIcon, MoreVert, StarRate, Share } from "@mui/icons-material";
+import { Chat as ChatIcon, MoreVert, StarRate, Share, School as SchoolIcon } from "@mui/icons-material";
 import ChatDrawer from "../../components/chat/ChatDrawer";
 import { courseService } from "../../service/courseService";
 import { sectionService } from "../../service/sectionService";
@@ -426,16 +426,28 @@ const CourseLearningPage = () => {
         <Box sx={{ display: "flex", alignItems: "center", flex: 1, gap: 3 }}>
           {/* Logo */}
           <Box
-            component="img"
-            src="/images/logo/logo.png"
-            alt="Logo"
+            onClick={() => navigate("/")}
             sx={{
-              height: 32,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
               cursor: "pointer",
               "&:hover": { opacity: 0.8 },
             }}
-            onClick={() => navigate("/")}
-          />
+          >
+            <SchoolIcon sx={{ color: "#3b82f6", fontSize: 24 }} />
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                color: "white",
+                letterSpacing: "-0.02em",
+                fontSize: "1.1rem",
+              }}
+            >
+              vidi
+            </Typography>
+          </Box>
 
           {/* Divider */}
           <Box
@@ -692,7 +704,7 @@ const CourseLearningPage = () => {
           currentLectureId={currentLectureId || 0}
           onLectureClick={handleLectureClick}
           onToggleComplete={(lessonId) => {
-          void markLectureCompleted(lessonId, true);
+            void markLectureCompleted(lessonId, true);
           }}
         />
       </Box>

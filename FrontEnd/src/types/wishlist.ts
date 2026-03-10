@@ -1,6 +1,7 @@
 export interface WishlistResponse {
     wishlistId: number;
     courseId: number;
+    courseSlug: string;
     courseTitle: string;
     courseImage: string;
     price: number;

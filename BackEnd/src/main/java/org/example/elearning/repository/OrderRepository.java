@@ -28,19 +28,19 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     Page<OrderEntity> findByUser(UserEntity user, Pageable pageable);
     
     // Revenue Analytics Queries
-    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'PAID'")
     BigDecimal getTotalRevenue();
     
-    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.status = 'COMPLETED'")
+    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.status = 'PAID'")
     Long getTotalCompletedOrders();
     
-    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate")
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'PAID' AND o.createdAt >= :startDate")
     BigDecimal getRevenueFrom(LocalDateTime startDate);
     
-    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate")
+    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.status = 'PAID' AND o.createdAt >= :startDate")
     Long getOrderCountFrom(LocalDateTime startDate);
     
-    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate AND o.createdAt < :endDate")
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM OrderEntity o WHERE o.status = 'PAID' AND o.createdAt >= :startDate AND o.createdAt < :endDate")
     BigDecimal getRevenueBetween(LocalDateTime startDate, LocalDateTime endDate);
     
     @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate")
@@ -49,7 +49,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     // Daily Revenue - using native query for date functions
     @Query(value = "SELECT DATE(o.created_at) as date, COALESCE(SUM(o.final_amount), 0) as revenue, COUNT(o.order_id) as orderCount " +
            "FROM orders o " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY DATE(o.created_at) " +
            "ORDER BY DATE(o.created_at)", nativeQuery = true)
     List<Object[]> getDailyRevenueNative(LocalDate startDate, LocalDate endDate);
@@ -60,7 +60,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
            "JOIN order_items oi ON o.order_id = oi.order_id " +
            "JOIN courses course ON oi.course_id = course.course_id " +
            "JOIN categories c ON course.category_id = c.id " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY c.id, c.name " +
            "ORDER BY revenue DESC", nativeQuery = true)
     List<Object[]> getRevenueByCategoryNative(LocalDate startDate, LocalDate endDate);
@@ -71,7 +71,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
            "JOIN order_items oi ON o.order_id = oi.order_id " +
            "JOIN courses course ON oi.course_id = course.course_id " +
            "JOIN categories c ON course.category_id = c.id " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY course.course_id, course.title, c.name " +
            "ORDER BY revenue DESC " +
            "LIMIT :limit", nativeQuery = true)
@@ -85,7 +85,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
            "JOIN courses course ON oi.course_id = course.course_id " +
            "JOIN instructors i ON course.instructor_id = i.instructor_id " +
            "JOIN users u ON i.user_id = u.user_id " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY i.instructor_id, u.full_name " +
            "ORDER BY revenue DESC", nativeQuery = true)
     List<Object[]> getRevenueByInstructorNative(LocalDate startDate, LocalDate endDate);
@@ -94,7 +94,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     @Query(value = "SELECT p.method, COALESCE(SUM(p.amount), 0) as revenue, COUNT(DISTINCT p.payment_id) as transactionCount " +
            "FROM payments p " +
            "JOIN orders o ON p.order_id = o.order_id " +
-           "WHERE o.status = 'COMPLETED' AND DATE(p.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(p.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY p.method " +
            "ORDER BY revenue DESC", nativeQuery = true)
     List<Object[]> getRevenueByPaymentMethodNative(LocalDate startDate, LocalDate endDate);
@@ -103,7 +103,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     @Query(value = "SELECT EXTRACT(YEAR FROM o.created_at) as year, EXTRACT(MONTH FROM o.created_at) as month, " +
            "COALESCE(SUM(o.final_amount), 0) as revenue, COUNT(o.order_id) as orderCount " +
            "FROM orders o " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY EXTRACT(YEAR FROM o.created_at), EXTRACT(MONTH FROM o.created_at) " +
            "ORDER BY year, month", nativeQuery = true)
     List<Object[]> getMonthlyRevenueNative(LocalDate startDate, LocalDate endDate);
@@ -112,7 +112,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     @Query(value = "SELECT EXTRACT(YEAR FROM o.created_at) as year, EXTRACT(QUARTER FROM o.created_at) as quarter, " +
            "COALESCE(SUM(o.final_amount), 0) as revenue, COUNT(o.order_id) as orderCount " +
            "FROM orders o " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate " +
            "GROUP BY EXTRACT(YEAR FROM o.created_at), EXTRACT(QUARTER FROM o.created_at) " +
            "ORDER BY year, quarter", nativeQuery = true)
     List<Object[]> getQuarterlyRevenueNative(LocalDate startDate, LocalDate endDate);
@@ -125,7 +125,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
            "CAST(COUNT(o.order_id) AS BIGINT) as orderCount, " +
            "CAST(COUNT(CASE WHEN o.discount_amount > 0 THEN 1 END) AS BIGINT) as ordersWithDiscount " +
            "FROM orders o " +
-           "WHERE o.status = 'COMPLETED' AND DATE(o.created_at) BETWEEN :startDate AND :endDate", nativeQuery = true)
+           "WHERE o.status = 'PAID' AND DATE(o.created_at) BETWEEN :startDate AND :endDate", nativeQuery = true)
     Object[] getDiscountImpactNative(LocalDate startDate, LocalDate endDate);
 }
 

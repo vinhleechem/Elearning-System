@@ -28,6 +28,8 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentEntity, Lo
     boolean existsByCourseAndUser(CourseEntity course, UserEntity user);
 
     Optional<EnrollmentEntity> findByCourse_CourseIdAndUser_UserId(Long courseCourseId, Long userUserId);
+
+    long countByCourseAndIsDeletedFalse(CourseEntity course);
 }
 
 

@@ -116,8 +116,8 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                         course.getTitle());
                 
                 // Add to discounts list
-                addOrUpdateDiscount(discounts, OrderDiscountType.PROMOTION.name(), 
-                        bestPromotion.getName(), bestPromotion.getDescription(), bestDiscount);
+                addOrUpdateDiscount(discounts, OrderDiscountType.PROMOTION.name(),
+                        bestPromotion.getPromotionId(), bestPromotion.getName(), bestPromotion.getDescription(), bestDiscount);
             }
             
             // Add item price
@@ -154,7 +154,7 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
                 applyVoucherToItems(applicableItems, voucherDiscount);
                 
                 addOrUpdateDiscount(discounts, OrderDiscountType.VOUCHER.name(),
-                        voucher.getName(), voucher.getDescription(), voucherDiscount);
+                        voucher.getVoucherId(), voucher.getName(), voucher.getDescription(), voucherDiscount);
             }
         }
         
@@ -208,6 +208,7 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
             OrderDiscountEntity orderDiscount = OrderDiscountEntity.builder()
                     .order(order)
                     .discountType(OrderDiscountType.valueOf(discount.getType()))
+                    .referenceId(discount.getReferenceId())
                     .discountAmount(discount.getAmount())
                     .description(discount.getName() + " - " + discount.getDescription())
                     .build();
@@ -256,8 +257,8 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
     private boolean isRuleApplicable(PromotionRuleEntity rule, CourseEntity course, ApplyDiscountRequest request) {
         return switch (rule.getRuleType()) {
             case ALL -> true;
-            case COURSE -> course.getCourseId().equals(rule.getTargetId());
-            case CATEGORY -> course.getCategory().getId().equals(rule.getTargetId());
+            case COURSE -> rule.getCourse() != null && rule.getCourse().getCourseId().equals(course.getCourseId());
+            case CATEGORY -> rule.getCategory() != null && rule.getCategory().getId().equals(course.getCategory().getId());
             case CART_TOTAL -> {
                 BigDecimal cartTotal = request.getCartItems().stream()
                         .map(ApplyDiscountRequest.CartItemRequest::getPrice)
@@ -422,7 +423,7 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
     }
 
     private void addOrUpdateDiscount(List<DiscountCalculationResponse.DiscountDetail> discounts,
-            String type, String name, String description, BigDecimal amount) {
+            String type, Long referenceId, String name, String description, BigDecimal amount) {
         Optional<DiscountCalculationResponse.DiscountDetail> existing = discounts.stream()
                 .filter(d -> d.getType().equals(type) && d.getName().equals(name))
                 .findFirst();
@@ -432,6 +433,7 @@ public class DiscountCalculationServiceImpl implements DiscountCalculationServic
         } else {
             discounts.add(DiscountCalculationResponse.DiscountDetail.builder()
                     .type(type)
+                    .referenceId(referenceId)
                     .name(name)
                     .description(description)
                     .amount(amount)

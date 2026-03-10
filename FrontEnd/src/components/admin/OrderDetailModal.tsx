@@ -132,7 +132,10 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     {formatCurrency(item.price)}
                   </TableCell>
                   <TableCell align="right" sx={{ color: "error.main" }}>
-                    -{formatCurrency(item.discountPrice || 0)}
+                    -
+                    {formatCurrency(
+                      item.price - (item.discountPrice ?? item.price),
+                    )}
                   </TableCell>
                   <TableCell
                     align="right"

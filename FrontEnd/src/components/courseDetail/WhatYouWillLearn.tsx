@@ -1,5 +1,3 @@
-import { Typography, Button, Paper, Box } from "@mui/material";
-import CheckIcon from "@mui/icons-material/Check";
 import { useState } from "react";
 
 interface Props {
@@ -8,38 +6,43 @@ interface Props {
 
 const WhatYouWillLearn: React.FC<Props> = ({ items }) => {
   const [expanded, setExpanded] = useState(false);
-  const initialLimit = 10;
+  const initialLimit = 8;
   const visible = expanded ? items : items.slice(0, initialLimit);
 
   if (!items || items.length === 0) return null;
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, mb: 4, borderColor: '#d1d7dc', borderRadius: 0 }}>
-      <Typography variant="h5" fontWeight={700} mb={3}>
-        Nội dung bài học
-      </Typography>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, columnGap: 4 }}>
+    <section className="p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">
+        Bạn sẽ học được gì?
+      </h2>
+      <div className="grid sm:grid-cols-2 gap-4">
         {visible.map((item, index) => (
-          <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-            <CheckIcon sx={{ color: '#2d2f31', fontSize: 16, mt: 0.5, mr: 2, flexShrink: 0 }} />
-            <Typography variant="body2" sx={{ fontSize: '0.9rem', color: '#2d2f31' }}>
+          <div key={index} className="flex gap-3">
+            <span className="material-symbols-outlined text-primary shrink-0 mt-0.5">
+              check_circle
+            </span>
+            <span className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
               {item.replace(/^[•\-\.\s]+/, "")}
-            </Typography>
-          </Box>
+            </span>
+          </div>
         ))}
-      </Box>
+      </div>
 
       {items.length > initialLimit && (
-        <Button
-          size="small"
+        <button
           onClick={() => setExpanded((s) => !s)}
-          sx={{ mt: 2, color: '#5624d0', fontWeight: 700, textTransform: 'none', padding: 0, minWidth: 0 }}
+          className="mt-6 text-primary font-bold flex items-center gap-1 hover:gap-2 transition-all text-sm"
         >
-          {expanded ? 'Ẩn bớt' : 'Hiện thêm'}
-        </Button>
+          {expanded ? "Ẩn bớt" : "Xem thêm"}
+          <span
+            className={`material-symbols-outlined transition-transform ${expanded ? "rotate-180" : ""}`}
+          >
+            expand_more
+          </span>
+        </button>
       )}
-    </Paper>
+    </section>
   );
 };
 

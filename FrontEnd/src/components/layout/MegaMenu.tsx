@@ -1,235 +1,337 @@
-import { useState } from "react";
-import { Box, Divider, Typography } from "@mui/material";
+import { useState, useRef } from "react";
+import { Box, Typography, Divider } from "@mui/material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Link } from "react-router-dom";
-import type { MegaMenuTopic } from "../../data/megaMenu";
+import type { CategoryTreeResponse } from "../../service/categoryService";
 
 interface MegaMenuProps {
-  title: string;
-  topics: MegaMenuTopic[];
+  categories: CategoryTreeResponse[]; // Level 1 roots
   onHover: () => void;
   onLeave: () => void;
 }
 
-const MegaMenu = ({ title, topics, onHover, onLeave }: MegaMenuProps) => {
-  const [activeTopicIndex, setActiveTopicIndex] = useState(0);
-  const [activeColumnIndex, setActiveColumnIndex] = useState(0);
-  const activeTopic = topics[activeTopicIndex];
-  const activeColumn =
-    activeTopic?.columns && activeTopic.columns.length > 0
-      ? activeTopic.columns[activeColumnIndex] || activeTopic.columns[0]
-      : null;
+const MegaMenu = ({ categories, onHover, onLeave }: MegaMenuProps) => {
+  const [activeLevel1Id, setActiveLevel1Id] = useState<number | null>(
+    categories[0]?.id ?? null
+  );
+  const [activeLevel2Id, setActiveLevel2Id] = useState<number | null>(null);
+
+  // Timeout refs for smooth hover transitions
+  const level2TimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const level3TimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const activeLevel1 = categories.find((c) => c.id === activeLevel1Id);
+  const level2List = activeLevel1?.children?.filter((c) => c.isActive) ?? [];
+
+  // Auto-select first level2 when level1 changes
+  const handleLevel1Hover = (cat: CategoryTreeResponse) => {
+    if (level2TimeoutRef.current) clearTimeout(level2TimeoutRef.current);
+    setActiveLevel1Id(cat.id);
+    setActiveLevel2Id(null); // Reset: panel 3 chỉ hiện khi hover cấp 2
+  };
+
+  const handleLevel2Hover = (cat: CategoryTreeResponse) => {
+    if (level3TimeoutRef.current) clearTimeout(level3TimeoutRef.current);
+    setActiveLevel2Id(cat.id);
+  };
+
+  const activeLevel2 = level2List.find((c) => c.id === activeLevel2Id);
+  const level3List = activeLevel2?.children?.filter((c) => c.isActive) ?? [];
 
   return (
     <Box
       sx={{
         position: "absolute",
-        top: "100%",
+        top: "calc(100% + 4px)",
         left: 0,
-        mt: 0.5,
         bgcolor: "#fff",
-        borderRadius: 1,
-        boxShadow: "0 2px 12px 0 rgba(0,0,0,0.16)",
-        border: "1px solid #d1d7dc",
+        borderRadius: "12px",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)",
+        border: "1px solid rgba(0,0,0,0.06)",
         display: "flex",
         zIndex: 1300,
-        minWidth: 820,
-        maxWidth: 1024,
         overflow: "hidden",
+        animation: "megaMenuFadeIn 0.18s ease",
+        "@keyframes megaMenuFadeIn": {
+          from: { opacity: 0, transform: "translateY(-6px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
       }}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
     >
+      {/* ── PANEL 1: Level 1 (root categories) ── */}
       <Box
         sx={{
-          minWidth: 240,
-          maxWidth: 240,
-          borderRight: "1px solid #d1d7dc",
-          backgroundColor: "#fff",
-          maxHeight: "70vh",
+          width: 220,
+          borderRight: "1px solid #f0f0f0",
+          maxHeight: "72vh",
           overflowY: "auto",
+          py: 1.5,
+          "&::-webkit-scrollbar": { width: 4 },
+          "&::-webkit-scrollbar-track": { background: "transparent" },
+          "&::-webkit-scrollbar-thumb": {
+            background: "#e0e0e0",
+            borderRadius: 2,
+          },
         }}
       >
         <Typography
-          variant="body2"
-          fontWeight={700}
           sx={{
-            px: 2,
-            py: 2,
-            color: "#1c1d1f",
-            fontSize: "14px",
-            letterSpacing: "0.5px",
+            px: 2.5,
+            py: 1,
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#94a3b8",
           }}
         >
-          {title}
+          Danh mục
         </Typography>
-        <Divider sx={{ borderColor: "#d1d7dc" }} />
-        <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
-          {topics.map((topic, idx) => {
-            const active = idx === activeTopicIndex;
+
+        {categories
+          .filter((c) => c.isActive)
+          .map((cat) => {
+            const isActive = cat.id === activeLevel1Id;
             return (
               <Box
-                key={topic.label}
-                component="li"
-                onMouseEnter={() => {
-                  setActiveTopicIndex(idx);
-                  setActiveColumnIndex(0);
+                key={cat.id}
+                component={Link}
+                to={`/courses?categoryId=${cat.id}`}
+                onMouseEnter={() => handleLevel1Hover(cat)}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 2.5,
+                  py: 1.1,
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  borderRadius: "0 8px 8px 0",
+                  mx: 1,
+                  bgcolor: isActive ? "#eff6ff" : "transparent",
+                  color: isActive ? "#2563eb" : "#1e293b",
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: "13.5px",
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: "#eff6ff",
+                    color: "#2563eb",
+                  },
+                  position: "relative",
+                  ...(isActive && {
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      left: -8,
+                      top: "20%",
+                      bottom: "20%",
+                      width: 3,
+                      borderRadius: 4,
+                      bgcolor: "#2563eb",
+                    },
+                  }),
                 }}
               >
-                <Box
-                  component={Link}
-                  to={`/courses?category=${encodeURIComponent(topic.label)}`}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    px: 2,
-                    py: 1,
-                    cursor: "pointer",
-                    bgcolor: active ? "#f7f9fa" : "transparent",
-                    color: active ? "#3b82f6" : "#1c1d1f",
-                    fontWeight: active ? 700 : 400,
-                    fontSize: "14px",
-                    textDecoration: "none",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      bgcolor: "#f7f9fa",
-                      color: "#3b82f6",
-                    },
-                  }}
-                >
-                  {topic.label}
+                <span>{cat.name}</span>
+                {cat.children && cat.children.length > 0 && (
                   <ChevronRightIcon
-                    fontSize="small"
                     sx={{
-                      fontSize: "18px",
-                      color: active ? "#3b82f6" : "#6a6f73",
+                      fontSize: 16,
+                      color: isActive ? "#2563eb" : "#cbd5e1",
+                      transition: "color 0.15s",
                     }}
                   />
-                </Box>
+                )}
+              </Box>
+            );
+          })}
+      </Box>
+
+      {/* ── PANEL 2: Level 2 ── */}
+      {level2List.length > 0 && (
+        <Box
+          sx={{
+            width: 230,
+            borderRight: "1px solid #f0f0f0",
+            maxHeight: "72vh",
+            overflowY: "auto",
+            py: 1.5,
+            bgcolor: "#fafbfc",
+            "&::-webkit-scrollbar": { width: 4 },
+            "&::-webkit-scrollbar-track": { background: "transparent" },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#e0e0e0",
+              borderRadius: 2,
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              px: 2.5,
+              py: 1,
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+            }}
+          >
+            {activeLevel1?.name}
+          </Typography>
+
+          {level2List.map((cat) => {
+            const isActive = cat.id === activeLevel2Id;
+            return (
+              <Box
+                key={cat.id}
+                component={Link}
+                to={`/courses?categoryId=${cat.id}`}
+                onMouseEnter={() => handleLevel2Hover(cat)}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 2.5,
+                  py: 1.1,
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  borderRadius: "0 8px 8px 0",
+                  mx: 1,
+                  bgcolor: isActive ? "#eff6ff" : "transparent",
+                  color: isActive ? "#2563eb" : "#1e293b",
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: "13.5px",
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: "#eff6ff",
+                    color: "#2563eb",
+                  },
+                  position: "relative",
+                  ...(isActive && {
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      left: -8,
+                      top: "20%",
+                      bottom: "20%",
+                      width: 3,
+                      borderRadius: 4,
+                      bgcolor: "#2563eb",
+                    },
+                  }),
+                }}
+              >
+                <span>{cat.name}</span>
+                {cat.children && cat.children.length > 0 && (
+                  <ChevronRightIcon
+                    sx={{
+                      fontSize: 16,
+                      color: isActive ? "#2563eb" : "#cbd5e1",
+                      transition: "color 0.15s",
+                    }}
+                  />
+                )}
               </Box>
             );
           })}
         </Box>
-      </Box>
+      )}
 
-      <Box
-        sx={{
-          display: "flex",
-          flex: 1,
-          backgroundColor: "#fff",
-          maxHeight: "70vh",
-          overflow: "hidden",
-        }}
-      >
-        {/* Middle column: level 2 list */}
+      {/* ── PANEL 3: Level 3 ── */}
+      {level3List.length > 0 && (
         <Box
           sx={{
             width: 260,
-            borderRight: "1px solid #e8e9eb",
-            backgroundColor: "#fff",
-            maxHeight: "70vh",
+            maxHeight: "72vh",
             overflowY: "auto",
+            py: 1.5,
+            "&::-webkit-scrollbar": { width: 4 },
+            "&::-webkit-scrollbar-track": { background: "transparent" },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#e0e0e0",
+              borderRadius: 2,
+            },
           }}
         >
-          <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
-            {activeTopic?.columns?.map((column, idx) => {
-              const active = idx === activeColumnIndex;
-              return (
-                <Box
-                  key={`${column.title}-${idx}`}
-                  component="li"
-                  onMouseEnter={() => setActiveColumnIndex(idx)}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      px: 2,
-                      py: 1,
-                      cursor: "pointer",
-                      bgcolor: active ? "#f7f9fa" : "transparent",
-                      color: active ? "#3b82f6" : "#1c1d1f",
-                      fontWeight: active ? 700 : 400,
-                      fontSize: "14px",
-                      "&:hover": {
-                        bgcolor: "#f7f9fa",
-                        color: "#3b82f6",
-                      },
-                    }}
-                  >
-                    {column.title}
-                    <ChevronRightIcon
-                      fontSize="small"
-                      sx={{
-                        fontSize: "18px",
-                        color: active ? "#3b82f6" : "#6a6f73",
-                      }}
-                    />
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-
-        {/* Right column: level 3 items */}
-        <Box
-          sx={{
-            flex: 1,
-            backgroundColor: "#fff",
-            maxHeight: "70vh",
-            overflowY: "auto",
-            p: 2.5,
-            minWidth: 260,
-          }}
-        >
-          {activeColumn ? (
-            <>
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                sx={{
-                  mb: 1.5,
-                  color: "#1c1d1f",
-                  fontSize: "14px",
-                }}
-              >
-                Popular topics
-              </Typography>
-              <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
-                {activeColumn.items.map((item) => (
-                  <Typography
-                    component={Link}
-                    to={`/courses?subcategory=${encodeURIComponent(item)}`}
-                    key={item}
-                    sx={{
-                      fontSize: "13px",
-                      color: "#6a6f73",
-                      py: 0.5,
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      display: "block",
-                      transition: "color 0.2s ease",
-                      "&:hover": {
-                        color: "#3b82f6",
-                        textDecoration: "underline",
-                      },
-                    }}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Box>
-            </>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              Đang cập nhật...
+          <Box sx={{ px: 2.5, py: 1 }}>
+            <Typography
+              sx={{
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "#94a3b8",
+                mb: 0.5,
+              }}
+            >
+              Chủ đề phổ biến
             </Typography>
-          )}
+            <Typography
+              component={Link}
+              to={`/courses?categoryId=${activeLevel2Id}`}
+              sx={{
+                fontSize: "12px",
+                color: "#2563eb",
+                fontWeight: 500,
+                textDecoration: "none",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              Xem tất cả →
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mx: 2, borderColor: "#f0f0f0", mb: 1 }} />
+
+          {level3List.map((cat) => (
+            <Box
+              key={cat.id}
+              component={Link}
+              to={`/courses?categoryId=${cat.id}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: 2.5,
+                py: 0.9,
+                textDecoration: "none",
+                color: "#374151",
+                fontSize: "13.5px",
+                borderRadius: "0 8px 8px 0",
+                mx: 1,
+                transition: "all 0.15s ease",
+                "&:hover": {
+                  bgcolor: "#eff6ff",
+                  color: "#2563eb",
+                  "& .dot": { bgcolor: "#2563eb" },
+                },
+              }}
+            >
+              <Box
+                className="dot"
+                sx={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  bgcolor: "#cbd5e1",
+                  flexShrink: 0,
+                  transition: "background 0.15s",
+                }}
+              />
+              {cat.name}
+            </Box>
+          ))}
         </Box>
-      </Box>
+      )}
+
+      {/* Empty state nếu chưa có dữ liệu */}
+      {level2List.length === 0 && (
+        <Box sx={{ px: 3, py: 4, color: "#94a3b8", fontSize: 13 }}>
+          Đang cập nhật...
+        </Box>
+      )}
     </Box>
   );
 };
